@@ -1,5 +1,13 @@
 //
 //  HomeOptionButton.swift
+//  Overlap
+//
+//  Created by Paul Davis on 7/24/25.
+//
+
+
+//
+//  HomeOptionButton.swift
 //  Overlay
 //
 //  Created by Paul Davis on 7/13/25.
@@ -43,15 +51,7 @@ struct HomeOptionButton: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 15)
-        // Rounded rectangle background with corner radius
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.systemGray6))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(color.opacity(0.3), lineWidth: 1)
-                )
-        )
+        .glassEffect(.clear.interactive())
     }
 }
 

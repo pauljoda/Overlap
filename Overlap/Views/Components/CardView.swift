@@ -1,10 +1,9 @@
 //
 //  CardView.swift
-//  Overlay
+//  Overlap
 //
-//  Created by Paul Davis on 7/12/25.
+//  Created by Paul Davis on 7/25/25.
 //
-
 
 import SwiftUI
 
@@ -118,19 +117,24 @@ struct CardView: View {
             // Card stack
             ZStack {
                 
-                // Main card Background
-                RoundedRectangle(cornerRadius: cardCornerRadius)
-                    .fill(cardColor)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: cardCornerRadius)
-                            .stroke(Color(.separator), lineWidth: borderWidth)
-                    )
-                    .shadow(
-                        color: Color.black.opacity(shadowOpacity),
-                        radius: shadowRadius,
-                        x: shadowOffsetX,
-                        y: shadowOffsetY
-                    )
+                GlassEffectContainer{
+                    
+                    
+                    // Main card Background
+                    RoundedRectangle(cornerRadius: cardCornerRadius)
+                        .fill(cardColor)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: cardCornerRadius)
+                                .stroke(Color(.separator), lineWidth: borderWidth)
+                        )
+                        .shadow(
+                            color: Color.black.opacity(shadowOpacity),
+                            radius: shadowRadius,
+                            x: shadowOffsetX,
+                            y: shadowOffsetY
+                        )
+                        .opacity(0.5)
+                }
                 
                 // Interior Card content
                 VStack {
@@ -184,7 +188,8 @@ struct CardView: View {
                 .padding(contentPadding)
             }
             .frame(width: geometry.size.width - cardPadding, height: geometry.size.height - cardPadding)
-            .position(x: geometry.size.width / 2 + offset.width, y: geometry.size.height / 2 + offset.height)
+            .center(in: geometry)
+            .offset(offset)
             .rotationEffect(.degrees(Double(offset.width / rotationDivisor)))
             .scaleEffect(1.0 - abs(offset.width) / geometry.size.width * scaleEffectMultiplier)
                 .gesture(
@@ -285,11 +290,117 @@ struct CardView: View {
         }
     }
 
-#Preview {
-    CardView(
-        question: Question(text: "Do you like pizza?")
-    ) { answer in
-        print("Selected answer: \(answer)")
+// MARK: - View Extension for Centering
+extension View {
+    func center(in geometry: GeometryProxy) -> some View {
+        self.position(x: geometry.size.width / 2, y: geometry.size.height / 2)
     }
-    .background(Color(.systemGroupedBackground))
+}
+
+#Preview {
+    ZStack{
+        BlobBackgroundView()
+        CardView(
+            question: Question(text: "Do you like pizza?")
+        ) { answer in
+            print("Selected answer: \(answer)")
+        }
+        //.background(Color(.systemGroupedBackground))
+    }
+}
+
+enum AnswerType: String, Codable, CaseIterable, Hashable {
+    case yes = "Yes"
+    case no = "No"
+    case maybe = "Maybe"
+}
+
+class Answer: Codable {
+    var type: AnswerType = AnswerType.no
+    var text: String = "No"
+    
+    init(type: AnswerType, text: String) {
+        self.type = type
+        self.text = text
+    }
+    
+    // MARK: - Codable Implementation
+    enum CodingKeys: String, CodingKey {
+        case type, text
+    }
+    
+    required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.type = try container.decode(AnswerType.self, forKey: .type)
+        self.text = try container.decode(String.self, forKey: .text)
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(type, forKey: .type)
+        try container.encode(text, forKey: .text)
+    }
+}
+
+//
+//  Question.swift
+//  Overlay
+//
+//  Created by Paul Davis on 7/12/25.
+//
+
+import Foundation
+import SwiftData
+
+@Model
+class Question: Codable {
+    var id: UUID = UUID()
+    var text: String = ""
+    var answerTexts: [AnswerType: String] = [AnswerType.no: "No", AnswerType.yes: "Yes", AnswerType.maybe: "Maybe"]
+    var orderIndex: Int = 0
+    //@Relationship var overlay: Overlay?
+    
+    init(text: String = "", answerTexts: [AnswerType: String]? = nil, orderIndex: Int = 0) {
+        self.id = UUID()
+        self.text = text
+        if let customAnswerTexts = answerTexts {
+            self.answerTexts = customAnswerTexts
+        } else {
+            self.answerTexts = [
+                .yes: "Yes",
+                .no: "No",
+                .maybe: "Maybe"
+            ]
+        }
+        self.orderIndex = orderIndex
+    }
+    
+    // MARK: - Codable Implementation
+    enum CodingKeys: String, CodingKey {
+        case id, text, answerTexts, orderIndex
+    }
+    
+    required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(UUID.self, forKey: .id)
+        self.text = try container.decode(String.self, forKey: .text)
+        self.answerTexts = try container.decode([AnswerType: String].self, forKey: .answerTexts)
+        self.orderIndex = try container.decode(Int.self, forKey: .orderIndex)
+        //self.overlay = nil // Relationships are not encoded/decoded
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(text, forKey: .text)
+        try container.encode(answerTexts, forKey: .answerTexts)
+        try container.encode(orderIndex, forKey: .orderIndex)
+        // Note: overlay relationship is not encoded as it would create circular references
+    }
+    
+    @discardableResult
+    func setAnswerText(_ type: AnswerType, _ text: String) -> Self {
+        answerTexts[type] = text
+        return self
+    }
 }

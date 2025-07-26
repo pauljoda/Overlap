@@ -1,5 +1,13 @@
 //
 //  HomeMenuView.swift
+//  Overlap
+//
+//  Created by Paul Davis on 7/24/25.
+//
+
+
+//
+//  HomeMenuView.swift
 //  Overlay
 //
 //  Created by Paul Davis on 7/13/25.
@@ -10,50 +18,50 @@ import SwiftUI
 struct HomeMenuView: View {
     var body: some View {
         VStack(spacing: 20) {
-            NavigationLink(destination: CreateOverlayView()) {
+            NavigationLink(destination: ComingSoonView(title:   "Create")) {
                 HomeOptionButton(
-                    title: "Create an Overlay",
+                    title: "Create",
                     icon: "plus.circle.fill",
                     color: .blue
                 )
             }
             
-            NavigationLink(destination: SavedOverlaysView()) {
+            NavigationLink(destination: ComingSoonView(title: "Saved")) {
                 HomeOptionButton(
-                    title: "Saved Overlays",
+                    title: "Saved",
                     icon: "bookmark.fill",
                     color: .purple
                 )
             }
             
-            NavigationLink(destination: ComingSoonView(title: "In-Progress Overlays")) {
+            NavigationLink(destination: ComingSoonView(title: "In-Progress")) {
                 HomeOptionButton(
-                    title: "In-Progress Overlays",
+                    title: "In-Progress",
                     icon: "clock.fill",
                     color: .orange
                 )
             }
             
-            NavigationLink(destination: CompletedOverlaysView()) {
+            NavigationLink(destination: ComingSoonView(title: "Completed")) {
                 HomeOptionButton(
-                    title: "Completed Overlays",
+                    title: "Completed",
                     icon: "checkmark.circle.fill",
                     color: .green
                 )
             }
         
             
-            NavigationLink(destination: ComingSoonView(title: "Join an Overlay")) {
+            NavigationLink(destination: ComingSoonView(title: "Join")) {
                 HomeOptionButton(
-                    title: "Join an Overlay",
+                    title: "Join",
                     icon: "person.2.fill",
                     color: .teal
                 )
             }
             
-            NavigationLink(destination: OverlayListView()) {
+            NavigationLink(destination: ComingSoonView(title: "Browse")) {
                 HomeOptionButton(
-                    title: "Browse Overlays",
+                    title: "Browse",
                     icon: "list.bullet.rectangle.fill",
                     color: .red
                 )

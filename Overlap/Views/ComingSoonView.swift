@@ -1,8 +1,8 @@
 //
 //  ComingSoonView.swift
-//  Overlay
+//  Overlap
 //
-//  Created by Paul Davis on 7/13/25.
+//  Created by Paul Davis on 7/24/25.
 //
 
 import SwiftUI
@@ -18,6 +18,7 @@ struct ComingSoonView: View {
             Image(systemName: "hammer.fill")
                 .font(.system(size: 60))
                 .foregroundColor(.orange)
+                
             
             // Title and subtitle
             VStack(spacing: 10) {

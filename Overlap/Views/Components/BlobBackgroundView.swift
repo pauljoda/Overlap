@@ -1,53 +1,66 @@
+//
+//  BlobBackgroundView.swift
+//  Overlap
+//
+//  Created by Paul Davis on 7/24/25.
+//
+
 import SwiftUI
 
 struct BlobBackgroundView: View {
-    @State private var animate = false
-    @State private var hueRotation: Double = 0
-
+    @State private var pulseScale: CGFloat = 1.0
+    @State private var opacity: Double = 0.3
+    
+    private let colors: [Color] = [
+        .red.opacity(0.4),
+        .yellow.opacity(0.4),
+        .green.opacity(0.4)
+    ]
+    
     var body: some View {
         ZStack {
-            // Blob 1 – Pastel Red
-            Circle()
-                .fill(LinearGradient(
-                    colors: [Color.red.opacity(0.3), Color.orange.opacity(0.3)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing))
-                .frame(width: 300, height: 300)
-                .offset(x: animate ? -100 : 100, y: animate ? -150 : 150)
-                .blur(radius: 60)
-                .hueRotation(.degrees(hueRotation))
-                .animation(.easeInOut(duration: 20).repeatForever(autoreverses: true), value: animate)
-
-            // Blob 2 – Pastel Yellow
-            Circle()
-                .fill(LinearGradient(
-                    colors: [Color.yellow.opacity(0.3), Color.white.opacity(0.2)],
-                    startPoint: .topTrailing,
-                    endPoint: .bottomLeading))
-                .frame(width: 250, height: 250)
-                .offset(x: animate ? 120 : -120, y: animate ? 100 : -100)
-                .blur(radius: 60)
-                .hueRotation(.degrees(hueRotation + 45))
-                .animation(.easeInOut(duration: 24).repeatForever(autoreverses: true), value: animate)
-
-            // Blob 3 – Pastel Green
-            Circle()
-                .fill(LinearGradient(
-                    colors: [Color.green.opacity(0.3), Color.teal.opacity(0.3)],
-                    startPoint: .bottomLeading,
-                    endPoint: .topTrailing))
-                .frame(width: 280, height: 280)
-                .offset(x: animate ? -130 : 130, y: animate ? 100 : -100)
-                .blur(radius: 60)
-                .hueRotation(.degrees(hueRotation + 90))
-                .animation(.easeInOut(duration: 28).repeatForever(autoreverses: true), value: animate)
+            // Simple static blobs with pulsing animation
+            ForEach(0..<3, id: \.self) { index in
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            gradient: Gradient(colors: [
+                                colors[index],
+                                colors[index].opacity(0)
+                            ]),
+                            center: .center,
+                            startRadius: 100,
+                            endRadius: 200
+                        )
+                    )
+                    .frame(width: 400, height: 400)
+                    .offset(
+                        x: index == 0 ? -100 : (index == 1 ? 100 : 0),
+                        y: index == 0 ? -150 : (index == 1 ? 50 : 200)
+                    )
+                    .scaleEffect(pulseScale)
+                    .opacity(opacity)
+                    .blur(radius: 20)
+                    .animation(
+                        .easeInOut(duration: 3.0 + Double(index))
+                        .repeatForever(autoreverses: true),
+                        value: pulseScale
+                    )
+                    .animation(
+                        .easeInOut(duration: 4.0 + Double(index) * 0.5)
+                        .repeatForever(autoreverses: true),
+                        value: opacity
+                    )
+            }
         }
         .ignoresSafeArea()
         .onAppear {
-            animate = true
-            withAnimation(Animation.linear(duration: 60).repeatForever(autoreverses: false)) {
-                hueRotation = 360
-            }
+            pulseScale = 1.2
+            opacity = 0.6
         }
     }
+}
+
+#Preview {
+    BlobBackgroundView()
 }

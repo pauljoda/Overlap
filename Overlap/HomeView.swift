@@ -10,10 +10,40 @@ import SwiftData
 
 struct HomeView: View {
     var body: some View {
-        NavigationSplitView {
-            BlobBackgroundView()
-        } detail: {
-            Text("Select an item")
+        NavigationStack {
+            ZStack {
+                // Setup Background
+                BlobBackgroundView()
+                
+                VStack(spacing: 40) {
+                    Spacer()
+                    
+                    //App Title
+                    VStack(spacing: 10) {
+                        Text("Overlap")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .foregroundColor(.primary)
+                        
+                        Text("See where your opinions overlap")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    HStack {
+                        Spacer()
+                        HomeMenuView()
+                            .padding()
+                            .frame(maxWidth: 400)
+                        Spacer()
+                    }
+                    
+                    Spacer()
+                }
+                .padding(30)
+            }
         }
     }
 }
