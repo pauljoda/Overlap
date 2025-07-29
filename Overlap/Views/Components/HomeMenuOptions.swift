@@ -15,7 +15,7 @@
 
 import SwiftUI
 
-struct HomeMenuView: View {
+struct HomeMenuOptions: View {
     var body: some View {
         VStack(spacing: 20) {
             NavigationLink(destination: ComingSoonView(title:   "Create")) {
@@ -72,7 +72,7 @@ struct HomeMenuView: View {
 
 #Preview {
     NavigationStack {
-        HomeMenuView()
+        HomeMenuOptions()
             .padding()
     }
 }
