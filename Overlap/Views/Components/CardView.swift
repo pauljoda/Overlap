@@ -7,12 +7,18 @@
 
 import SwiftUI
 
+enum DragDirection {
+    case left, right, up
+}
+
 struct CardView: View {
     // Paramaters
     /// The question to display on the card
     let question: Question
     /// Callback to handle the answer selection
     var onSwipe: (Answer) -> Void
+    /// Callback to handle emphasis changes for the background
+    var onEmphasisChange: ((BlobEmphasis) -> Void)?
 
     // State Variables
     /// The current offset of the card during drag
@@ -24,14 +30,10 @@ struct CardView: View {
     
     // MARK: - Configuration Variables
     ///Configuration for various thresholds and visual styles
-    private let dragThreshold: CGFloat = 100
-    /// Configuration for swipe thresholds and animations
-    private let swipeThresholdMultiplier: CGFloat = 0.25 // 25% of screen width
+    private let dragThreshold: CGFloat = 80
     /// Velocity threshold for swipe detection
-    private let velocityThreshold: CGFloat = 500
+    private let velocityThreshold: CGFloat = 400
     /// Configuration for exit distance multiplier
-    private let velocityMultiplier: CGFloat = 0.3
-    /// Multiplier for how far the card exits the screen
     private let exitDistanceMultiplier: CGFloat = 1.5
     
     // Visual Configuration
@@ -50,19 +52,13 @@ struct CardView: View {
     /// Shadow opacity
     private let shadowOpacity: Double = 0.1
     
-    // Color Configuration
-    ///Configuration for card colors and opacity
-    private let colorOpacity: Double = 0.8
+    // Color Configuration (simplified)
     /// Threshold for when to fade help text
     private let helpTextFadeThreshold: CGFloat = 0.3
     
     // Animation Configuration
     /// Configuration for animation effects
     private let rotationDivisor: CGFloat = 10
-    /// Configuration for scaling effects
-    private let scaleDivisor: CGFloat = 0.05
-    /// Configuration for exit animation duration
-    private let scaleEffectMultiplier: CGFloat = 0.1
     /// Configuration for exit animation duration
     private let exitAnimationDuration: Double = 0.6
     /// Delay before calling the swipe callback
@@ -86,39 +82,56 @@ struct CardView: View {
 
     /// How far along the card drag is relative to the drag threshold
     private var dragProgress: CGFloat {
-        let threshold: CGFloat = dragThreshold
-        return max(abs(offset.width), abs(offset.height)) / threshold
+        return max(abs(offset.width), abs(offset.height)) / dragThreshold
     }
 
-    /// The color of the card based on the drag direction
+    /// The color of the card (simplified - no color changes during drag)
     private var cardColor: Color {
-        let horizontal = offset.width
-        let vertical = offset.height
-        
-        // More left and right than up
-        if abs(horizontal) > abs(vertical) {
-            return horizontal < 0 ? .red.opacity(colorOpacity) : .green.opacity(colorOpacity)
-        } else if vertical < 0 {
-            return .yellow.opacity(colorOpacity)
-        }
         return Color(.systemBackground)
     }
     
-    private var rotationAngle: Double {
-        return Double(offset.width / rotationDivisor)
+    /// Determines the current emphasis based on drag position
+    private var currentEmphasis: BlobEmphasis {
+        guard max(abs(offset.width), abs(offset.height)) > 20 else {
+            return .none
+        }
+        
+        let absWidth = abs(offset.width)
+        let absHeight = abs(offset.height)
+        
+        if absWidth > absHeight {
+            return offset.width < 0 ? .red : .green
+        } else if offset.height < 0 {
+            return .yellow
+        }
+        
+        return .none
     }
     
-    private var cardScale: CGFloat {
-        return 1.0 - abs(offset.width) / UIScreen.main.bounds.width * scaleDivisor
+    /// Determines the answer direction based on final movement
+    private func determineAnswerDirection(from translation: CGSize, velocity: CGSize) -> DragDirection? {
+        let absWidth = abs(translation.width)
+        let absHeight = abs(translation.height)
+        let absVelWidth = abs(velocity.width)
+        let absVelHeight = abs(velocity.height)
+        
+        // Determine dominant direction based on both distance and velocity
+        let horizontalStrength = absWidth + absVelWidth * 0.1 // Small velocity contribution
+        let verticalStrength = absHeight + absVelHeight * 0.1
+        
+        if horizontalStrength > verticalStrength {
+            return translation.width < 0 ? .left : .right
+        } else if translation.height < 0 {
+            return .up
+        }
+        
+        return nil // Downward movement not allowed
     }
 
     var body: some View {
         GeometryReader { geometry in
             // Card stack
             ZStack {
-                
-                GlassEffectContainer{
-                    
                     
                     // Main card Background
                     RoundedRectangle(cornerRadius: cardCornerRadius)
@@ -133,8 +146,7 @@ struct CardView: View {
                             x: shadowOffsetX,
                             y: shadowOffsetY
                         )
-                        .opacity(0.5)
-                }
+                        .opacity(0.7)
                 
                 // Interior Card content
                 VStack {
@@ -188,219 +200,110 @@ struct CardView: View {
                 .padding(contentPadding)
             }
             .frame(width: geometry.size.width - cardPadding, height: geometry.size.height - cardPadding)
-            .center(in: geometry)
-            .offset(offset)
+            .position(x: geometry.size.width / 2 + offset.width, y: geometry.size.height / 2 + offset.height)
             .rotationEffect(.degrees(Double(offset.width / rotationDivisor)))
-            .scaleEffect(1.0 - abs(offset.width) / geometry.size.width * scaleEffectMultiplier)
                 .gesture(
-                    // Gesture logic to handle card swiping and dragging
+                    // Simplified free movement gesture
                     DragGesture()
                         .onChanged { gesture in
                             if !isAnswered {
+                                // Allow completely free movement
                                 offset = gesture.translation
+                                
+                                // Notify about emphasis change
+                                onEmphasisChange?(currentEmphasis)
                             }
                         }
                         .onEnded { gesture in
                             if !isAnswered {
-                                let horizontal = gesture.translation.width
-                                let vertical = gesture.translation.height
-                                let velocity = gesture.velocity
+                                let distance = max(abs(offset.width), abs(offset.height))
+                                let velocity = max(abs(gesture.velocity.width), abs(gesture.velocity.height))
                                 
-                                // Calculate if we should trigger based on distance OR velocity (like Tinder)
-                                let swipeThreshold: CGFloat = geometry.size.width * swipeThresholdMultiplier
-                                let velocityThreshold: CGFloat = self.velocityThreshold
+                                // Check if we should trigger based on distance or velocity
+                                let shouldTrigger = distance > dragThreshold || velocity > velocityThreshold
                                 
-                                let shouldTriggerHorizontal = abs(horizontal) > swipeThreshold || abs(velocity.width) > velocityThreshold
-                                let shouldTriggerVertical = abs(vertical) > swipeThreshold || abs(velocity.height) > velocityThreshold
-                                
-                                if shouldTriggerHorizontal || shouldTriggerVertical {
-                                    let answer: AnswerType?
-                                    
-                                    // Determine the answer based on the primary direction
-                                    if abs(horizontal) > abs(vertical) || abs(velocity.width) > abs(velocity.height) {
-                                        // Horizontal movement (left/right)
-                                        answer = (horizontal < 0 || velocity.width < 0) ? .no : .yes
-                                    } else if vertical < 0 || velocity.height < 0 {
-                                        // Upward movement only
-                                        answer = .maybe
-                                    } else {
-                                        // Downward movement - not a valid answer, should return to center
-                                        answer = nil
-                                    }
-                                    
-                                    // Only proceed if we have a valid answer
-                                    if let validAnswer = answer {
-                                        selectedAnswer = validAnswer
+                                if shouldTrigger {
+                                    // Determine answer based on final position and velocity
+                                    if let direction = determineAnswerDirection(from: gesture.translation, velocity: gesture.velocity) {
+                                        let answer: AnswerType
                                         
-                                        // Calculate final position based on direction and add velocity momentum
-                                        let velocityMultiplier: CGFloat = self.velocityMultiplier
-                                        
-                                        // Calculate final width position
-                                        let finalWidth: CGFloat
-                                        if horizontal < 0 {
-                                            finalWidth = -geometry.size.width * exitDistanceMultiplier + velocity.width * velocityMultiplier
-                                        } else if horizontal > 0 {
-                                            finalWidth = geometry.size.width * exitDistanceMultiplier + velocity.width * velocityMultiplier
-                                        } else if velocity.width < 0 {
-                                            finalWidth = -geometry.size.width * exitDistanceMultiplier + velocity.width * velocityMultiplier
-                                        } else {
-                                            finalWidth = geometry.size.width * exitDistanceMultiplier + velocity.width * velocityMultiplier
+                                        switch direction {
+                                        case .left:
+                                            answer = .no
+                                        case .right:
+                                            answer = .yes
+                                        case .up:
+                                            answer = .maybe
                                         }
                                         
-                                        // Calculate final height position
-                                        let finalHeight: CGFloat
-                                        if vertical < 0 {
-                                            finalHeight = -geometry.size.height * exitDistanceMultiplier + velocity.height * velocityMultiplier
-                                        } else if vertical > 0 {
-                                            finalHeight = geometry.size.height * exitDistanceMultiplier + velocity.height * velocityMultiplier
-                                        } else if velocity.height < 0 {
-                                            finalHeight = -geometry.size.height * exitDistanceMultiplier + velocity.height * velocityMultiplier
-                                        } else {
-                                            finalHeight = geometry.size.height * exitDistanceMultiplier + velocity.height * velocityMultiplier
+                                        selectedAnswer = answer
+                                        
+                                        // Calculate exit position based on direction
+                                        let exitOffset: CGSize
+                                        switch direction {
+                                        case .left:
+                                            exitOffset = CGSize(width: -geometry.size.width * exitDistanceMultiplier, height: gesture.translation.height)
+                                        case .right:
+                                            exitOffset = CGSize(width: geometry.size.width * exitDistanceMultiplier, height: gesture.translation.height)
+                                        case .up:
+                                            exitOffset = CGSize(width: gesture.translation.width, height: -geometry.size.height * exitDistanceMultiplier)
                                         }
                                         
-                                        let finalOffset = CGSize(width: finalWidth, height: finalHeight)
-                                        
+                                        // Animate exit
                                         withAnimation(.easeOut(duration: exitAnimationDuration)) {
-                                            offset = finalOffset
+                                            offset = exitOffset
                                         }
                                         
-                                        // Call onSwipe after animation has time to complete
+                                        // Call completion callback
                                         DispatchQueue.main.asyncAfter(deadline: .now() + delayBeforeCallback) {
                                             isAnswered = true
-                                            onSwipe(Answer(type: validAnswer, text: question.answerTexts[validAnswer] ?? ""))
+                                            onSwipe(Answer(type: answer, text: question.answerTexts[answer] ?? ""))
                                         }
                                     } else {
                                         // Invalid direction (downward), return to center
                                         withAnimation(.spring(response: springResponse, dampingFraction: springDamping, blendDuration: 0)) {
                                             offset = .zero
                                         }
+                                        
+                                        // Reset emphasis when returning to center
+                                        onEmphasisChange?(.none)
                                     }
                                 } else {
-                                    // Reset with spring animation if not swiped far enough
+                                    // Reset to center with spring animation
                                     withAnimation(.spring(response: springResponse, dampingFraction: springDamping, blendDuration: 0)) {
                                         offset = .zero
                                     }
+                                    
+                                    // Reset emphasis when returning to center
+                                    onEmphasisChange?(.none)
                                 }
                             }
                         }
                 )
             }
-            .clipped()
         }
     }
 
-// MARK: - View Extension for Centering
-extension View {
-    func center(in geometry: GeometryProxy) -> some View {
-        self.position(x: geometry.size.width / 2, y: geometry.size.height / 2)
-    }
-}
 
 #Preview {
-    ZStack{
-        BlobBackgroundView()
-        CardView(
-            question: Question(text: "Do you like pizza?")
-        ) { answer in
-            print("Selected answer: \(answer)")
+    struct CardViewPreview: View {
+        @State private var blobEmphasis: BlobEmphasis = .none
+        
+        var body: some View {
+            ZStack {
+                BlobBackgroundView(emphasis: blobEmphasis)
+                CardView(
+                    question: Question(text: "Do you like pizza?"),
+                    onSwipe: { answer in
+                        print("Selected answer: \(answer)")
+                    },
+                    onEmphasisChange: { emphasis in
+                        blobEmphasis = emphasis
+                    }
+                )
+            }
         }
-        //.background(Color(.systemGroupedBackground))
-    }
-}
-
-enum AnswerType: String, Codable, CaseIterable, Hashable {
-    case yes = "Yes"
-    case no = "No"
-    case maybe = "Maybe"
-}
-
-class Answer: Codable {
-    var type: AnswerType = AnswerType.no
-    var text: String = "No"
-    
-    init(type: AnswerType, text: String) {
-        self.type = type
-        self.text = text
     }
     
-    // MARK: - Codable Implementation
-    enum CodingKeys: String, CodingKey {
-        case type, text
-    }
-    
-    required init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.type = try container.decode(AnswerType.self, forKey: .type)
-        self.text = try container.decode(String.self, forKey: .text)
-    }
-    
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(type, forKey: .type)
-        try container.encode(text, forKey: .text)
-    }
-}
-
-//
-//  Question.swift
-//  Overlay
-//
-//  Created by Paul Davis on 7/12/25.
-//
-
-import Foundation
-import SwiftData
-
-@Model
-class Question: Codable {
-    var id: UUID = UUID()
-    var text: String = ""
-    var answerTexts: [AnswerType: String] = [AnswerType.no: "No", AnswerType.yes: "Yes", AnswerType.maybe: "Maybe"]
-    var orderIndex: Int = 0
-    //@Relationship var overlay: Overlay?
-    
-    init(text: String = "", answerTexts: [AnswerType: String]? = nil, orderIndex: Int = 0) {
-        self.id = UUID()
-        self.text = text
-        if let customAnswerTexts = answerTexts {
-            self.answerTexts = customAnswerTexts
-        } else {
-            self.answerTexts = [
-                .yes: "Yes",
-                .no: "No",
-                .maybe: "Maybe"
-            ]
-        }
-        self.orderIndex = orderIndex
-    }
-    
-    // MARK: - Codable Implementation
-    enum CodingKeys: String, CodingKey {
-        case id, text, answerTexts, orderIndex
-    }
-    
-    required init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.id = try container.decode(UUID.self, forKey: .id)
-        self.text = try container.decode(String.self, forKey: .text)
-        self.answerTexts = try container.decode([AnswerType: String].self, forKey: .answerTexts)
-        self.orderIndex = try container.decode(Int.self, forKey: .orderIndex)
-        //self.overlay = nil // Relationships are not encoded/decoded
-    }
-    
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(id, forKey: .id)
-        try container.encode(text, forKey: .text)
-        try container.encode(answerTexts, forKey: .answerTexts)
-        try container.encode(orderIndex, forKey: .orderIndex)
-        // Note: overlay relationship is not encoded as it would create circular references
-    }
-    
-    @discardableResult
-    func setAnswerText(_ type: AnswerType, _ text: String) -> Self {
-        answerTexts[type] = text
-        return self
-    }
+    return CardViewPreview()
 }

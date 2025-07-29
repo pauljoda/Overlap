@@ -34,7 +34,7 @@ struct HomeView: View {
                     
                     HStack {
                         Spacer()
-                        HomeMenuView()
+                        HomeMenuOptions()
                             .padding()
                             .frame(maxWidth: 400)
                         Spacer()

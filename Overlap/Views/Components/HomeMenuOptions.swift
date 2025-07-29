@@ -18,7 +18,7 @@ import SwiftUI
 struct HomeMenuOptions: View {
     var body: some View {
         VStack(spacing: 20) {
-            NavigationLink(destination: ComingSoonView(title:   "Create")) {
+            NavigationLink(destination: CreateView()) {
                 HomeOptionButton(
                     title: "Create",
                     icon: "plus.circle.fill",
