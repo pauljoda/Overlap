@@ -8,9 +8,23 @@
 import SwiftUI
 import SwiftData
 
+// Environment key for NavigationPath
+struct NavigationPathKey: EnvironmentKey {
+    static let defaultValue: Binding<NavigationPath> = .constant(NavigationPath())
+}
+
+extension EnvironmentValues {
+    var navigationPath: Binding<NavigationPath> {
+        get { self[NavigationPathKey.self] }
+        set { self[NavigationPathKey.self] = newValue }
+    }
+}
+
 struct HomeView: View {
+    @State private var path = NavigationPath()
+    
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             ZStack {
                 // Setup Background
                 BlobBackgroundView()
@@ -44,7 +58,29 @@ struct HomeView: View {
                 }
                 .padding(30)
             }
+            .navigationDestination(for: String.self) { destination in
+                switch destination {
+                case "create":
+                    ComingSoonView(title: "Create")
+                case "saved":
+                    ComingSoonView(title: "Saved")
+                case "in-progress":
+                    ComingSoonView(title: "In-Progress")
+                case "completed":
+                    ComingSoonView(title: "Completed")
+                case "join":
+                    ComingSoonView(title: "Join")
+                case "browse":
+                    ComingSoonView(title: "Browse")
+                default:
+                    Text("Unknown destination")
+                }
+            }
+            .navigationDestination(for: Overlap.self) { overlap in
+                QuestionnaireView(overlap: overlap)
+            }
         }
+        .environment(\.navigationPath, $path)
     }
 }
 

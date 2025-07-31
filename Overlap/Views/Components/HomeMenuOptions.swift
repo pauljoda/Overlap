@@ -16,9 +16,13 @@
 import SwiftUI
 
 struct HomeMenuOptions: View {
+    @Environment(\.navigationPath) private var navigationPath
+    
     var body: some View {
         VStack(spacing: 20) {
-            NavigationLink(destination: CreateView()) {
+            Button(action: {
+                navigationPath.wrappedValue.append(SampleData.sampleOverlap)
+            }) {
                 HomeOptionButton(
                     title: "Create",
                     icon: "plus.circle.fill",
@@ -26,7 +30,9 @@ struct HomeMenuOptions: View {
                 )
             }
             
-            NavigationLink(destination: ComingSoonView(title: "Saved")) {
+            Button(action: {
+                navigationPath.wrappedValue.append("saved")
+            }) {
                 HomeOptionButton(
                     title: "Saved",
                     icon: "bookmark.fill",
@@ -34,7 +40,9 @@ struct HomeMenuOptions: View {
                 )
             }
             
-            NavigationLink(destination: ComingSoonView(title: "In-Progress")) {
+            Button(action: {
+                navigationPath.wrappedValue.append("in-progress")
+            }) {
                 HomeOptionButton(
                     title: "In-Progress",
                     icon: "clock.fill",
@@ -42,16 +50,20 @@ struct HomeMenuOptions: View {
                 )
             }
             
-            NavigationLink(destination: ComingSoonView(title: "Completed")) {
+            Button(action: {
+                navigationPath.wrappedValue.append("completed")
+            }) {
                 HomeOptionButton(
                     title: "Completed",
                     icon: "checkmark.circle.fill",
                     color: .green
                 )
             }
-        
             
-            NavigationLink(destination: ComingSoonView(title: "Join")) {
+            
+            Button(action: {
+                navigationPath.wrappedValue.append("join")
+            }) {
                 HomeOptionButton(
                     title: "Join",
                     icon: "person.2.fill",
@@ -59,7 +71,9 @@ struct HomeMenuOptions: View {
                 )
             }
             
-            NavigationLink(destination: ComingSoonView(title: "Browse")) {
+            Button(action: {
+                navigationPath.wrappedValue.append("browse")
+            }) {
                 HomeOptionButton(
                     title: "Browse",
                     icon: "list.bullet.rectangle.fill",
