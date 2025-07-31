@@ -16,16 +16,16 @@ class SampleData {
         Question(
             text: "Do you prefer tea over coffee?",
             answerTexts: [
-                .no: "Tea",
-                .maybe: "Both/Neither",
-                .yes: "Coffee",
+                .no: "None",
+                .maybe: "Coffee",
+                .yes: "Tea",
             ]
         ),
     ]
 
     static let sampleQuestionnaire = Questionnaire(
         title: "Sample Questionnaire",
-        instructions: "Respond to each question honestly, select the best answer for each one. This questionnaire is for fun only and does not reflect any personal opinions or beliefs. The results are purely statistical and should not be interpreted as any kind of opinion or prediction. Good luck! ",
+        instructions: "Respond to each question honestly, select the best answer for each one. This questionnaire is for fun only and does not reflect any personal opinions or beliefs. The results are purely statistical and should not be interpreted as any kind of opinion or prediction. Good luck!",
         questions: SampleData.sampleQuestions
     )
 

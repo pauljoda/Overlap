@@ -84,3 +84,20 @@ struct QuestionResultCard: View {
         }
     }
 }
+
+
+#Preview("Sample Result Card") {
+    QuestionResultCard(
+        question: Question(
+            text: "What's your favorite programming language?"
+        ),
+        responses: [
+            "Alice": Answer(type: .yes, text: "Swift"),
+            "Bob": Answer(type: .maybe, text: "Python"),
+            "Charlie": Answer(type: .no, text: "Java"),
+            "Dana": Answer(type: .yes, text: "Kotlin"),
+            "Eve": Answer(type: .maybe, text: "Go")
+        ],
+        accentColor: .blue
+    )
+}

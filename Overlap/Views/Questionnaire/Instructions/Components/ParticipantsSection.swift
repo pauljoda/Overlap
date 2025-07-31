@@ -97,9 +97,9 @@ struct ParticipantsSection: View {
 }
 
 #Preview {
-    @State var newName = ""
+    @Previewable @State var animating: Set<Int> = []
+    @Previewable @State var newName = ""
     @FocusState var isFocused: Bool
-    @State var animating: Set<Int> = []
     
     return ParticipantsSection(
         overlap: SampleData.sampleOverlap,

@@ -70,21 +70,40 @@ class Overlap {
         } else {
             self.currentParticipant = currentParticipant
         }
+    }
 
-        // Prefill the mapping for users and answers
-        for participant in self.participants {
+    // MARK : Functions
+
+    /// Marks the overlap as complete and sets the completion timestamp.
+    ///
+    /// This method should be called whenever the questionnaire is completed
+    /// to ensure the completion date is properly recorded.
+    private func markAsComplete() {
+        currentState = .complete
+        completeDate = Date.now
+    }
+
+    /// Initializes the responses dictionary for all current participants.
+    ///
+    /// This method should be called when the questionnaire begins to ensure all
+    /// participants have their response structure initialized, including any
+    /// participants that may have been added after the Overlap was created.
+    func initializeResponses() {
+        // Clear existing responses to ensure clean state
+        responses.removeAll()
+        
+        // Initialize responses for all current participants
+        for participant in participants {
             var initialArray: [UUID: Answer] = [:]
-            for question in self.questionnaire.questions {
+            for question in questionnaire.questions {
                 initialArray[question.id] = Answer(type: .no, text: "")
             }
-            self.responses[participant] = Responses(
+            responses[participant] = Responses(
                 user: participant,
                 answers: initialArray
             )
         }
     }
-
-    // MARK : Functions
 
     /// Saves the provided answer for the current participant and current question.
     ///
@@ -95,9 +114,21 @@ class Overlap {
     ///   for the current participant.
     func SaveResponse(answer: Answer) {
         // Validate that we have a valid current participant
-        guard !currentParticipant.isEmpty, responses[currentParticipant] != nil else {
+        guard !currentParticipant.isEmpty else {
             print("Error: Invalid current participant '\(currentParticipant)'")
             return
+        }
+        
+        // Initialize responses for current participant if not already done
+        if responses[currentParticipant] == nil {
+            var initialArray: [UUID: Answer] = [:]
+            for question in questionnaire.questions {
+                initialArray[question.id] = Answer(type: .no, text: "")
+            }
+            responses[currentParticipant] = Responses(
+                user: currentParticipant,
+                answers: initialArray
+            )
         }
         
         // Validate that we have a valid question index
@@ -119,7 +150,7 @@ class Overlap {
             currentQuestionIndex = 0
             if currentParticipant == participants.last {
                 // All participants have completed all questions
-                currentState = .complete
+                markAsComplete()
             } else {
                 currentState = .nextParticipant
                 // Move to the next participant

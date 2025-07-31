@@ -50,7 +50,7 @@ struct GlassActionButton: View {
         .disabled(!isEnabled)
         .frame(height: 80)
         .glassEffect(
-            .regular.tint(isEnabled ? tintColor : .gray).interactive(isEnabled)
+            .clear.tint(isEnabled ? tintColor : .gray).interactive(isEnabled)
         )
         .tint(.primary)
     }

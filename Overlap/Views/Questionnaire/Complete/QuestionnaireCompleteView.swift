@@ -17,35 +17,35 @@ struct QuestionnaireCompleteView: View {
         ZStack {
             BlobBackgroundView(emphasis: .none)
             
-            VStack(spacing: 0) {
-                // Scrollable Content
-                ScrollView {
-                    VStack(spacing: 32) {
-                        // Header Section
-                        CompletionHeader(isAnimated: isAnimated)
-                        
-                        // Results Section
-                        OverlapResultsView(overlap: overlap, isAnimated: isAnimated)
-                        
-                        // Bottom padding
-                        Rectangle()
-                            .fill(Color.clear)
-                            .frame(height: 100)
-                    }
+            // Scrollable Content - Full screen
+            ScrollView {
+                VStack(spacing: 32) {
+                    // Header Section
+                    CompletionHeader(isAnimated: isAnimated, overlap: overlap)
+                    
+                    // Results Section
+                    OverlapResultsView(overlap: overlap, isAnimated: isAnimated)
+                    
+                    // Bottom padding to account for floating button
+                    Rectangle()
+                        .fill(Color.clear)
+                        .frame(height: 120) // Increased to account for button height
                 }
-
-                // Start New Button - Fixed at bottom
-                VStack {
-                    GlassActionButton(
-                        title: "Done",
-                        isEnabled: true,
-                        tintColor: .blue,
-                        action: startNewOverlap
-                    )
-                    .opacity(isAnimated ? 1 : 0)
-                    .offset(y: isAnimated ? 0 : 50)
-                    .animation(.spring(response: 0.8, dampingFraction: 0.8).delay(2.0), value: isAnimated)
-                }
+            }
+            
+            // Floating Done Button - Overlays at bottom
+            VStack {
+                Spacer()
+                
+                GlassActionButton(
+                    title: "Done",
+                    isEnabled: true,
+                    tintColor: .blue,
+                    action: startNewOverlap
+                )
+                .opacity(isAnimated ? 1 : 0)
+                .offset(y: isAnimated ? 0 : 50)
+                .animation(.spring(response: 0.8, dampingFraction: 0.8).delay(2.0), value: isAnimated)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)
             }
@@ -68,6 +68,9 @@ struct QuestionnaireCompleteView: View {
             questionnaire: SampleData.sampleQuestionnaire,
             currentState: .complete
         )
+        
+        // Set a completion date for preview
+        overlap.completeDate = Date.now
         
         // Get question IDs from sample questions
         let questions = SampleData.sampleQuestions

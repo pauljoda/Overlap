@@ -21,42 +21,42 @@ struct QuestionnaireInstructionsView: View {
         ZStack {
             BlobBackgroundView(emphasis: .none)
 
-            VStack(spacing: 0) {
-                // Scrollable Content
-                ScrollView {
-                    VStack(spacing: 24) {
-                        // Header Section
-                        QuestionnaireHeader(overlap: overlap)
+            // Scrollable Content - Full screen
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Header Section
+                    QuestionnaireHeader(overlap: overlap)
 
-                        // Participants Section
-                        if !overlap.isOnline {
-                            ParticipantsSection(
-                                overlap: overlap,
-                                newParticipantName: $newParticipantName,
-                                isTextFieldFocused: $isTextFieldFocused,
-                                animatingParticipants: $animatingParticipants,
-                                onAddParticipant: addParticipant,
-                                onRemoveParticipant: removeParticipant
-                            )
-                        }
-
-                        // Bottom padding to ensure content doesn't get hidden behind button
-                        Rectangle()
-                            .fill(Color.clear)
-                            .frame(height: 100)
+                    // Participants Section
+                    if !overlap.isOnline {
+                        ParticipantsSection(
+                            overlap: overlap,
+                            newParticipantName: $newParticipantName,
+                            isTextFieldFocused: $isTextFieldFocused,
+                            animatingParticipants: $animatingParticipants,
+                            onAddParticipant: addParticipant,
+                            onRemoveParticipant: removeParticipant
+                        )
                     }
-                }
 
-                // Begin Button - Fixed at bottom
-                VStack {
-                    GlassActionButton(
-                        title: "Begin Overlap",
-                        icon: "play.fill",
-                        isEnabled: canBegin,
-                        tintColor: .green,
-                        action: beginQuestionnaire
-                    )
+                    // Bottom padding to account for floating button
+                    Rectangle()
+                        .fill(Color.clear)
+                        .frame(height: 120)
                 }
+            }
+
+            // Floating Begin Button - Overlays at bottom
+            VStack {
+                Spacer()
+                
+                GlassActionButton(
+                    title: "Begin Overlap",
+                    icon: "play.fill",
+                    isEnabled: canBegin,
+                    tintColor: .green,
+                    action: beginQuestionnaire
+                )
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)
             }
@@ -118,6 +118,10 @@ struct QuestionnaireInstructionsView: View {
 
     private func beginQuestionnaire() {
         guard canBegin else { return }
+        
+        // Initialize responses for all current participants
+        overlap.initializeResponses()
+        
         overlap.currentState = .nextParticipant
         if !overlap.participants.isEmpty {
             overlap.currentParticipant = overlap.participants[0]
