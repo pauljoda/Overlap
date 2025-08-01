@@ -21,13 +21,13 @@ import SwiftUI
 /// This view is intended for use in result or summary screens, where an overview of collected answers
 /// is presented in a clear, visually distinct format.
 struct QuestionResultCard: View {
-    let question: Question
+    let question: String
     let responses: [String: Answer]
     let accentColor: Color
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(question.text)
+            Text(question)
                 .font(.headline)
                 .fontWeight(.semibold)
                 .foregroundColor(.primary)
@@ -88,9 +88,7 @@ struct QuestionResultCard: View {
 
 #Preview("Sample Result Card") {
     QuestionResultCard(
-        question: Question(
-            text: "What's your favorite programming language?"
-        ),
+        question: "What's your favorite programming language?",
         responses: [
             "Alice": .yes,
             "Bob": .maybe,

@@ -10,9 +10,9 @@ struct Responses: Codable {
     // User that usbmitted responses
     var user: String
     // Answers with question ID mapped to the response
-    var answers: [UUID: Answer]
+    var answers: [String: Answer]
     
-    init(user: String, answers: [UUID: Answer]) {
+    init(user: String, answers: [String: Answer]) {
         self.user = user
         self.answers = answers
     }

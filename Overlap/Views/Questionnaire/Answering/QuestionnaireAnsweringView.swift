@@ -53,7 +53,7 @@ struct QuestionnaireAnsweringView: View {
                 )
                 .scaleEffect(cardScale)
                 .opacity(cardOpacity)
-                .id(overlap.GetCurrentQuestion().id)  // Force SwiftUI to recreate the view
+                .id(overlap.GetCurrentQuestion())  // Force SwiftUI to recreate the view
                                 .onAppear {
                     // Animate in the first card
                     withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {

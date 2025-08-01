@@ -5,8 +5,8 @@
 //  Created by Paul Davis on 7/29/25.
 //
 
-import SwiftData
 import Foundation
+import SwiftData
 
 @Model
 class Questionnaire {
@@ -15,9 +15,16 @@ class Questionnaire {
     var instructions: String = ""
     var author: String = ""
     var creationDate: Date = Date.now
-    var questions: [Question] = []
-    
-    init(id: UUID = UUID(), title: String = "", instructions: String = "", author: String = "", creationDate: Date = Date.now, questions: [Question] = []) {
+    var questions: [String] = []
+
+    init(
+        id: UUID = UUID(),
+        title: String = "",
+        instructions: String = "",
+        author: String = "",
+        creationDate: Date = Date.now,
+        questions: [String] = []
+    ) {
         self.id = id
         self.title = title
         self.instructions = instructions

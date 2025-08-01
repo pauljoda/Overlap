@@ -14,7 +14,7 @@ enum DragDirection {
 struct CardView: View {
     // Paramaters
     /// The question to display on the card
-    let question: Question
+    let question: String
     /// Callback to handle the answer selection
     var onSwipe: (Answer) -> Void
     /// Callback to handle emphasis changes for the background
@@ -208,7 +208,7 @@ struct CardView: View {
                     Spacer()
 
                     // Question text
-                    Text(question.text)
+                    Text(question)
                         .font(.largeTitle)
                         .fontWeight(.bold)
                         .multilineTextAlignment(.center)
@@ -442,7 +442,7 @@ struct CardView: View {
             ZStack {
                 BlobBackgroundView(emphasis: blobEmphasis)
                 CardView(
-                    question: Question(text: "Do you like pizza?"),
+                    question: "Do you like pizza?",
                     onSwipe: { answer in
                         print("Selected answer: \(answer)")
                     },

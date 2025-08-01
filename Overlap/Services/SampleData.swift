@@ -8,12 +8,12 @@
 import Foundation
 
 class SampleData {
-    static let sampleQuestions: [Question] = [
-        Question(text: "Do you like pizza?"),
-        Question(text: "Is Swift your favorite programming language?"),
-        Question(text: "Do you enjoy outdoor activities?"),
-        Question(text: "Have you ever traveled abroad?"),
-        Question(text: "Do you prefer tea over coffee?"),
+    static let sampleQuestions: [String] = [
+        "Do you like pizza?",
+        "Is Swift your favorite programming language?",
+        "Do you enjoy outdoor activities?",
+        "Have you ever traveled abroad?",
+        "Do you prefer tea over coffee?",
     ]
 
     static let sampleQuestionnaire = Questionnaire(

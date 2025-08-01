@@ -19,7 +19,7 @@ struct ResultsSection: View {
     let subtitle: String
     let icon: String
     let accentColor: Color
-    let questions: [(Question, [String: Answer])]
+    let questions: [(String, [String: Answer])]
     let isAnimated: Bool
     let animationDelay: Double
     let cardAnimationDelay: Double
@@ -29,7 +29,7 @@ struct ResultsSection: View {
         subtitle: String,
         icon: String,
         accentColor: Color,
-        questions: [(Question, [String: Answer])],
+        questions: [(String, [String: Answer])],
         isAnimated: Bool = false,
         animationDelay: Double = 0.0,
         cardAnimationDelay: Double = 1.0

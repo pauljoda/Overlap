@@ -94,9 +94,9 @@ class Overlap {
         
         // Initialize responses for all current participants
         for participant in participants {
-            var initialArray: [UUID: Answer] = [:]
+            var initialArray: [String: Answer] = [:]
             for question in questionnaire.questions {
-                initialArray[question.id] = .no
+                initialArray[question] = .no
             }
             responses[participant] = Responses(
                 user: participant,
@@ -121,9 +121,9 @@ class Overlap {
         
         // Initialize responses for current participant if not already done
         if responses[currentParticipant] == nil {
-            var initialArray: [UUID: Answer] = [:]
+            var initialArray: [String: Answer] = [:]
             for question in questionnaire.questions {
-                initialArray[question.id] = .no
+                initialArray[question] = .no
             }
             responses[currentParticipant] = Responses(
                 user: currentParticipant,
@@ -139,7 +139,7 @@ class Overlap {
         
         // Save the answer for the current question
         responses[currentParticipant]!.answers[
-            questionnaire.questions[currentQuestionIndex].id
+            questionnaire.questions[currentQuestionIndex]
         ] = answer
         
         // Move to the next question
@@ -166,19 +166,10 @@ class Overlap {
     /// This method retrieves the question from the `questionnaire` at the position indicated by `currentQuestionIndex`.
     ///
     /// - Returns: The `Question` object at the current index within the `questionnaire`.
-    func GetCurrentQuestion() -> Question {
+    func GetCurrentQuestion() -> String {
         guard currentQuestionIndex < questionnaire.questions.count else {
             fatalError("Current question index \(currentQuestionIndex) is out of bounds for questionnaire with \(questionnaire.questions.count) questions")
         }
         return questionnaire.questions[currentQuestionIndex]
-    }
-
-    func FindQuestionByUUID(id: UUID) -> Question? {
-        for question in self.questionnaire.questions {
-            if question.id == id {
-                return question
-            }
-        }
-        return nil
     }
 }

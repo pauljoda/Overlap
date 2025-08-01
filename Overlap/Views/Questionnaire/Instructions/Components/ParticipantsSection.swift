@@ -51,9 +51,13 @@ struct ParticipantsSection: View {
                     .font(.title2)
                     .fontWeight(.semibold)
                 Spacer()
-                Text("\(overlap.participants.count) of ∞")
+                Text("\(overlap.participants.count)")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
+                    .frame(width: 24, height: 24)
+                    .background(overlap.participants.count >= minimumParticipants ? Color.green : Color.orange)
+                    .clipShape(Circle())
             }
 
             // Input Field
@@ -63,6 +67,8 @@ struct ParticipantsSection: View {
                 placeholder: "Enter participant name",
                 onSubmit: onAddParticipant
             )
+            .padding(EdgeInsets(top: 10, leading: 0, bottom: 0, trailing: 0))
+
 
             // Participants List or Empty State
             if !overlap.participants.isEmpty {
@@ -79,7 +85,7 @@ struct ParticipantsSection: View {
                         }
                     }
                 }
-                .padding(EdgeInsets(top: 20, leading: 0, bottom: 0, trailing: 0))
+                .padding(EdgeInsets(top: 10, leading: 0, bottom: 0, trailing: 0))
             } else {
                 EmptyParticipantsState(minimumParticipants: minimumParticipants)
             }

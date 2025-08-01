@@ -103,11 +103,11 @@ struct QuestionnaireInstructionsView: View {
             // Clean up animation state for the removed participant
             animatingParticipants.remove(index)
             
-            // Update animation state for participants that will shift down
-            let participantsToUpdate = animatingParticipants.filter { $0 > index }
-            for participantIndex in participantsToUpdate {
+            // Clear any animation states for participants with indices greater than the removed one
+            // This prevents the shifting participants from being animated
+            let participantsToCleanup = animatingParticipants.filter { $0 > index }
+            for participantIndex in participantsToCleanup {
                 animatingParticipants.remove(participantIndex)
-                animatingParticipants.insert(participantIndex - 1)
             }
             
             withAnimation(.easeInOut(duration: 0.2)) {
