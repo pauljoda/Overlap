@@ -96,7 +96,7 @@ class Overlap {
         for participant in participants {
             var initialArray: [UUID: Answer] = [:]
             for question in questionnaire.questions {
-                initialArray[question.id] = Answer(type: .no, text: "")
+                initialArray[question.id] = .no
             }
             responses[participant] = Responses(
                 user: participant,
@@ -123,7 +123,7 @@ class Overlap {
         if responses[currentParticipant] == nil {
             var initialArray: [UUID: Answer] = [:]
             for question in questionnaire.questions {
-                initialArray[question.id] = Answer(type: .no, text: "")
+                initialArray[question.id] = .no
             }
             responses[currentParticipant] = Responses(
                 user: currentParticipant,

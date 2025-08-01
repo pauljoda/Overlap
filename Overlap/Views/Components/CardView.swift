@@ -26,7 +26,7 @@ struct CardView: View {
     /// Flag to indicate if the card has been answered
     @State private var isAnswered = false
     /// The selected answer after swiping
-    @State private var selectedAnswer: AnswerType?
+    @State private var selectedAnswer: Answer?
 
     // MARK: - Configuration Variables
     ///Configuration for various thresholds and visual styles
@@ -227,7 +227,7 @@ struct CardView: View {
                                 .scaleEffect(
                                     currentEmphasis == .red ? 1.2 : 1.0
                                 )
-                            Text(question.answerTexts[.no] ?? "No")
+                            Text(Answer.no.rawValue)
                                 .foregroundColor(.red)
                                 .font(.callout)
                                 .fontWeight(
@@ -252,7 +252,7 @@ struct CardView: View {
                                 .scaleEffect(
                                     currentEmphasis == .yellow ? 1.2 : 1.0
                                 )
-                            Text(question.answerTexts[.maybe] ?? "Maybe")
+                            Text(Answer.maybe.rawValue)
                                 .foregroundColor(.yellow)
                                 .font(.callout)
                                 .fontWeight(
@@ -278,7 +278,7 @@ struct CardView: View {
                                 .scaleEffect(
                                     currentEmphasis == .green ? 1.2 : 1.0
                                 )
-                            Text(question.answerTexts[.yes] ?? "Yes")
+                            Text(Answer.yes.rawValue)
                                 .foregroundColor(.green)
                                 .font(.callout)
                                 .fontWeight(
@@ -345,7 +345,7 @@ struct CardView: View {
                                     from: gesture.translation,
                                     velocity: gesture.velocity
                                 ) {
-                                    let answer: AnswerType
+                                    let answer: Answer
 
                                     switch direction {
                                     case .left:
@@ -395,14 +395,7 @@ struct CardView: View {
                                         deadline: .now() + delayBeforeCallback
                                     ) {
                                         isAnswered = true
-                                        onSwipe(
-                                            Answer(
-                                                type: answer,
-                                                text: question.answerTexts[
-                                                    answer
-                                                ] ?? ""
-                                            )
-                                        )
+                                        onSwipe(answer)
                                     }
                                 } else {
                                     // Invalid direction (downward), return to center

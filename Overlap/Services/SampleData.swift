@@ -13,14 +13,7 @@ class SampleData {
         Question(text: "Is Swift your favorite programming language?"),
         Question(text: "Do you enjoy outdoor activities?"),
         Question(text: "Have you ever traveled abroad?"),
-        Question(
-            text: "Do you prefer tea over coffee?",
-            answerTexts: [
-                .no: "None",
-                .maybe: "Coffee",
-                .yes: "Tea",
-            ]
-        ),
+        Question(text: "Do you prefer tea over coffee?"),
     ]
 
     static let sampleQuestionnaire = Questionnaire(

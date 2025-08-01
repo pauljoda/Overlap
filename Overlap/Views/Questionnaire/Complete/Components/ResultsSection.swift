@@ -97,7 +97,7 @@ struct ResultsSection: View {
         subtitle: "Everyone said yes to these questions",
         icon: "hands.clap.fill",
         accentColor: .green,
-        questions: [(SampleData.sampleQuestions[0], ["Alice": Answer(type: .yes, text: "Yes")])],
+        questions: [(SampleData.sampleQuestions[0], ["Alice": .yes])],
         isAnimated: true
     )
     .padding()

@@ -79,11 +79,11 @@ struct QuestionnaireCompleteView: View {
         let aliceResponses = Responses(
             user: "Alice",
             answers: [
-                questions[0].id: Answer(type: .yes, text: "Yes"),      // Pizza - everyone agrees
-                questions[1].id: Answer(type: .yes, text: "Yes"),      // Swift - everyone agrees
-                questions[2].id: Answer(type: .maybe, text: "Maybe"),  // Outdoor - partial agreement
-                questions[3].id: Answer(type: .no, text: "No"),        // Travel - disagreement
-                questions[4].id: Answer(type: .yes, text: "Coffee")    // Tea vs Coffee - disagreement
+                questions[0].id: .yes,      // Pizza - everyone agrees
+                questions[1].id: .yes,      // Swift - everyone agrees
+                questions[2].id: .maybe,    // Outdoor - partial agreement
+                questions[3].id: .no,       // Travel - disagreement
+                questions[4].id: .yes       // Tea vs Coffee - disagreement
             ]
         )
         
@@ -91,11 +91,11 @@ struct QuestionnaireCompleteView: View {
         let bobResponses = Responses(
             user: "Bob",
             answers: [
-                questions[0].id: Answer(type: .yes, text: "Yes"),      // Pizza - everyone agrees
-                questions[1].id: Answer(type: .yes, text: "Yes"),      // Swift - everyone agrees
-                questions[2].id: Answer(type: .yes, text: "Yes"),      // Outdoor - partial agreement
-                questions[3].id: Answer(type: .yes, text: "Yes"),      // Travel - disagreement
-                questions[4].id: Answer(type: .yes, text: "Coffee")        // Tea vs Coffee - disagreement
+                questions[0].id: .yes,      // Pizza - everyone agrees
+                questions[1].id: .yes,      // Swift - everyone agrees
+                questions[2].id: .yes,      // Outdoor - partial agreement
+                questions[3].id: .yes,      // Travel - disagreement
+                questions[4].id: .yes       // Tea vs Coffee - disagreement
             ]
         )
         
@@ -103,11 +103,11 @@ struct QuestionnaireCompleteView: View {
         let charlieResponses = Responses(
             user: "Charlie",
             answers: [
-                questions[0].id: Answer(type: .yes, text: "Yes"),         // Pizza - everyone agrees
-                questions[1].id: Answer(type: .yes, text: "Yes"),         // Swift - everyone agrees
-                questions[2].id: Answer(type: .maybe, text: "Maybe"),     // Outdoor - partial agreement
-                questions[3].id: Answer(type: .maybe, text: "Maybe"),     // Travel - disagreement
-                questions[4].id: Answer(type: .maybe, text: "Both/Neither") // Tea vs Coffee - disagreement
+                questions[0].id: .yes,         // Pizza - everyone agrees
+                questions[1].id: .yes,         // Swift - everyone agrees
+                questions[2].id: .maybe,       // Outdoor - partial agreement
+                questions[3].id: .maybe,       // Travel - disagreement
+                questions[4].id: .maybe        // Tea vs Coffee - disagreement
             ]
         )
         

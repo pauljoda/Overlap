@@ -23,7 +23,7 @@ struct OverlapResultsView: View {
     private var fullAgreementQuestions: [(Question, [String: Answer])] {
         overlap.questionnaire.questions.compactMap { question in
             let responses = getResponsesForQuestion(question.id)
-            let allYes = responses.values.allSatisfy { $0.type == .yes }
+            let allYes = responses.values.allSatisfy { $0 == .yes }
             return allYes && !responses.isEmpty ? (question, responses) : nil
         }
     }
@@ -31,9 +31,9 @@ struct OverlapResultsView: View {
     private var partialAgreementQuestions: [(Question, [String: Answer])] {
         overlap.questionnaire.questions.compactMap { question in
             let responses = getResponsesForQuestion(question.id)
-            let hasAtLeastOneMaybe = responses.values.contains { $0.type == .maybe }
-            let hasNoNo = !responses.values.contains { $0.type == .no }
-            let notAllYes = !responses.values.allSatisfy { $0.type == .yes }
+            let hasAtLeastOneMaybe = responses.values.contains { $0 == .maybe }
+            let hasNoNo = !responses.values.contains { $0 == .no }
+            let notAllYes = !responses.values.allSatisfy { $0 == .yes }
             
             return hasAtLeastOneMaybe && hasNoNo && notAllYes && !responses.isEmpty ? (question, responses) : nil
         }
@@ -108,11 +108,11 @@ struct OverlapResultsView: View {
         let aliceResponses = Responses(
             user: "Alice",
             answers: [
-                questions[0].id: Answer(type: .yes, text: "Yes"),               // Pizza - full agreement
-                questions[1].id: Answer(type: .yes, text: "Yes"),               // Swift - full agreement  
-                questions[2].id: Answer(type: .maybe, text: "Maybe"),           // Outdoor - partial agreement
-                questions[3].id: Answer(type: .no, text: "No"),                 // Travel - disagreement
-                questions[4].id: Answer(type: .yes, text: "Yes")                // Coffee vs Tea - disagreement
+                questions[0].id: .yes,               // Pizza - full agreement
+                questions[1].id: .yes,               // Swift - full agreement  
+                questions[2].id: .maybe,             // Outdoor - partial agreement
+                questions[3].id: .no,                // Travel - disagreement
+                questions[4].id: .yes                // Coffee vs Tea - disagreement
             ]
         )
         
@@ -120,11 +120,11 @@ struct OverlapResultsView: View {
         let bobResponses = Responses(
             user: "Bob",
             answers: [
-                questions[0].id: Answer(type: .yes, text: "Yes"),               // Pizza - full agreement
-                questions[1].id: Answer(type: .yes, text: "Yes"),               // Swift - full agreement
-                questions[2].id: Answer(type: .yes, text: "Yes"),               // Outdoor - partial agreement
-                questions[3].id: Answer(type: .yes, text: "Yes"),               // Travel - disagreement
-                questions[4].id: Answer(type: .no, text: "No")                  // Coffee vs Tea - disagreement
+                questions[0].id: .yes,               // Pizza - full agreement
+                questions[1].id: .yes,               // Swift - full agreement
+                questions[2].id: .yes,               // Outdoor - partial agreement
+                questions[3].id: .yes,               // Travel - disagreement
+                questions[4].id: .no                 // Coffee vs Tea - disagreement
             ]
         )
         
@@ -132,11 +132,11 @@ struct OverlapResultsView: View {
         let charlieResponses = Responses(
             user: "Charlie",
             answers: [
-                questions[0].id: Answer(type: .yes, text: "Yes"),               // Pizza - full agreement
-                questions[1].id: Answer(type: .yes, text: "Yes"),               // Swift - full agreement
-                questions[2].id: Answer(type: .maybe, text: "Maybe"),           // Outdoor - partial agreement
-                questions[3].id: Answer(type: .maybe, text: "Maybe"),           // Travel - disagreement
-                questions[4].id: Answer(type: .maybe, text: "Maybe")            // Coffee vs Tea - disagreement
+                questions[0].id: .yes,               // Pizza - full agreement
+                questions[1].id: .yes,               // Swift - full agreement
+                questions[2].id: .maybe,             // Outdoor - partial agreement
+                questions[3].id: .maybe,             // Travel - disagreement
+                questions[4].id: .maybe              // Coffee vs Tea - disagreement
             ]
         )
         
@@ -144,11 +144,11 @@ struct OverlapResultsView: View {
         let dianaResponses = Responses(
             user: "Diana",
             answers: [
-                questions[0].id: Answer(type: .yes, text: "Yes"),               // Pizza - full agreement
-                questions[1].id: Answer(type: .yes, text: "Yes"),               // Swift - full agreement
-                questions[2].id: Answer(type: .maybe, text: "Maybe"),           // Outdoor - partial agreement
-                questions[3].id: Answer(type: .yes, text: "Yes"),               // Travel - disagreement
-                questions[4].id: Answer(type: .yes, text: "Yes")                // Coffee vs Tea - disagreement
+                questions[0].id: .yes,               // Pizza - full agreement
+                questions[1].id: .yes,               // Swift - full agreement
+                questions[2].id: .maybe,             // Outdoor - partial agreement
+                questions[3].id: .yes,               // Travel - disagreement
+                questions[4].id: .yes                // Coffee vs Tea - disagreement
             ]
         )
         

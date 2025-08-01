@@ -38,7 +38,7 @@ struct QuestionResultCard: View {
                     if let answer = responses[participant] {
                         HStack(spacing: 12) {
                             Circle()
-                                .fill(colorForAnswerType(answer.type))
+                                .fill(colorForAnswer(answer))
                                 .frame(width: 12, height: 12)
 
                             Text(participant)
@@ -48,16 +48,16 @@ struct QuestionResultCard: View {
 
                             Spacer()
 
-                            Text(answer.text)
+                            Text(answer.rawValue)
                                 .font(.caption)
                                 .fontWeight(.medium)
                                 .foregroundColor(
-                                    colorForAnswerType(answer.type)
+                                    colorForAnswer(answer)
                                 )
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 2)
                                 .background(
-                                    colorForAnswerType(answer.type).opacity(0.2)
+                                    colorForAnswer(answer).opacity(0.2)
                                 )
                                 .cornerRadius(8)
                         }
@@ -73,8 +73,8 @@ struct QuestionResultCard: View {
         )
         .cornerRadius(12)
     }
-    private func colorForAnswerType(_ type: AnswerType) -> Color {
-        switch type {
+    private func colorForAnswer(_ answer: Answer) -> Color {
+        switch answer {
         case .yes:
             return .green
         case .maybe:
@@ -92,11 +92,11 @@ struct QuestionResultCard: View {
             text: "What's your favorite programming language?"
         ),
         responses: [
-            "Alice": Answer(type: .yes, text: "Swift"),
-            "Bob": Answer(type: .maybe, text: "Python"),
-            "Charlie": Answer(type: .no, text: "Java"),
-            "Dana": Answer(type: .yes, text: "Kotlin"),
-            "Eve": Answer(type: .maybe, text: "Go")
+            "Alice": .yes,
+            "Bob": .maybe,
+            "Charlie": .no,
+            "Dana": .yes,
+            "Eve": .maybe
         ],
         accentColor: .blue
     )
