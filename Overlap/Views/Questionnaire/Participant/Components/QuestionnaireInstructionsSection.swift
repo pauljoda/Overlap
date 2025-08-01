@@ -38,7 +38,7 @@ struct QuestionnaireInstructionsSection: View {
                 .fontWeight(.semibold)
                 .foregroundColor(.primary)
 
-            Text(overlap.questionnaire.instructions)
+            Text(overlap.session.questionnaire.instructions)
                 .font(.body)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.leading)

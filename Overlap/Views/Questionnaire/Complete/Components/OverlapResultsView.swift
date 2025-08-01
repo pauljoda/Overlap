@@ -21,16 +21,14 @@ struct OverlapResultsView: View {
     
     // Computed properties for analyzing results
     private var fullAgreementQuestions: [(String, [String: Answer])] {
-        overlap.questionnaire.questions.compactMap { question in
-            let responses = getResponsesForQuestion(question)
+        overlap.getQuestionsWithResponses().compactMap { question, responses in
             let allYes = responses.values.allSatisfy { $0 == .yes }
             return allYes && !responses.isEmpty ? (question, responses) : nil
         }
     }
     
     private var partialAgreementQuestions: [(String, [String: Answer])] {
-        overlap.questionnaire.questions.compactMap { question in
-            let responses = getResponsesForQuestion(question)
+        overlap.getQuestionsWithResponses().compactMap { question, responses in
             let hasAtLeastOneMaybe = responses.values.contains { $0 == .maybe }
             let hasNoNo = !responses.values.contains { $0 == .no }
             let notAllYes = !responses.values.allSatisfy { $0 == .yes }
@@ -78,18 +76,6 @@ struct OverlapResultsView: View {
             }
         }
     }
-    
-    private func getResponsesForQuestion(_ questionId: String) -> [String: Answer] {
-        var questionResponses: [String: Answer] = [:]
-        
-        for (participant, responses) in overlap.responses {
-            if let answer = responses.answers[questionId] {
-                questionResponses[participant] = answer
-            }
-        }
-        
-        return questionResponses
-    }
 }
 
 #Preview {
@@ -101,64 +87,26 @@ struct OverlapResultsView: View {
             currentState: .complete
         )
         
-        // Get question IDs from sample questions
-        let questions = SampleData.sampleQuestions
+        // Initialize the session with participants
+        overlap.session.setParticipants(["Alice", "Bob", "Charlie", "Diana"])
         
-        // Create responses for Alice
-        let aliceResponses = Responses(
-            user: "Alice",
-            answers: [
-                questions[0]: .yes,               // Pizza - full agreement
-                questions[1]: .yes,               // Swift - full agreement
-                questions[2]: .maybe,             // Outdoor - partial agreement
-                questions[3]: .no,                // Travel - disagreement
-                questions[4]: .yes                // Coffee vs Tea - disagreement
-            ]
-        )
-        
-        // Create responses for Bob
-        let bobResponses = Responses(
-            user: "Bob",
-            answers: [
-                questions[0]: .yes,               // Pizza - full agreement
-                questions[1]: .yes,               // Swift - full agreement
-                questions[2]: .yes,               // Outdoor - partial agreement
-                questions[3]: .yes,               // Travel - disagreement
-                questions[4]: .no                 // Coffee vs Tea - disagreement
-            ]
-        )
-        
-        // Create responses for Charlie
-        let charlieResponses = Responses(
-            user: "Charlie",
-            answers: [
-                questions[0]: .yes,               // Pizza - full agreement
-                questions[1]: .yes,               // Swift - full agreement
-                questions[2]: .maybe,             // Outdoor - partial agreement
-                questions[3]: .maybe,             // Travel - disagreement
-                questions[4]: .maybe              // Coffee vs Tea - disagreement
-            ]
-        )
-        
-        // Create responses for Diana
-        let dianaResponses = Responses(
-            user: "Diana",
-            answers: [
-                questions[0]: .yes,               // Pizza - full agreement
-                questions[1]: .yes,               // Swift - full agreement
-                questions[2]: .maybe,             // Outdoor - partial agreement
-                questions[3]: .yes,               // Travel - disagreement
-                questions[4]: .yes                // Coffee vs Tea - disagreement
-            ]
-        )
-        
-        // Add responses to overlap
-        overlap.responses = [
-            "Alice": aliceResponses,
-            "Bob": bobResponses,
-            "Charlie": charlieResponses,
-            "Diana": dianaResponses
+        // Simulate saving responses for each participant
+        let responsePatterns = [
+            [Answer.yes, .yes, .maybe, .no, .yes],      // Alice
+            [Answer.yes, .yes, .yes, .yes, .no],        // Bob  
+            [Answer.yes, .yes, .maybe, .maybe, .maybe], // Charlie
+            [Answer.yes, .yes, .maybe, .yes, .yes]      // Diana
         ]
+        
+        // Reset session and manually set responses for preview
+        overlap.session.resetSession()
+        for (participantIndex, pattern) in responsePatterns.enumerated() {
+            let participant = overlap.participants[participantIndex]
+            for (questionIndex, answer) in pattern.enumerated() {
+                // Directly set the answer for preview purposes
+                _ = overlap.session.saveCurrentAnswer(answer)
+            }
+        }
         
         return overlap
     }()

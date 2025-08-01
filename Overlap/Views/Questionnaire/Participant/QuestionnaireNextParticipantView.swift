@@ -85,7 +85,7 @@ struct QuestionnaireNextParticipantView: View {
 
     private func beginAnswering() {
         overlap.currentState = .answering
-        overlap.currentQuestionIndex = 0
+        // The session automatically handles question index management
     }
 }
 

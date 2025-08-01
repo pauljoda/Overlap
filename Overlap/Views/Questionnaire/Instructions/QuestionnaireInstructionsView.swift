@@ -123,10 +123,7 @@ struct QuestionnaireInstructionsView: View {
         overlap.initializeResponses()
         
         overlap.currentState = .nextParticipant
-        if !overlap.participants.isEmpty {
-            overlap.currentParticipant = overlap.participants[0]
-        }
-        overlap.currentQuestionIndex = 0
+        // The session automatically handles participant and question index management
     }
 }
 

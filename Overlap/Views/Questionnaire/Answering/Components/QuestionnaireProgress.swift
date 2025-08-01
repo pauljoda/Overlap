@@ -18,12 +18,12 @@ struct QuestionnaireProgress: View {
     
     var body: some View {
         if overlap.isOnline {
-            Text("\(overlap.currentQuestionIndex + 1) / \(overlap.questionnaire.questions.count)")
+            Text("\(overlap.session.currentQuestionIndex + 1) / \(overlap.session.totalQuestions)")
         } else {
             HStack {
-                Text(overlap.currentParticipant)
+                Text(overlap.getCurrentParticipant() ?? "Unknown")
                     .bold()
-                Text("\(overlap.currentQuestionIndex + 1) / \(overlap.questionnaire.questions.count)")
+                Text("\(overlap.session.currentQuestionIndex + 1) / \(overlap.session.totalQuestions)")
             }
         }
     }

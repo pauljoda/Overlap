@@ -27,12 +27,12 @@ struct QuestionnaireView: View {
         }
         .navigationTitle(
             overlap.currentState == .answering
-                ? overlap.questionnaire.title : ""
+            ? overlap.session.questionnaire.title : ""
         )
         .navigationBarTitleDisplayMode(.inline)
     }
 }
 
 #Preview {
-    QuestionnaireView(overlap: SampleData.sampleOverlap)
+    QuestionnaireView(overlap: SampleData.sampleRandomizedOverlap)
 }

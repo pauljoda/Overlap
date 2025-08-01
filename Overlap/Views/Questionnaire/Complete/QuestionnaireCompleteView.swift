@@ -72,51 +72,23 @@ struct QuestionnaireCompleteView: View {
         // Set a completion date for preview
         overlap.completeDate = Date.now
         
-        // Get question IDs from sample questions
-        let questions = SampleData.sampleQuestions
+        // Initialize the session and simulate responses
+        overlap.session.setParticipants(["Alice", "Bob", "Charlie"])
         
-        // Create responses for Alice
-        let aliceResponses = Responses(
-            user: "Alice",
-            answers: [
-                questions[0]: .yes,      // Pizza - everyone agrees
-                questions[1]: .yes,      // Swift - everyone agrees
-                questions[2]: .maybe,    // Outdoor - partial agreement
-                questions[3]: .no,       // Travel - disagreement
-                questions[4]: .yes       // Tea vs Coffee - disagreement
-            ]
-        )
-        
-        // Create responses for Bob
-        let bobResponses = Responses(
-            user: "Bob",
-            answers: [
-                questions[0]: .yes,      // Pizza - everyone agrees
-                questions[1]: .yes,      // Swift - everyone agrees
-                questions[2]: .yes,      // Outdoor - partial agreement
-                questions[3]: .yes,      // Travel - disagreement
-                questions[4]: .yes       // Tea vs Coffee - disagreement
-            ]
-        )
-        
-        // Create responses for Charlie
-        let charlieResponses = Responses(
-            user: "Charlie",
-            answers: [
-                questions[0]: .yes,         // Pizza - everyone agrees
-                questions[1]: .yes,         // Swift - everyone agrees
-                questions[2]: .maybe,       // Outdoor - partial agreement
-                questions[3]: .maybe,       // Travel - disagreement
-                questions[4]: .maybe        // Tea vs Coffee - disagreement
-            ]
-        )
-        
-        // Add responses to overlap
-        overlap.responses = [
-            "Alice": aliceResponses,
-            "Bob": bobResponses,
-            "Charlie": charlieResponses
+        // Simulate response patterns
+        let responsePatterns = [
+            [Answer.yes, .yes, .maybe, .no, .yes],      // Alice
+            [Answer.yes, .yes, .yes, .yes, .yes],       // Bob  
+            [Answer.yes, .yes, .maybe, .maybe, .maybe]  // Charlie
         ]
+        
+        // Reset and populate responses
+        overlap.session.resetSession()
+        for pattern in responsePatterns {
+            for answer in pattern {
+                _ = overlap.session.saveCurrentAnswer(answer)
+            }
+        }
         
         return overlap
     }()

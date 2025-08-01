@@ -18,13 +18,13 @@ struct QuestionnaireHeader: View {
     
     var body: some View {
         VStack(spacing: 16) {
-            Text(overlap.questionnaire.title)
+            Text(overlap.session.questionnaire.title)
                 .font(.largeTitle)
                 .fontWeight(.bold)
                 .foregroundColor(.primary)
                 .multilineTextAlignment(.center)
 
-            Text(overlap.questionnaire.instructions)
+            Text(overlap.session.questionnaire.instructions)
                 .font(.body)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)

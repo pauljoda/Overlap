@@ -29,4 +29,11 @@ class SampleData {
         questionnaire: SampleData.sampleQuestionnaire,
         currentState: .instructions
     )
+    
+    static let sampleRandomizedOverlap = Overlap(
+        participants: sampleParticipants,
+        questionnaire: SampleData.sampleQuestionnaire,
+        randomizeQuestions: true,
+        currentState: .instructions
+    )
 }

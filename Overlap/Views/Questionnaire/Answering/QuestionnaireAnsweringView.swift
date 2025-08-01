@@ -22,44 +22,50 @@ struct QuestionnaireAnsweringView: View {
             BlobBackgroundView(emphasis: blobEmphasis)
             
             VStack {
-                CardView(
-                    question: overlap.GetCurrentQuestion(),
-                    onSwipe: { answer in
-                        print("Selected answer: \(answer)")
+                if let currentQuestion = overlap.GetCurrentQuestion() {
+                    CardView(
+                        question: currentQuestion,
+                        onSwipe: { answer in
+                            print("Selected answer: \(answer)")
 
-                        // Save answer first (this changes the question index)
-                        overlap.SaveResponse(answer: answer)
-                        
-                        // Reset blob emphasis
-                        blobEmphasis = .none
+                            // Save answer first (this changes the question index)
+                            overlap.SaveResponse(answer: answer)
+                            
+                            // Reset blob emphasis
+                            blobEmphasis = .none
 
-                        // Reset card state for next card
-                        cardScale = 0.8
-                        cardOpacity = 0.0
+                            // Reset card state for next card
+                            cardScale = 0.8
+                            cardOpacity = 0.0
 
-                        // Animate in the next card with a slight delay to ensure state is updated
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                            withAnimation(
-                                .spring(response: 0.6, dampingFraction: 0.8)
-                            ) {
-                                cardScale = 1.0
-                                cardOpacity = 1.0
+                            // Animate in the next card with a slight delay to ensure state is updated
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                withAnimation(
+                                    .spring(response: 0.6, dampingFraction: 0.8)
+                                ) {
+                                    cardScale = 1.0
+                                    cardOpacity = 1.0
+                                }
                             }
+                        },
+                        onEmphasisChange: { emphasis in
+                            blobEmphasis = emphasis
                         }
-                    },
-                    onEmphasisChange: { emphasis in
-                        blobEmphasis = emphasis
+                    )
+                    .scaleEffect(cardScale)
+                    .opacity(cardOpacity)
+                    .id(currentQuestion)  // Force SwiftUI to recreate the view
+                    .onAppear {
+                        // Animate in the first card
+                        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                            cardScale = 1.0
+                            cardOpacity = 1.0
+                        }
                     }
-                )
-                .scaleEffect(cardScale)
-                .opacity(cardOpacity)
-                .id(overlap.GetCurrentQuestion())  // Force SwiftUI to recreate the view
-                                .onAppear {
-                    // Animate in the first card
-                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                        cardScale = 1.0
-                        cardOpacity = 1.0
-                    }
+                } else {
+                    Text("No more questions")
+                        .font(.title2)
+                        .foregroundColor(.secondary)
                 }
                 
                 // Progress
