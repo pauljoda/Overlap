@@ -5,8 +5,8 @@
 //  Created by Paul Davis on 7/24/25.
 //
 
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 @main
 struct OverlapApp: App {
@@ -14,5 +14,9 @@ struct OverlapApp: App {
         WindowGroup {
             HomeView()
         }
+        .modelContainer(for: [
+            Questionnaire.self,
+            Overlap.self,
+        ])
     }
 }

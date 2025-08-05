@@ -73,7 +73,7 @@ struct QuestionnaireCompleteView: View {
         overlap.completeDate = Date.now
         
         // Initialize the session and simulate responses
-        overlap.session.setParticipants(["Alice", "Bob", "Charlie"])
+        overlap.setParticipants(["Alice", "Bob", "Charlie"])
         
         // Simulate response patterns
         let responsePatterns = [
@@ -83,10 +83,10 @@ struct QuestionnaireCompleteView: View {
         ]
         
         // Reset and populate responses
-        overlap.session.resetSession()
+        overlap.resetSession()
         for pattern in responsePatterns {
             for answer in pattern {
-                _ = overlap.session.saveCurrentAnswer(answer)
+                _ = overlap.saveResponse(answer: answer)
             }
         }
         

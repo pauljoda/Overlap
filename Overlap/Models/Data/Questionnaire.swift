@@ -12,6 +12,7 @@ import SwiftData
 class Questionnaire {
     var id = UUID()
     var title: String = ""
+    var information: String = ""
     var instructions: String = ""
     var author: String = ""
     var creationDate: Date = Date.now
@@ -20,6 +21,7 @@ class Questionnaire {
     init(
         id: UUID = UUID(),
         title: String = "",
+        information: String = "",
         instructions: String = "",
         author: String = "",
         creationDate: Date = Date.now,
@@ -27,6 +29,7 @@ class Questionnaire {
     ) {
         self.id = id
         self.title = title
+        self.information = information
         self.instructions = instructions
         self.author = author
         self.creationDate = creationDate

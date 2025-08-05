@@ -88,7 +88,7 @@ struct OverlapResultsView: View {
         )
         
         // Initialize the session with participants
-        overlap.session.setParticipants(["Alice", "Bob", "Charlie", "Diana"])
+        overlap.setParticipants(["Alice", "Bob", "Charlie", "Diana"])
         
         // Simulate saving responses for each participant
         let responsePatterns = [
@@ -99,12 +99,12 @@ struct OverlapResultsView: View {
         ]
         
         // Reset session and manually set responses for preview
-        overlap.session.resetSession()
+        overlap.resetSession()
         for (participantIndex, pattern) in responsePatterns.enumerated() {
             let participant = overlap.participants[participantIndex]
             for (questionIndex, answer) in pattern.enumerated() {
                 // Directly set the answer for preview purposes
-                _ = overlap.session.saveCurrentAnswer(answer)
+                _ = overlap.saveResponse(answer: answer)
             }
         }
         

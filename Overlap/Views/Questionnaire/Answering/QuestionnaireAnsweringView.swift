@@ -22,14 +22,14 @@ struct QuestionnaireAnsweringView: View {
             BlobBackgroundView(emphasis: blobEmphasis)
             
             VStack {
-                if let currentQuestion = overlap.GetCurrentQuestion() {
+                if let currentQuestion = overlap.getCurrentQuestion() {
                     CardView(
                         question: currentQuestion,
                         onSwipe: { answer in
                             print("Selected answer: \(answer)")
 
                             // Save answer first (this changes the question index)
-                            overlap.SaveResponse(answer: answer)
+                            overlap.saveResponse(answer: answer)
                             
                             // Reset blob emphasis
                             blobEmphasis = .none

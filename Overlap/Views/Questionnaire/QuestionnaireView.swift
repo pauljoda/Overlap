@@ -27,7 +27,7 @@ struct QuestionnaireView: View {
         }
         .navigationTitle(
             overlap.currentState == .answering
-            ? overlap.session.questionnaire.title : ""
+            ? overlap.title : ""
         )
         .navigationBarTitleDisplayMode(.inline)
     }
