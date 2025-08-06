@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftData
 
 class SampleData {
     static let sampleQuestions: [String] = [
@@ -18,9 +19,40 @@ class SampleData {
 
     static let sampleQuestionnaire = Questionnaire(
         title: "Sample Questionnaire",
-        information: "A fun sample questionnaire to test the Overlap app",
-        instructions: "Respond to each question honestly, select the best answer for each one. This questionnaire is for fun only and does not reflect any personal opinions or beliefs. The results are purely statistical and should not be interpreted as any kind of opinion or prediction. Good luck!",
+        information: "A fun sample questionnaire to test the Overlap app. This questionnaire is designed to be lighthearted and entertaining. It includes a variety of questions that cover different topics, from food preferences to travel experiences.",
+        instructions:
+            "Respond to each question honestly, select the best answer for each one. This questionnaire is for fun only and does not reflect any personal opinions or beliefs. The results are purely statistical and should not be interpreted as any kind of opinion or prediction. Good luck!",
         questions: SampleData.sampleQuestions
+    )
+    
+    static let sampleQuestions2: [String] = [
+        "Have you ever gone skydiving?",
+        "Do you speak more than one language?",
+        "Is summer your favorite season?",
+        "Do you play a musical instrument?",
+        "Have you ever run a marathon?",
+    ]
+
+    static let sampleQuestionnaire2 = Questionnaire(
+        title: "Adventure & Experience Quiz",
+        information: "A short quiz about adventure and personal experiences.",
+        instructions: "Select the answer that best matches your experience. Be honest for the most interesting results!",
+        questions: SampleData.sampleQuestions2
+    )
+
+    static let sampleQuestions3: [String] = [
+        "Do you enjoy reading books?",
+        "Is science fiction your favorite genre?",
+        "Do you own a pet?",
+        "Have you ever written a story?",
+        "Do you visit the library regularly?",
+    ]
+
+    static let sampleQuestionnaire3 = Questionnaire(
+        title: "Reading & Hobbies Survey",
+        information: "A lighthearted survey about reading habits and hobbies.",
+        instructions: "Answer each question based on your current habits and interests.",
+        questions: SampleData.sampleQuestions3
     )
 
     static let sampleParticipants = ["John", "Sally"]
@@ -30,7 +62,7 @@ class SampleData {
         questionnaire: SampleData.sampleQuestionnaire,
         currentState: .instructions
     )
-    
+
     static let sampleRandomizedOverlap = Overlap(
         participants: sampleParticipants,
         questionnaire: SampleData.sampleQuestionnaire,
@@ -38,3 +70,27 @@ class SampleData {
         currentState: .instructions
     )
 }
+
+@MainActor
+let previewModelContainer: ModelContainer = {
+    do {
+        let container = try ModelContainer(
+            for: Questionnaire.self,
+            Overlap.self
+        )
+        
+        // Clear
+        try? container.mainContext.delete(model: Questionnaire.self)
+        try? container.mainContext.delete(model: Overlap.self)
+        
+        // Add
+        container.mainContext.insert(SampleData.sampleQuestionnaire)
+        container.mainContext.insert(SampleData.sampleQuestionnaire2)
+        container.mainContext.insert(SampleData.sampleQuestionnaire3)
+
+        container.mainContext.insert(SampleData.sampleOverlap)
+        return container
+    } catch {
+        fatalError("Failed to create ModelContainer for previews: \(error)")
+    }
+}()

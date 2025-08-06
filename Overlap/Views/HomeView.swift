@@ -63,7 +63,7 @@ struct HomeView: View {
                 case "create":
                     ComingSoonView(title: "Create")
                 case "saved":
-                    ComingSoonView(title: "Saved")
+                    SavedView()
                 case "in-progress":
                     ComingSoonView(title: "In-Progress")
                 case "completed":

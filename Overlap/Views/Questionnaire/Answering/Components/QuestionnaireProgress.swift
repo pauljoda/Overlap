@@ -24,6 +24,7 @@ struct QuestionnaireProgress: View {
                 Text(overlap.getCurrentParticipant() ?? "Unknown")
                     .bold()
                 Text("\(overlap.currentQuestionIndex + 1) / \(overlap.totalQuestions)")
+                
             }
         }
     }
@@ -33,11 +34,11 @@ struct QuestionnaireProgress: View {
     VStack(spacing: 16) {
         QuestionnaireProgress(overlap: SampleData.sampleOverlap)
         
-        QuestionnaireProgress(overlap: {
-            let onlineOverlap = SampleData.sampleOverlap
-            onlineOverlap.isOnline = true
-            return onlineOverlap
-        }())
+//        QuestionnaireProgress(overlap: {
+//            let onlineOverlap = SampleData.sampleOverlap
+//            onlineOverlap.isOnline = true
+//            return onlineOverlap
+//        }())
     }
     .padding()
 }

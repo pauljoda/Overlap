@@ -39,7 +39,7 @@ struct HomeOptionButton: View {
             // Title text with styling
             Text(title)
                 .font(.title3)
-                .fontWeight(.semibold)
+                .fontWeight(.bold)
                 .foregroundColor(.primary)
 
             Spacer()
