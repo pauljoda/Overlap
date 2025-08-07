@@ -61,7 +61,7 @@ struct HomeView: View {
             .navigationDestination(for: String.self) { destination in
                 switch destination {
                 case "create":
-                    ComingSoonView(title: "Create")
+                    CreateQuestionnaireView()
                 case "saved":
                     SavedView()
                 case "in-progress":

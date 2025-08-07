@@ -22,7 +22,7 @@ struct QuestionnaireListItem: View {
                 ))
                 .frame(width: 50, height: 50)
                 .overlay(
-                    Image(systemName: questionnaire.iconSystemName)
+                    Text(questionnaire.iconEmoji)
                         .foregroundColor(.white)
                         .font(.title2)
                 )

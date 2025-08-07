@@ -21,7 +21,7 @@ struct HomeMenuOptions: View {
     var body: some View {
         VStack(spacing: 20) {
             Button(action: {
-                navigationPath.wrappedValue.append(SampleData.sampleOverlap)
+                navigationPath.wrappedValue.append("create")
             }) {
                 HomeOptionButton(
                     title: "Create",

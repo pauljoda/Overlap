@@ -10,6 +10,7 @@ import SwiftUI
 
 struct SavedView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.navigationPath) private var navigationPath
     @Query(filter: #Predicate<Questionnaire> { questionnaire in
         questionnaire.isFavorite == true
     }, sort: \Questionnaire.title, order: .forward) private var favoriteQuestionnaires: [Questionnaire]
@@ -24,8 +25,7 @@ struct SavedView: View {
 
             if favoriteQuestionnaires.isEmpty && regularQuestionnaires.isEmpty {
                 EmptyQuestionnairesState {
-                    // TODO: Handle create overlay action
-                    print("Create overlay tapped")
+                    navigationPath.wrappedValue.append("create")
                 }
             } else {
                 QuestionnairesListView(
@@ -45,8 +45,7 @@ struct SavedView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
-                    // TODO: Handle create overlay action
-                    print("Create overlay tapped")
+                    navigationPath.wrappedValue.append("create")
                 } label: {
                     Image(systemName: "plus")
                         .fontWeight(.semibold)

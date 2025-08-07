@@ -20,7 +20,7 @@ class Questionnaire {
     var questions: [String] = []
     
     // Visual customization properties
-    var iconSystemName: String = "doc.text.fill"
+    var iconEmoji: String = "📝"
     
     // Simple color storage using RGBA components
     var startColorRed: Double = 0.0
@@ -99,7 +99,7 @@ class Questionnaire {
         author: String = "",
         creationDate: Date = Date.now,
         questions: [String] = [],
-        iconSystemName: String = "doc.text.fill",
+        iconEmoji: String = "📝",
         startColor: Color = .blue,
         endColor: Color = .purple,
         isFavorite: Bool = false
@@ -111,7 +111,7 @@ class Questionnaire {
         self.author = author
         self.creationDate = creationDate
         self.questions = questions
-        self.iconSystemName = iconSystemName
+        self.iconEmoji = iconEmoji
         self.isFavorite = isFavorite
         
         // Set colors using the computed properties
