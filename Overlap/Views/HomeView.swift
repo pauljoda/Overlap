@@ -65,16 +65,27 @@ struct HomeView: View {
                 case "saved":
                     SavedView()
                 case "in-progress":
-                    ComingSoonView(title: "In-Progress")
+                    InProgressView()
                 case "completed":
-                    ComingSoonView(title: "Completed")
+                    CompletedView()
                 case "join":
                     ComingSoonView(title: "Join")
                 case "browse":
                     ComingSoonView(title: "Browse")
+                case let editPath where editPath.hasPrefix("edit-"):
+                    // Extract questionnaire ID for editing
+                    let questionnaireId = String(editPath.dropFirst(5)) // Remove "edit-" prefix
+                    if let uuid = UUID(uuidString: questionnaireId) {
+                        EditQuestionnaireView(questionnaireId: uuid)
+                    } else {
+                        Text("Invalid questionnaire ID")
+                    }
                 default:
                     Text("Unknown destination")
                 }
+            }
+            .navigationDestination(for: Questionnaire.self) { questionnaire in
+                QuestionnaireDetailView(questionnaire: questionnaire)
             }
             .navigationDestination(for: Overlap.self) { overlap in
                 QuestionnaireView(overlap: overlap)
@@ -86,4 +97,9 @@ struct HomeView: View {
 
 #Preview {
     HomeView()
+}
+
+#Preview("With Model Data") {
+    HomeView()
+        .modelContainer(previewModelContainer)
 }

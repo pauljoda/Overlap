@@ -8,7 +8,7 @@
 
 //
 //  HomeOptionButton.swift
-//  Overlay
+//  Overlap
 //
 //  Created by Paul Davis on 7/13/25.
 //
@@ -58,13 +58,13 @@ struct HomeOptionButton: View {
 #Preview {
     VStack(spacing: 20) {
         HomeOptionButton(
-            title: "Create an Overlay",
+            title: "Create an Overlap",
             icon: "plus.circle.fill",
             color: .blue
         )
 
         HomeOptionButton(
-            title: "Browse Overlays",
+            title: "Browse Overlaps",
             icon: "list.bullet.rectangle.fill",
             color: .red
         )

@@ -48,6 +48,9 @@ struct BlobBackgroundView: View {
         self.blobPositions = blobPositions ?? Self.defaultPositions
     }
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
     var body: some View {
         ZStack {
             // Red blob
@@ -78,6 +81,9 @@ struct BlobBackgroundView: View {
             )
         }
         .ignoresSafeArea()
+        .background(
+            reduceTransparency ? Color(.systemBackground) : Color.clear
+        )
         .onAppear {
             startDefaultAnimation()
         }
@@ -88,6 +94,14 @@ struct BlobBackgroundView: View {
 
     /// Starts the default random pulsing animation
     private func startDefaultAnimation() {
+        if reduceMotion {
+            // Respect Reduce Motion: keep subtle static scales/opacity
+            withAnimation(.linear(duration: 0.01)) {
+                redScale = 1.0; yellowScale = 1.0; greenScale = 1.0
+                redOpacity = 0.4; yellowOpacity = 0.4; greenOpacity = 0.4
+            }
+            return
+        }
         if emphasis == .none {
             // Default random pulsing behavior
             withAnimation(

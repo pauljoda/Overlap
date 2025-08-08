@@ -13,21 +13,7 @@ struct CreateQuestionnaireHeader: View {
     var body: some View {
         VStack(spacing: 16) {
             // Icon
-            ZStack {
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [questionnaire.startColor, questionnaire.endColor],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 80, height: 80)
-                
-                Text(questionnaire.iconEmoji)
-                    .font(.largeTitle)
-                    .foregroundColor(.white)
-            }
+            QuestionnaireIcon(questionnaire: questionnaire, size: .medium)
             
             VStack(spacing: 8) {
                 Text("Create New Questionnaire")

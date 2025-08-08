@@ -47,6 +47,6 @@ struct ComingSoonView: View {
 
 #Preview {
     NavigationStack {
-        ComingSoonView(title: "Create an Overlay")
+        ComingSoonView(title: "Create an Overlap")
     }
 }

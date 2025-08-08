@@ -17,17 +17,17 @@ struct EmptyQuestionnairesState: View {
                     .font(.system(size: 80))
                     .foregroundStyle(.purple.gradient)
 
-                Text("No Saved Overlays")
+                Text("No Saved Overlaps")
                     .font(.title)
                     .fontWeight(.bold)
 
-                Text("Create your first overlay to get started!")
+                Text("Create your first overlap to get started!")
                     .font(.body)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
             }
 
-            Button("Create Overlay") {
+            Button("Create Overlap") {
                 onCreateTapped()
             }
             .buttonStyle(.borderedProminent)

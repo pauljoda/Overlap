@@ -6,9 +6,11 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct QuestionnaireInstructionsView: View {
     let overlap: Overlap
+    @Environment(\.modelContext) private var modelContext
     @State private var newParticipantName = ""
     @FocusState private var isTextFieldFocused: Bool
     @State private var animatingParticipants: Set<Int> = []
@@ -19,34 +21,34 @@ struct QuestionnaireInstructionsView: View {
 
     var body: some View {
         ZStack {
-            BlobBackgroundView(emphasis: .none)
+            GlassScreen {
+                ScrollView {
+                    VStack(spacing: Tokens.Spacing.xxl) {
+                        // Header Section
+                        QuestionnaireHeader(overlap: overlap)
 
-            // Scrollable Content - Full screen
-            ScrollView {
-                VStack(spacing: 24) {
-                    // Header Section
-                    QuestionnaireHeader(overlap: overlap)
+                        // Participants Section
+                        if !overlap.isOnline {
+                            ParticipantsSection(
+                                overlap: overlap,
+                                newParticipantName: $newParticipantName,
+                                isTextFieldFocused: $isTextFieldFocused,
+                                animatingParticipants: $animatingParticipants,
+                                onAddParticipant: addParticipant,
+                                onRemoveParticipant: removeParticipant
+                            )
+                        }
 
-                    // Participants Section
-                    if !overlap.isOnline {
-                        ParticipantsSection(
-                            overlap: overlap,
-                            newParticipantName: $newParticipantName,
-                            isTextFieldFocused: $isTextFieldFocused,
-                            animatingParticipants: $animatingParticipants,
-                            onAddParticipant: addParticipant,
-                            onRemoveParticipant: removeParticipant
-                        )
+                        // Bottom padding to account for floating button
+                        Rectangle()
+                            .fill(Color.clear)
+                            .frame(height: 120)
                     }
-
-                    // Bottom padding to account for floating button
-                    Rectangle()
-                        .fill(Color.clear)
-                        .frame(height: 120)
+                    .padding(.top, 20)
                 }
             }
 
-            // Floating Begin Button - Overlays at bottom
+            // Floating Begin Button - overlayed at bottom
             VStack {
                 Spacer()
                 
@@ -80,10 +82,10 @@ struct QuestionnaireInstructionsView: View {
         overlap.participants.append(trimmedName)
         newParticipantName = ""
         isTextFieldFocused = false
-        
+
         // Start animation for the new participant
         animatingParticipants.insert(newIndex)
-        
+
         // After a brief delay, expand the participant row
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             withAnimation(.easeInOut(duration: 0.3)) {
@@ -94,22 +96,24 @@ struct QuestionnaireInstructionsView: View {
 
     private func removeParticipant(at index: Int) {
         guard index < overlap.participants.count else { return }
-        
+
         // Start removal animation - shrink to circle first
         animatingParticipants.insert(index)
-        
+
         // After animation completes, remove the participant
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             // Clean up animation state for the removed participant
             animatingParticipants.remove(index)
-            
+
             // Clear any animation states for participants with indices greater than the removed one
             // This prevents the shifting participants from being animated
-            let participantsToCleanup = animatingParticipants.filter { $0 > index }
+            let participantsToCleanup = animatingParticipants.filter {
+                $0 > index
+            }
             for participantIndex in participantsToCleanup {
                 animatingParticipants.remove(participantIndex)
             }
-            
+
             withAnimation(.easeInOut(duration: 0.2)) {
                 overlap.participants.remove(at: index)
             }
@@ -118,11 +122,16 @@ struct QuestionnaireInstructionsView: View {
 
     private func beginQuestionnaire() {
         guard canBegin else { return }
-        
+
         // Initialize responses for all current participants
         overlap.initializeResponses()
-        
+
         overlap.currentState = .nextParticipant
+        
+        // Save the overlap to the model context when starting
+        modelContext.insert(overlap)
+        try? modelContext.save()
+        
         // The session automatically handles participant and question index management
     }
 }

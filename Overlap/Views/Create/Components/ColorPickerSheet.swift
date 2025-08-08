@@ -18,7 +18,7 @@ struct ColorPickerSheet: View {
     ]
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 24) {
                 // Color Wheel Picker
                 ColorPicker("Custom Color", selection: $selectedColor, supportsOpacity: false)
@@ -65,7 +65,21 @@ struct ColorPickerSheet: View {
                     }
                     .fontWeight(.semibold)
                 }
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Reset") {
+                        resetColor()
+                    }
+                }
             }
+        }
+    }
+
+    private func resetColor() {
+        switch colorType {
+        case .start:
+            selectedColor = .blue
+        case .end:
+            selectedColor = .purple
         }
     }
 }

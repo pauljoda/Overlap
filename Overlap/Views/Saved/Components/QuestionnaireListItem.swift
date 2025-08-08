@@ -14,18 +14,7 @@ struct QuestionnaireListItem: View {
     var body: some View {
         HStack(spacing: 12) {
             // Leading icon
-            RoundedRectangle(cornerRadius: 8)
-                .fill(LinearGradient(
-                    colors: [questionnaire.startColor.opacity(0.8), questionnaire.endColor.opacity(0.6)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ))
-                .frame(width: 50, height: 50)
-                .overlay(
-                    Text(questionnaire.iconEmoji)
-                        .foregroundColor(.white)
-                        .font(.title2)
-                )
+            QuestionnaireIcon(questionnaire: questionnaire, size: .small)
             
             // Main content
             VStack(alignment: .leading, spacing: 4) {
@@ -95,10 +84,7 @@ struct QuestionnaireListItem: View {
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 12)
-        //.background(Color(.systemBackground))
-        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 16))
-        //.clipShape(RoundedRectangle(cornerRadius: 12))
-        .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+        .standardGlassCard()
     }
 }
 

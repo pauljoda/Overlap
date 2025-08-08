@@ -64,13 +64,13 @@ struct CardView: View {
     /// Configuration for animation effects
     private let rotationDivisor: CGFloat = 10
     /// Configuration for exit animation duration
-    private let exitAnimationDuration: Double = 0.6
+    private let exitAnimationDuration: Double = Tokens.Duration.slow
     /// Delay before calling the swipe callback
     private let delayBeforeCallback: Double = 0.5
     /// Spring animation configuration
-    private let springResponse: Double = 0.5
+    private let springResponse: Double = Tokens.Spring.response
     /// Spring damping configuration
-    private let springDamping: Double = 0.6
+    private let springDamping: Double = Tokens.Spring.damping
 
     // Answers Layout Configuration
     /// Configuration for layout spacing
@@ -382,11 +382,7 @@ struct CardView: View {
                                     }
 
                                     // Animate exit
-                                    withAnimation(
-                                        .easeOut(
-                                            duration: exitAnimationDuration
-                                        )
-                                    ) {
+                                    withAnimation(.easeOut(duration: exitAnimationDuration)) {
                                         offset = exitOffset
                                     }
 
@@ -399,13 +395,7 @@ struct CardView: View {
                                     }
                                 } else {
                                     // Invalid direction (downward), return to center
-                                    withAnimation(
-                                        .spring(
-                                            response: springResponse,
-                                            dampingFraction: springDamping,
-                                            blendDuration: 0
-                                        )
-                                    ) {
+                                    withAnimation(.spring(response: springResponse, dampingFraction: springDamping, blendDuration: 0)) {
                                         offset = .zero
                                     }
 
@@ -414,13 +404,7 @@ struct CardView: View {
                                 }
                             } else {
                                 // Reset to center with spring animation
-                                withAnimation(
-                                    .spring(
-                                        response: springResponse,
-                                        dampingFraction: springDamping,
-                                        blendDuration: 0
-                                    )
-                                ) {
+                                withAnimation(.spring(response: springResponse, dampingFraction: springDamping, blendDuration: 0)) {
                                     offset = .zero
                                 }
 

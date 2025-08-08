@@ -32,9 +32,13 @@ struct BasicInformationSection: View {
                     
                     TextField("Enter questionnaire title", text: $questionnaire.title)
                         .textFieldStyle(.plain)
+                        .textInputAutocapitalization(.sentences)
+                        .textContentType(.name)
+                        .submitLabel(.next)
                         .padding()
-                        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 16))
+                        .standardGlassCard()
                         .focused($focusedField, equals: .title)
+                        .onSubmit { focusedField = .information }
                 }
                 
                 // Information Field
@@ -54,9 +58,12 @@ struct BasicInformationSection: View {
                     TextField("Brief description of this questionnaire", text: $questionnaire.information, axis: .vertical)
                         .textFieldStyle(.plain)
                         .lineLimit(3...6)
+                        .textInputAutocapitalization(.sentences)
+                        .submitLabel(.next)
                         .padding()
-                        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 16))
+                        .standardGlassCard()
                         .focused($focusedField, equals: .information)
+                        .onSubmit { focusedField = .instructions }
                 }
                 
                 // Instructions Field
@@ -76,9 +83,12 @@ struct BasicInformationSection: View {
                     TextField("Instructions for participants", text: $questionnaire.instructions, axis: .vertical)
                         .textFieldStyle(.plain)
                         .lineLimit(2...4)
+                        .textInputAutocapitalization(.sentences)
+                        .submitLabel(.next)
                         .padding()
-                        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 16))
+                        .standardGlassCard()
                         .focused($focusedField, equals: .instructions)
+                        .onSubmit { focusedField = .author }
                 }
                 
                 // Author Field
@@ -97,9 +107,12 @@ struct BasicInformationSection: View {
                     
                     TextField("Your name", text: $questionnaire.author)
                         .textFieldStyle(.plain)
+                        .textContentType(.name)
+                        .submitLabel(.done)
                         .padding()
-                        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 16))
+                        .standardGlassCard()
                         .focused($focusedField, equals: .author)
+                        .onSubmit { focusedField = .question(0) }
                 }
             }
             

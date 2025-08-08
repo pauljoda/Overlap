@@ -6,20 +6,18 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct QuestionnaireCompleteView: View {
     let overlap: Overlap
+    @Environment(\.modelContext) private var modelContext
     @State private var isAnimated = false
     
     @Environment(\.navigationPath) private var navigationPath
 
     var body: some View {
-        ZStack {
-            BlobBackgroundView(emphasis: .none)
-            
-            // Scrollable Content - Full screen
-            ScrollView {
-                VStack(spacing: 32) {
+        GlassScreen {
+            VStack(spacing: Tokens.Spacing.tripleXL) {
                     // Header Section
                     CompletionHeader(isAnimated: isAnimated, overlap: overlap)
                     
@@ -29,29 +27,17 @@ struct QuestionnaireCompleteView: View {
                     // Bottom padding to account for floating button
                     Rectangle()
                         .fill(Color.clear)
-                        .frame(height: 120) // Increased to account for button height
+                        .frame(height: Tokens.Spacing.quadXL * 3) // Increased to account for button height
                 }
-            }
-            
-            // Floating Done Button - Overlays at bottom
-            VStack {
-                Spacer()
-                
-                GlassActionButton(
-                    title: "Done",
-                    isEnabled: true,
-                    tintColor: .blue,
-                    action: startNewOverlap
-                )
-                .opacity(isAnimated ? 1 : 0)
-                .offset(y: isAnimated ? 0 : 50)
-                .animation(.spring(response: 0.8, dampingFraction: 0.8).delay(2.0), value: isAnimated)
-                .padding(.horizontal, 20)
-                .padding(.bottom, 20)
-            }
         }
         .onAppear {
             isAnimated = true
+            
+            // Set completion date if not already set
+            if overlap.completeDate == nil {
+                overlap.completeDate = Date.now
+                try? modelContext.save()
+            }
         }
     }
     

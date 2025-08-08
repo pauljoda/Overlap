@@ -54,7 +54,7 @@ class Overlap {
     /// The unique identifier for this overlap session
     var id = UUID()
     /// Start date of the overlap session
-    var beginData: Date = Date.now
+    var beginDate: Date = Date.now
     /// Completion date when all participants have finished
     var completeDate: Date?
 
@@ -74,7 +74,7 @@ class Overlap {
     /// The questions for this session
     var questions: [String] = []
     /// Storage for all participant responses organized by participant name and question index
-    private var participantResponses: [String: [Answer]] = [:]
+    private var participantResponses: [String: [Answer?]] = [:]
 
     // MARK: - Randomization Settings
     /// Whether question randomization is enabled for this session
@@ -89,6 +89,8 @@ class Overlap {
     var currentQuestionIndex: Int = 0
     /// Overall session state for UI navigation
     var currentState: OverlapState = OverlapState.instructions
+    /// Whether the overlap session has been completed (stored property for SwiftData queries)
+    var isCompleted: Bool = false
 
     // MARK: - Computed Properties
 
@@ -143,7 +145,7 @@ class Overlap {
 
     init(
         id: UUID = UUID(),
-        beginData: Date = Date.now,
+        beginDate: Date = Date.now,
         completeDate: Date? = nil,
         participants: [String] = [],
         isOnline: Bool = false,
@@ -152,7 +154,7 @@ class Overlap {
         currentState: OverlapState = .instructions
     ) {
         self.id = id
-        self.beginData = beginData
+        self.beginDate = beginDate
         self.completeDate = completeDate
         self.participants = participants
         self.isOnline = isOnline
@@ -165,6 +167,7 @@ class Overlap {
         
         self.isRandomized = randomizeQuestions
         self.currentState = currentState
+        self.isCompleted = (currentState == .complete)
 
         initializeParticipantResponses()
         if randomizeQuestions {
@@ -175,7 +178,7 @@ class Overlap {
     /// Convenience initializer for creating an overlap with direct question data
     init(
         id: UUID = UUID(),
-        beginData: Date = Date.now,
+        beginDate: Date = Date.now,
         completeDate: Date? = nil,
         participants: [String] = [],
         isOnline: Bool = false,
@@ -187,7 +190,7 @@ class Overlap {
         currentState: OverlapState = .instructions
     ) {
         self.id = id
-        self.beginData = beginData
+        self.beginDate = beginDate
         self.completeDate = completeDate
         self.participants = participants
         self.isOnline = isOnline
@@ -197,6 +200,7 @@ class Overlap {
         self.questions = questions
         self.isRandomized = randomizeQuestions
         self.currentState = currentState
+        self.isCompleted = (currentState == .complete)
 
         initializeParticipantResponses()
         if randomizeQuestions {
@@ -213,6 +217,7 @@ class Overlap {
     private func markAsComplete() {
         currentState = .complete
         completeDate = Date.now
+        isCompleted = true
     }
 
     /// Initializes the responses for all current participants.
@@ -357,7 +362,7 @@ class Overlap {
     ///
     /// - Parameter participant: Name of the participant
     /// - Returns: Array of all answers for the participant, or nil if not found
-    func getAllResponses(for participant: String) -> [Answer]? {
+    func getAllResponses(for participant: String) -> [Answer?]? {
         return participantResponses[participant]
     }
 
@@ -450,7 +455,7 @@ class Overlap {
 
         for participant in participants {
             if let responses = participantResponses[participant] {
-                completedCount += responses.count
+                completedCount += responses.compactMap { $0 }.count
             }
         }
 
@@ -494,8 +499,7 @@ class Overlap {
     /// - Returns: True if participant has answered all questions
     func isParticipantComplete(_ participant: String) -> Bool {
         guard let responses = participantResponses[participant] else { return false }
-        // Check if we have meaningful responses (not all default .no answers)
-        return responses.count == questions.count
+        return responses.compactMap { $0 }.count == questions.count
     }
 
     // MARK: - Debug and Utility Methods
@@ -538,7 +542,7 @@ class Overlap {
     /// - Parameter participant: Name of the participant
     private func initializeResponsesForParticipant(_ participant: String) {
         participantResponses[participant] = Array(
-            repeating: .no,
+            repeating: nil,
             count: questions.count
         )
     }

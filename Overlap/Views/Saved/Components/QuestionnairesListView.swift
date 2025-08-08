@@ -17,7 +17,7 @@ struct QuestionnairesListView: View {
     let onDeleteRegular: (IndexSet) -> Void
     
     var body: some View {
-        List {
+    List {
             // Favorites Section
             if !favoriteQuestionnaires.isEmpty {
                 QuestionnaireSection(
@@ -40,6 +40,10 @@ struct QuestionnairesListView: View {
                 )
             }
         }
+    .listStyle(.plain)
+    .scrollContentBackground(.hidden)
+    .background(Color.clear)
+    .listSectionSeparator(.hidden)
     }
 }
 

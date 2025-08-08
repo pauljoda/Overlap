@@ -8,7 +8,7 @@
 
 //
 //  HomeMenuView.swift
-//  Overlay
+//  Overlap
 //
 //  Created by Paul Davis on 7/13/25.
 //
@@ -21,7 +21,7 @@ struct HomeMenuOptions: View {
     var body: some View {
         VStack(spacing: 20) {
             Button(action: {
-                navigationPath.wrappedValue.append("create")
+                navigate(to: .create, using: navigationPath)
             }) {
                 HomeOptionButton(
                     title: "Create",
@@ -31,7 +31,7 @@ struct HomeMenuOptions: View {
             }
             
             Button(action: {
-                navigationPath.wrappedValue.append("saved")
+                navigate(to: .saved, using: navigationPath)
             }) {
                 HomeOptionButton(
                     title: "Saved",
@@ -41,7 +41,7 @@ struct HomeMenuOptions: View {
             }
             
             Button(action: {
-                navigationPath.wrappedValue.append("in-progress")
+                navigate(to: .inProgress, using: navigationPath)
             }) {
                 HomeOptionButton(
                     title: "In-Progress",
@@ -51,7 +51,7 @@ struct HomeMenuOptions: View {
             }
             
             Button(action: {
-                navigationPath.wrappedValue.append("completed")
+                navigate(to: .completed, using: navigationPath)
             }) {
                 HomeOptionButton(
                     title: "Completed",
@@ -62,7 +62,7 @@ struct HomeMenuOptions: View {
             
             
             Button(action: {
-                navigationPath.wrappedValue.append("join")
+                navigate(to: .join, using: navigationPath)
             }) {
                 HomeOptionButton(
                     title: "Join",
@@ -72,7 +72,7 @@ struct HomeMenuOptions: View {
             }
             
             Button(action: {
-                navigationPath.wrappedValue.append("browse")
+                navigate(to: .browse, using: navigationPath)
             }) {
                 HomeOptionButton(
                     title: "Browse",

@@ -6,9 +6,11 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct QuestionnaireAnsweringView: View {
     let overlap: Overlap
+    @Environment(\.modelContext) private var modelContext
     
     @State private var blobEmphasis: BlobEmphasis = .none
     
@@ -18,10 +20,8 @@ struct QuestionnaireAnsweringView: View {
     @State private var cardOpacity: Double = 0.0
 
     var body: some View {
-        ZStack {
-            BlobBackgroundView(emphasis: blobEmphasis)
-            
-            VStack {
+        GlassScreen(scrollable: false, emphasis: blobEmphasis) {
+            VStack(spacing: 0) {
                 if let currentQuestion = overlap.getCurrentQuestion() {
                     CardView(
                         question: currentQuestion,
@@ -30,6 +30,9 @@ struct QuestionnaireAnsweringView: View {
 
                             // Save answer first (this changes the question index)
                             overlap.saveResponse(answer: answer)
+                            
+                            // Save changes to model context
+                            try? modelContext.save()
                             
                             // Reset blob emphasis
                             blobEmphasis = .none
@@ -57,7 +60,7 @@ struct QuestionnaireAnsweringView: View {
                     .id(currentQuestion)  // Force SwiftUI to recreate the view
                     .onAppear {
                         // Animate in the first card
-                        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                        withAnimation(.spring(response: Tokens.Spring.response, dampingFraction: Tokens.Spring.damping)) {
                             cardScale = 1.0
                             cardOpacity = 1.0
                         }
@@ -70,7 +73,10 @@ struct QuestionnaireAnsweringView: View {
                 
                 // Progress
                 QuestionnaireProgress(overlap: overlap)
+                    .padding(.top, 12)
+                    .padding(.bottom, 20)
             }
+            .padding(.horizontal, 20)
         }
     }
 }

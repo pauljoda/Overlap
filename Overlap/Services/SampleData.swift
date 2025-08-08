@@ -69,6 +69,23 @@ class SampleData {
         randomizeQuestions: true,
         currentState: .instructions
     )
+    
+    static let sampleInProgressOverlap = Overlap(
+        participants: ["Alice", "Bob", "Carol"],
+        questionnaire: SampleData.sampleQuestionnaire2,
+        currentState: .answering
+    )
+    
+    static let sampleCompletedOverlap: Overlap = {
+        let overlap = Overlap(
+            participants: ["David", "Emma", "Frank"],
+            questionnaire: SampleData.sampleQuestionnaire3,
+            currentState: .complete
+        )
+        overlap.completeDate = Date.now.addingTimeInterval(-86400) // Yesterday
+        overlap.isCompleted = true
+        return overlap
+    }()
 }
 
 @MainActor
@@ -89,6 +106,8 @@ let previewModelContainer: ModelContainer = {
         container.mainContext.insert(SampleData.sampleQuestionnaire3)
 
         container.mainContext.insert(SampleData.sampleOverlap)
+        container.mainContext.insert(SampleData.sampleInProgressOverlap)
+        container.mainContext.insert(SampleData.sampleCompletedOverlap)
         return container
     } catch {
         fatalError("Failed to create ModelContainer for previews: \(error)")

@@ -6,9 +6,11 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct QuestionnaireNextParticipantView: View {
     let overlap: Overlap
+    @Environment(\.modelContext) private var modelContext
     @State private var isAnimated = false
 
     var body: some View {
@@ -57,7 +59,7 @@ struct QuestionnaireNextParticipantView: View {
                 }
             }
 
-            // Floating Begin Button - Overlays at bottom
+            // Floating Begin Button - overlayed at bottom
             VStack {
                 Spacer()
                 
@@ -85,6 +87,10 @@ struct QuestionnaireNextParticipantView: View {
 
     private func beginAnswering() {
         overlap.currentState = .answering
+        
+        // Save state change to model context
+        try? modelContext.save()
+        
         // The session automatically handles question index management
     }
 }

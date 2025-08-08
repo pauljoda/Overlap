@@ -14,21 +14,36 @@ struct QuestionnaireSection: View {
     let modelContext: ModelContext
     let onDelete: (IndexSet) -> Void
     let onEdit: (Questionnaire) -> Void
+    @Environment(\.navigationPath) private var navigationPath
     
     var body: some View {
-        Section(title) {
+        Section {
             ForEach(questionnaires) { questionnaire in
-                QuestionnaireListItem(questionnaire: questionnaire)
-                    .questionnaireSwipeActions(
-                        questionnaire: questionnaire,
-                        modelContext: modelContext,
-                        onEdit: onEdit
-                    )
+                Button {
+                    navigate(to: questionnaire, using: navigationPath)
+                } label: {
+                    QuestionnaireListItem(questionnaire: questionnaire)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .questionnaireSwipeActions(
+                    questionnaire: questionnaire,
+                    modelContext: modelContext,
+                    onEdit: onEdit
+                )
             }
             .onDelete(perform: onDelete)
             .listRowSeparator(.hidden)
             .listRowInsets(EdgeInsets(top: 5, leading: 25, bottom: 5, trailing: 25))
             .listRowBackground(Color.clear)
+        } header: {
+            Text(title)
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 25)
+                .padding(.top, 12)
+                .textCase(nil)
+                .background(Color.clear)
         }
     }
 }

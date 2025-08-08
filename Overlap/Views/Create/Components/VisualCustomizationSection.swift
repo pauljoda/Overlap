@@ -79,7 +79,7 @@ struct VisualCustomizationSection: View {
                     }
                     .buttonStyle(PlainButtonStyle())
                     .padding()
-                    .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 16))
+                    .standardGlassCard()
                 }
                 
                 // Color Selection
@@ -90,28 +90,24 @@ struct VisualCustomizationSection: View {
                         .foregroundColor(.primary)
                     
                     HStack(spacing: 16) {
-                        // Start Color
-                        VStack(spacing: 8) {
-                            Text("Start")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            
-                            Button(action: {
-                                selectedColorType = .start
-                                showingColorPicker = true
-                            }) {
-                                Circle()
-                                    .fill(questionnaire.startColor)
-                                    .frame(width: 50, height: 50)
-                                    .overlay(
-                                        Circle()
-                                            .stroke(Color.white, lineWidth: 3)
-                                            .shadow(radius: 2)
-                                    )
-                            }
+                        // Start Color (aligned center with bar)
+                        Button(action: {
+                            selectedColorType = .start
+                            showingColorPicker = true
+                        }) {
+                            Circle()
+                                .fill(questionnaire.startColor)
+                                .frame(width: 50, height: 50)
+                                .overlay(
+                                    Circle()
+                                        .stroke(Color.white, lineWidth: 3)
+                                        .shadow(radius: 2)
+                                )
                         }
-                        
-                        // Gradient Preview
+                        .accessibilityLabel("Start color")
+                        .accessibilityHint("Tap to choose the start color of the gradient")
+
+                        // Gradient Preview (flexes in the middle)
                         RoundedRectangle(cornerRadius: 25)
                             .fill(
                                 LinearGradient(
@@ -121,33 +117,69 @@ struct VisualCustomizationSection: View {
                                 )
                             )
                             .frame(height: 50)
-                        
-                        // End Color
-                        VStack(spacing: 8) {
-                            Text("End")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            
-                            Button(action: {
-                                selectedColorType = .end
-                                showingColorPicker = true
-                            }) {
-                                Circle()
-                                    .fill(questionnaire.endColor)
-                                    .frame(width: 50, height: 50)
-                                    .overlay(
-                                        Circle()
-                                            .stroke(Color.white, lineWidth: 3)
-                                            .shadow(radius: 2)
-                                    )
-                            }
+                            .frame(maxWidth: .infinity)
+
+                        // End Color (aligned center with bar)
+                        Button(action: {
+                            selectedColorType = .end
+                            showingColorPicker = true
+                        }) {
+                            Circle()
+                                .fill(questionnaire.endColor)
+                                .frame(width: 50, height: 50)
+                                .overlay(
+                                    Circle()
+                                        .stroke(Color.white, lineWidth: 3)
+                                        .shadow(radius: 2)
+                                )
                         }
+                        .accessibilityLabel("End color")
+                        .accessibilityHint("Tap to choose the end color of the gradient")
                     }
                     .padding()
-                    .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 16))
+                    .standardGlassCard()
+
+                    // Controls: Swap and Randomize
+                    HStack(spacing: 12) {
+                        Button {
+                            swapColors()
+                        } label: {
+                            Label("Swap", systemImage: "arrow.left.arrow.right")
+                                .font(.footnote)
+                                .fontWeight(.semibold)
+                        }
+                        .buttonStyle(.bordered)
+
+                        Button {
+                            randomizeColors()
+                        } label: {
+                            Label("Randomize", systemImage: "sparkles")
+                                .font(.footnote)
+                                .fontWeight(.semibold)
+                        }
+                        .buttonStyle(.bordered)
+                    }
                 }
             }
         }
+    }
+
+    private func swapColors() {
+        let start = questionnaire.startColor
+        questionnaire.startColor = questionnaire.endColor
+        questionnaire.endColor = start
+    }
+
+    private func randomizeColors() {
+        // Generate harmonious gradient using HSB
+        let hue = Double.random(in: 0...1)
+        let offset = Double.random(in: 0.12...0.2) // pleasant separation
+        let startHue = hue
+        let endHue = fmod(hue + offset, 1.0)
+        let start = Color(hue: startHue, saturation: 0.7, brightness: 0.95)
+        let end = Color(hue: endHue, saturation: 0.7, brightness: 0.85)
+        questionnaire.startColor = start
+        questionnaire.endColor = end
     }
 }
 
