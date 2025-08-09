@@ -33,15 +33,15 @@ struct QuestionnaireSection: View {
             }
             .onDelete(perform: onDelete)
             .listRowSeparator(.hidden)
-            .listRowInsets(EdgeInsets(top: 5, leading: 25, bottom: 5, trailing: 25))
+            .listRowInsets(EdgeInsets(top: Tokens.Spacing.xs, leading: Tokens.Spacing.xxl, bottom: Tokens.Spacing.xs, trailing: Tokens.Spacing.xxl))
             .listRowBackground(Color.clear)
         } header: {
             Text(title)
                 .font(.subheadline)
                 .fontWeight(.semibold)
                 .foregroundStyle(.secondary)
-                .padding(.horizontal, 25)
-                .padding(.top, 12)
+                .padding(.horizontal, Tokens.Spacing.xxl)
+                .padding(.top, Tokens.Spacing.m)
                 .textCase(nil)
                 .background(Color.clear)
         }

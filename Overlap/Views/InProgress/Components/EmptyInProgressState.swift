@@ -11,33 +11,20 @@ struct EmptyInProgressState: View {
     let onBrowseAction: () -> Void
     
     var body: some View {
-        VStack(spacing: 30) {
+        VStack {
             Spacer()
             
-            Image(systemName: "clock.fill")
-                .font(.system(size: 60))
-                .foregroundColor(.orange)
-            
-            VStack(spacing: 10) {
-                Text("No Active Sessions")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                
-                Text("Start a questionnaire to see it here")
-                    .font(.title2)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-            
-            Button("Browse Saved Questionnaires") {
-                onBrowseAction()
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            EmptyStateView(
+                icon: "clock.fill",
+                title: "No Active Sessions",
+                message: "Start a questionnaire to see it here",
+                buttonTitle: "Browse Saved Questionnaires",
+                iconColor: .orange,
+                action: onBrowseAction
+            )
             
             Spacer()
         }
-        .padding(.horizontal, 40)
     }
 }
 

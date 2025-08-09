@@ -48,7 +48,7 @@ struct SavedView: View {
         }
         .navigationTitle("Saved Questionnaires")
         .navigationBarTitleDisplayMode(.inline)
-        .contentMargins(0)
+        .contentMargins(.zero)
         .toolbar {
             if !(favoriteQuestionnaires.isEmpty
                 && regularQuestionnaires.isEmpty)

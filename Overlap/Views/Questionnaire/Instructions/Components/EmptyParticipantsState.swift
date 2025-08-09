@@ -17,20 +17,14 @@ struct EmptyParticipantsState: View {
     let minimumParticipants: Int
     
     var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "person.2.badge.plus")
-                .font(.largeTitle)
-                .foregroundColor(.secondary)
-
-            Text("Add participants to get started")
-                .font(.body)
-                .foregroundColor(.secondary)
-
-            Text("At least \(minimumParticipants) participants are required")
-                .font(.caption)
-                .foregroundColor(.secondary)
-        }
-        .padding(.vertical, 40)
+        EmptyStateView(
+            icon: "person.2.badge.plus",
+            title: "Add participants to get started",
+            message: "At least \(minimumParticipants) participants are required",
+            iconColor: .secondary,
+            iconSize: Tokens.Size.iconMedium
+        )
+        .padding(.vertical, Tokens.Spacing.quadXL)
     }
 }
 
