@@ -30,7 +30,7 @@ struct AnimatedParticipantDisplay: View {
     }
     
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: Tokens.Spacing.s) {
             Text(subtitle)
                 .font(.title2)
                 .fontWeight(.semibold)
@@ -38,7 +38,7 @@ struct AnimatedParticipantDisplay: View {
                 .opacity(isAnimated ? 1 : 0)
                 .offset(y: isAnimated ? 0 : -20)
                 .animation(
-                    .easeOut(duration: 0.6).delay(0.1),
+                    .easeOut(duration: Tokens.Duration.medium).delay(0.1),
                     value: isAnimated
                 )
 
@@ -56,9 +56,9 @@ struct AnimatedParticipantDisplay: View {
                 .scaleEffect(isAnimated ? 1 : 0.8)
                 .animation(
                     .spring(
-                        response: 0.8,
-                        dampingFraction: 0.7
-                    ).delay(0.2),
+                        response: Tokens.Spring.response,
+                        dampingFraction: Tokens.Spring.damping
+                    ).delay(Tokens.Duration.fast),
                     value: isAnimated
                 )
         }
@@ -66,7 +66,7 @@ struct AnimatedParticipantDisplay: View {
 }
 
 #Preview {
-    VStack(spacing: 40) {
+    VStack(spacing: Tokens.Spacing.quadXL) {
         AnimatedParticipantDisplay(
             overlap: SampleData.sampleOverlap,
             isAnimated: true

@@ -12,12 +12,12 @@ struct QuestionnaireListItem: View {
     let questionnaire: Questionnaire
     
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: Tokens.Spacing.m) {
             // Leading icon
             QuestionnaireIcon(questionnaire: questionnaire, size: .small)
             
             // Main content
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: Tokens.Spacing.xs) {
                 Text(questionnaire.title)
                     .font(.headline)
                     .fontWeight(.medium)
@@ -32,9 +32,9 @@ struct QuestionnaireListItem: View {
                 }
                 
                 // Metadata section
-                HStack(spacing: 12) {
+                HStack(spacing: Tokens.Spacing.m) {
                     // Question count
-                    HStack(spacing: 4) {
+                    HStack(spacing: Tokens.Spacing.xs) {
                         Image(systemName: "questionmark.circle.fill")
                             .font(.caption2)
                             .foregroundColor(.secondary)
@@ -47,11 +47,11 @@ struct QuestionnaireListItem: View {
                     // Separator
                     Circle()
                         .fill(Color.secondary)
-                        .frame(width: 2, height: 2)
+                        .frame(width: Tokens.Border.thick, height: Tokens.Border.thick)
                     
                     // Author or date
                     if !questionnaire.author.isEmpty {
-                        HStack(spacing: 4) {
+                        HStack(spacing: Tokens.Spacing.xs) {
                             Image(systemName: "person.fill")
                                 .font(.caption2)
                                 .foregroundColor(.secondary)
@@ -61,7 +61,7 @@ struct QuestionnaireListItem: View {
                                 .lineLimit(1)
                         }
                     } else {
-                        HStack(spacing: 4) {
+                        HStack(spacing: Tokens.Spacing.xs) {
                             Image(systemName: "calendar")
                                 .font(.caption2)
                                 .foregroundColor(.secondary)
@@ -82,8 +82,8 @@ struct QuestionnaireListItem: View {
                 .font(.caption)
                 //.foregroundColor(.tertiary)
         }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 12)
+        .padding(.vertical, Tokens.Spacing.s)
+        .padding(.horizontal, Tokens.Spacing.m)
         .standardGlassCard()
     }
 }

@@ -42,9 +42,9 @@ struct QuestionnaireInstructionsView: View {
                         // Bottom padding to account for floating button
                         Rectangle()
                             .fill(Color.clear)
-                            .frame(height: 120)
+                            .frame(height: Tokens.Size.iconHuge)
                     }
-                    .padding(.top, 20)
+                    .padding(.top, Tokens.Spacing.xl)
                 }
             }
 
@@ -59,8 +59,8 @@ struct QuestionnaireInstructionsView: View {
                     tintColor: .green,
                     action: beginQuestionnaire
                 )
-                .padding(.horizontal, 20)
-                .padding(.bottom, 20)
+                .padding(.horizontal, Tokens.Spacing.xl)
+                .padding(.bottom, Tokens.Spacing.xl)
             }
         }
         .onTapGesture {
@@ -88,7 +88,7 @@ struct QuestionnaireInstructionsView: View {
 
         // After a brief delay, expand the participant row
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            withAnimation(.easeInOut(duration: 0.3)) {
+            withAnimation(.easeInOut(duration: Tokens.Duration.fast)) {
                 _ = animatingParticipants.remove(newIndex)
             }
         }
@@ -114,7 +114,7 @@ struct QuestionnaireInstructionsView: View {
                 animatingParticipants.remove(participantIndex)
             }
 
-            withAnimation(.easeInOut(duration: 0.2)) {
+            withAnimation(.easeInOut(duration: Tokens.Duration.fast)) {
                 overlap.participants.remove(at: index)
             }
         }

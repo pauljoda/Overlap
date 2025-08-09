@@ -5,14 +5,6 @@
 //  Created by Paul Davis on 7/24/25.
 //
 
-
-//
-//  HomeOptionButton.swift
-//  Overlap
-//
-//  Created by Paul Davis on 7/13/25.
-//
-
 import SwiftUI
 
 /// A customizable button for the home screen options

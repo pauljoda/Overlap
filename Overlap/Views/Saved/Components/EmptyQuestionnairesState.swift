@@ -11,29 +11,15 @@ struct EmptyQuestionnairesState: View {
     let onCreateTapped: () -> Void
     
     var body: some View {
-        VStack(spacing: 32) {
-            VStack(spacing: 16) {
-                Image(systemName: "doc.text.below.ecg")
-                    .font(.system(size: 80))
-                    .foregroundStyle(.purple.gradient)
-
-                Text("No Saved Overlaps")
-                    .font(.title)
-                    .fontWeight(.bold)
-
-                Text("Create your first overlap to get started!")
-                    .font(.body)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-
-            Button("Create Overlap") {
-                onCreateTapped()
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-        }
-        .padding(.horizontal, 40)
+        EmptyStateView(
+            icon: "doc.text.below.ecg",
+            title: "No Saved Overlaps",
+            message: "Create your first overlap to get started!",
+            buttonTitle: "Create Overlap",
+            iconColor: .purple,
+            iconSize: Tokens.Size.iconXL,
+            action: onCreateTapped
+        )
     }
 }
 

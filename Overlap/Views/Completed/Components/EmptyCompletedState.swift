@@ -11,33 +11,20 @@ struct EmptyCompletedState: View {
     let onBrowseAction: () -> Void
     
     var body: some View {
-        VStack(spacing: 30) {
+        VStack {
             Spacer()
             
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 60))
-                .foregroundColor(.green)
-            
-            VStack(spacing: 10) {
-                Text("No Completed Sessions")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                
-                Text("Finish a questionnaire session to see results here")
-                    .font(.title2)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-            
-            Button("Browse Saved Questionnaires") {
-                onBrowseAction()
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
+            EmptyStateView(
+                icon: "checkmark.circle.fill",
+                title: "No Completed Sessions",
+                message: "Finish a questionnaire session to see results here",
+                buttonTitle: "Browse Saved Questionnaires",
+                iconColor: .green,
+                action: onBrowseAction
+            )
             
             Spacer()
         }
-        .padding(.horizontal, 40)
     }
 }
 

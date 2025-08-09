@@ -32,7 +32,7 @@ struct QuestionnaireInstructionsSection: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: Tokens.Spacing.l) {
             Text(title)
                 .font(.title2)
                 .fontWeight(.semibold)
@@ -42,14 +42,14 @@ struct QuestionnaireInstructionsSection: View {
                 .font(.body)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.leading)
-                .padding(20)
+                .padding(Tokens.Spacing.xl)
                 .background(Color.secondary.opacity(0.1))
                 .cornerRadius(40)
         }
         .opacity(isAnimated ? 1 : 0)
         .offset(y: isAnimated ? 0 : 20)
         .animation(
-            .easeOut(duration: 0.6).delay(animationDelay),
+            .easeOut(duration: Tokens.Duration.medium).delay(animationDelay),
             value: isAnimated
         )
     }

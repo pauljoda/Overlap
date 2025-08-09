@@ -19,9 +19,9 @@ struct QuestionnaireNextParticipantView: View {
 
             // Scrollable Content - Full screen
             ScrollView {
-                VStack(spacing: 32) {
+                VStack(spacing: Tokens.Spacing.tripleXL) {
                     // Main Participant Section
-                    VStack(spacing: 20) {
+                    VStack(spacing: Tokens.Spacing.xl) {
                         AnimatedParticipantDisplay(
                             overlap: overlap,
                             isAnimated: isAnimated
@@ -35,8 +35,8 @@ struct QuestionnaireNextParticipantView: View {
                             animationDelay: 0.4
                         )
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 40)
+                    .padding(.horizontal, Tokens.Spacing.xl)
+                    .padding(.top, Tokens.Spacing.quadXL)
 
                     // Questionnaire Instructions Section
                     QuestionnaireInstructionsSection(
@@ -44,18 +44,18 @@ struct QuestionnaireNextParticipantView: View {
                         isAnimated: isAnimated,
                         animationDelay: 0.6
                     )
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, Tokens.Spacing.xl)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .opacity(isAnimated ? 1 : 0)
                     .animation(
-                        .easeIn(duration: 0.7).delay(0.6),
+                        .easeIn(duration: Tokens.Duration.slow).delay(Tokens.Duration.medium),
                         value: isAnimated
                     )
 
                     // Bottom padding to account for floating button
                     Rectangle()
                         .fill(Color.clear)
-                        .frame(height: 120)
+                        .frame(height: Tokens.Size.iconHuge)
                 }
             }
 
@@ -71,13 +71,13 @@ struct QuestionnaireNextParticipantView: View {
                     action: beginAnswering
                 )
                 .opacity(isAnimated ? 1 : 0)
-                .offset(y: isAnimated ? 0 : 50)
+                .offset(y: isAnimated ? 0 : Tokens.Size.buttonStandard)
                 .animation(
-                    .spring(response: 0.8, dampingFraction: 0.8).delay(0.8),
+                    .spring(response: Tokens.Spring.response, dampingFraction: Tokens.Spring.damping).delay(Tokens.Spring.response),
                     value: isAnimated
                 )
-                .padding(.horizontal, 20)
-                .padding(.bottom, 20)
+                .padding(.horizontal, Tokens.Spacing.xl)
+                .padding(.bottom, Tokens.Spacing.xl)
             }
         }
         .onAppear {

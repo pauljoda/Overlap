@@ -35,25 +35,16 @@ struct EmptyResultsState: View {
     }
     
     var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: icon)
-                .font(.system(size: 48))
-                .foregroundColor(.secondary)
-            
-            Text(title)
-                .font(.title2)
-                .fontWeight(.semibold)
-                .foregroundColor(.primary)
-            
-            Text(subtitle)
-                .font(.body)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
-        }
+        EmptyStateView(
+            icon: icon,
+            title: title,
+            message: subtitle,
+            iconColor: .secondary,
+            iconSize: 48
+        )
         .opacity(isAnimated ? 1 : 0)
         .offset(y: isAnimated ? 0 : 20)
-        .animation(.easeOut(duration: 0.6).delay(animationDelay), value: isAnimated)
+        .animation(.easeOut(duration: Tokens.Duration.medium).delay(animationDelay), value: isAnimated)
     }
 }
 
