@@ -7,18 +7,31 @@
 
 import SwiftData
 import SwiftUI
+import UIKit
 
 struct CreateQuestionnaireView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(\.navigationPath) private var navigationPath
-    
+
     // Editing support
     let editingQuestionnaire: Questionnaire?
     private var isEditing: Bool { editingQuestionnaire != nil }
-    
+
     @State private var questionnaire = Questionnaire()
     @State private var questions: [String] = [""]
+
+    // Create a binding that works with either the editing questionnaire or the local one
+    private var questionnaireBinding: Binding<Questionnaire> {
+        if isEditing {
+            return Binding(
+                get: { editingQuestionnaire! },
+                set: { _ in }  // SwiftData will handle the changes automatically
+            )
+        } else {
+            return $questionnaire
+        }
+    }
     @State private var showingColorPicker = false
     @State private var selectedColorType: ColorType = .start
     @FocusState private var focusedField: FocusedField?
@@ -27,11 +40,15 @@ struct CreateQuestionnaireView: View {
     // Feedback triggers for modern SwiftUI sensory feedback
     @State private var saveFeedbackKey: Int = 0
     @State private var saveSucceeded: Bool = false
-    
+    // Keyboard management
+    @State private var isKeyboardVisible = false
+    // Track currently selected question card for auto-focus
+    @State private var selectedQuestionIndex: Int = 0
+
     init(editingQuestionnaire: Questionnaire? = nil) {
         self.editingQuestionnaire = editingQuestionnaire
     }
-    
+
     enum ColorType {
         case start, end
     }
@@ -41,20 +58,34 @@ struct CreateQuestionnaireView: View {
         case information
         case instructions
         case author
+        case emoji
         case question(Int)
+
+        // Check if this field is in the questions section
+        var isQuestionField: Bool {
+            switch self {
+            case .question:
+                return true
+            case .title, .information, .instructions, .author, .emoji:
+                return false
+            }
+        }
     }
 
     private var isValid: Bool {
-        let hasTitle = !questionnaire.title.trimmingCharacters(
+        let currentQuestionnaire = questionnaireBinding.wrappedValue
+        let hasTitle = !currentQuestionnaire.title.trimmingCharacters(
             in: .whitespacesAndNewlines
         ).isEmpty
-        let hasInformation = !questionnaire.information.trimmingCharacters(
-            in: .whitespacesAndNewlines
-        ).isEmpty
-        let hasInstructions = !questionnaire.instructions.trimmingCharacters(
-            in: .whitespacesAndNewlines
-        ).isEmpty
-        let hasAuthor = !questionnaire.author.trimmingCharacters(
+        let hasInformation = !currentQuestionnaire.information
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            ).isEmpty
+        let hasInstructions = !currentQuestionnaire.instructions
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            ).isEmpty
+        let hasAuthor = !currentQuestionnaire.author.trimmingCharacters(
             in: .whitespacesAndNewlines
         ).isEmpty
         let hasValidQuestions = questions.contains {
@@ -65,18 +96,24 @@ struct CreateQuestionnaireView: View {
             && hasValidQuestions
     }
 
+    private var shouldShowKeyboardToolbar: Bool {
+        return false  // Remove keyboard navigation toolbar
+    }
+
     // Binding to the currently selected gradient color (start or end)
     private var selectedColorBinding: Binding<Color> {
-        Binding(
+        let currentQuestionnaire = questionnaireBinding.wrappedValue
+        return Binding(
             get: {
                 selectedColorType == .start
-                    ? questionnaire.startColor : questionnaire.endColor
+                    ? currentQuestionnaire.startColor
+                    : currentQuestionnaire.endColor
             },
             set: { newValue in
                 if selectedColorType == .start {
-                    questionnaire.startColor = newValue
+                    currentQuestionnaire.startColor = newValue
                 } else {
-                    questionnaire.endColor = newValue
+                    currentQuestionnaire.endColor = newValue
                 }
             }
         )
@@ -86,19 +123,22 @@ struct CreateQuestionnaireView: View {
         GlassScreen {
             VStack(spacing: Tokens.Spacing.xxl) {
                 // Header
-                CreateQuestionnaireHeader(questionnaire: questionnaire)
+                CreateQuestionnaireHeader(
+                    questionnaire: questionnaireBinding.wrappedValue
+                )
 
                 // Basic Information Section
                 BasicInformationSection(
-                    questionnaire: $questionnaire,
+                    questionnaire: questionnaireBinding,
                     focusedField: $focusedField
                 )
 
                 // Visual Customization Section
                 VisualCustomizationSection(
-                    questionnaire: $questionnaire,
+                    questionnaire: questionnaireBinding,
                     showingColorPicker: $showingColorPicker,
-                    selectedColorType: $selectedColorType
+                    selectedColorType: $selectedColorType,
+                    focusedField: $focusedField
                 )
 
                 // Questions Section
@@ -140,7 +180,8 @@ struct CreateQuestionnaireView: View {
                         } else {
                             QuestionEditorCarousel(
                                 questions: $questions,
-                                focusedField: $focusedField
+                                focusedField: $focusedField,
+                                selectedIndex: $selectedQuestionIndex
                             )
                         }
                     }
@@ -150,8 +191,14 @@ struct CreateQuestionnaireView: View {
             }
             .padding(.horizontal, Tokens.Spacing.xl)
             .padding(.top, Tokens.Spacing.xl)
+
+            // Simple spacer to allow scrolling above keyboard
+            Spacer()
+                .frame(height: 400)
         }
-        .navigationTitle(isEditing ? "Edit Questionnaire" : "Create Questionnaire")
+        .navigationTitle(
+            isEditing ? "Edit Questionnaire" : "Create Questionnaire"
+        )
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(false)
         .scrollDismissesKeyboard(.interactively)
@@ -163,6 +210,28 @@ struct CreateQuestionnaireView: View {
         )
         .onAppear {
             loadQuestionnaireForEditing()
+            // Auto-focus the first field on load
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                focusedField = .title
+                isKeyboardVisible = true
+            }
+        }
+        .onChange(of: focusedField) { oldValue, newValue in
+            // Keep track of keyboard visibility
+            isKeyboardVisible = newValue != nil
+
+            // Auto-focus the currently selected question when entering questions section
+            if let newValue = newValue, newValue.isQuestionField {
+                if case .question(let index) = newValue {
+                    selectedQuestionIndex = index
+                }
+            }
+        }
+        .onChange(of: selectedQuestionIndex) { oldValue, newValue in
+            // When the selected question changes in carousel (scroll/swipe), auto-focus it if we're in question mode
+            if let currentField = focusedField, currentField.isQuestionField {
+                focusedField = .question(newValue)
+            }
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -174,7 +243,9 @@ struct CreateQuestionnaireView: View {
                     .tint(.blue)
                     .keyboardShortcut(.defaultAction)
                     .accessibilityLabel("Save Questionnaire")
-                    .accessibilityHint("Saves your questionnaire and closes this screen")
+                    .accessibilityHint(
+                        "Saves your questionnaire and closes this screen"
+                    )
                 } else {
                     Button(action: saveQuestionnaire) {
                         Image(systemName: "checkmark")
@@ -185,9 +256,16 @@ struct CreateQuestionnaireView: View {
                     .accessibilityHint("Complete all fields to enable Save")
                 }
             }
-        }
-        .onTapGesture {
-            focusedField = nil
+
+            // Keyboard toolbar - removed navigation, only show Done button
+            ToolbarItemGroup(placement: .keyboard) {
+                HStack {
+                    Spacer()
+                    Button("Done") {
+                        focusedField = nil
+                    }
+                }
+            }
         }
         .animation(.easeInOut(duration: 0.2), value: useListEditor)
         .sheet(isPresented: $showingColorPicker) {
@@ -206,86 +284,124 @@ struct CreateQuestionnaireView: View {
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
 
+        let currentQuestionnaire = questionnaireBinding.wrappedValue
+
         // Guard on validity with subtle haptic
         guard isValid else {
             saveSucceeded = false
             saveFeedbackKey &+= 1
             // Direct focus to the first missing field
-            if questionnaire.title.trimmingCharacters(
+            if currentQuestionnaire.title.trimmingCharacters(
                 in: .whitespacesAndNewlines
             ).isEmpty {
                 focusedField = .title
-            } else if questionnaire.information.trimmingCharacters(
+            } else if currentQuestionnaire.information.trimmingCharacters(
                 in: .whitespacesAndNewlines
             ).isEmpty {
                 focusedField = .information
-            } else if questionnaire.instructions.trimmingCharacters(
+            } else if currentQuestionnaire.instructions.trimmingCharacters(
                 in: .whitespacesAndNewlines
             ).isEmpty {
                 focusedField = .instructions
-            } else if questionnaire.author.trimmingCharacters(
+            } else if currentQuestionnaire.author.trimmingCharacters(
                 in: .whitespacesAndNewlines
             ).isEmpty {
                 focusedField = .author
             } else if cleanedQuestions.isEmpty {
                 focusedField = .question(0)
+                // Ensure there's at least one empty question to focus on
+                if questions.isEmpty {
+                    questions = [""]
+                }
             }
             return
         }
 
         // Trim main fields before saving
-        questionnaire.title = questionnaire.title.trimmingCharacters(
-            in: .whitespacesAndNewlines
-        )
-        questionnaire.information = questionnaire.information
+        currentQuestionnaire.title = currentQuestionnaire.title
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+        currentQuestionnaire.information = currentQuestionnaire.information
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        questionnaire.instructions = questionnaire.instructions
+        currentQuestionnaire.instructions = currentQuestionnaire.instructions
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        questionnaire.author = questionnaire.author.trimmingCharacters(
-            in: .whitespacesAndNewlines
-        )
-        questionnaire.questions = cleanedQuestions
-        questionnaire.creationDate = Date.now
-        
+        currentQuestionnaire.author = currentQuestionnaire.author
+            .trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
+        currentQuestionnaire.questions = cleanedQuestions
+        currentQuestionnaire.creationDate = Date.now
+
         // Save to SwiftData
         if isEditing {
             // For editing, we already have the questionnaire in the context
-            // Just update the existing one
+            // Just update the existing one - no need to insert
         } else {
             // For new questionnaires, insert into context
-            modelContext.insert(questionnaire)
+            modelContext.insert(currentQuestionnaire)
         }
-        
+
         do {
             try modelContext.save()
             saveSucceeded = true
             saveFeedbackKey &+= 1
-            
+
             if isEditing {
                 // For editing, just dismiss back to detail view
                 dismiss()
             } else {
                 // For new questionnaires, navigate to detail
-                navigate(to: questionnaire, using: navigationPath)
+                navigate(to: currentQuestionnaire, using: navigationPath)
             }
         } catch {
             print("Failed to save questionnaire: \(error)")
         }
     }
-    
+
     private func loadQuestionnaireForEditing() {
         guard let editingQuestionnaire = editingQuestionnaire else { return }
-        
-        // Load the existing questionnaire data
-        questionnaire = editingQuestionnaire
-        questions = editingQuestionnaire.questions.isEmpty ? [""] : editingQuestionnaire.questions
-    }
+
+        // Load the questions from the existing questionnaire
+        questions =
+            editingQuestionnaire.questions.isEmpty
+            ? [""] : editingQuestionnaire.questions
     }
 
+}
 
 #Preview {
     NavigationStack {
         CreateQuestionnaireView()
     }
     .modelContainer(for: Questionnaire.self, inMemory: true)
+}
+
+#Preview("Editing Questionnaire") {
+    let container = try! ModelContainer(
+        for: Questionnaire.self,
+        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+    )
+    let context = container.mainContext
+
+    let sampleQuestionnaire = Questionnaire(
+        title: "Work From Home Survey",
+        information: "A survey about remote work preferences and productivity",
+        instructions:
+            "Please answer all questions honestly based on your experience",
+        author: "HR Team",
+        questions: [
+            "Do you prefer working from home or in the office?",
+            "How productive are you when working remotely?",
+            "What tools help you stay connected with your team?",
+        ]
+    )
+
+    context.insert(sampleQuestionnaire)
+    try! context.save()
+
+    return NavigationStack {
+        CreateQuestionnaireView(editingQuestionnaire: sampleQuestionnaire)
+    }
+    .modelContainer(container)
 }

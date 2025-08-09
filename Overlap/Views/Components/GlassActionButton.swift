@@ -45,7 +45,7 @@ struct GlassActionButton: View {
                     .fontWeight(.semibold)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
+            .padding(.vertical, Tokens.Spacing.l)
         }
         .disabled(!isEnabled)
         .glassEffect(
@@ -56,7 +56,7 @@ struct GlassActionButton: View {
 }
 
 #Preview {
-    VStack(spacing: 16) {
+    VStack(spacing: Tokens.Spacing.l) {
         GlassActionButton(
             title: "Begin Overlap",
             icon: "play.fill",

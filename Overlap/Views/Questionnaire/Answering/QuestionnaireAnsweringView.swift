@@ -21,7 +21,7 @@ struct QuestionnaireAnsweringView: View {
 
     var body: some View {
         GlassScreen(scrollable: false, emphasis: blobEmphasis) {
-            VStack(spacing: 0) {
+            VStack(spacing: Tokens.Spacing.xs) {
                 if let currentQuestion = overlap.getCurrentQuestion() {
                     CardView(
                         question: currentQuestion,

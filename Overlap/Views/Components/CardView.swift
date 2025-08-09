@@ -29,36 +29,33 @@ struct CardView: View {
     @State private var selectedAnswer: Answer?
 
     // MARK: - Configuration Variables
-    ///Configuration for various thresholds and visual styles
+    /// Configuration for various thresholds and visual styles
     private let dragThreshold: CGFloat = 80
     /// Velocity threshold for swipe detection
     private let velocityThreshold: CGFloat = 400
     /// Configuration for exit distance multiplier
     private let exitDistanceMultiplier: CGFloat = 1.5
 
-    // Visual Configuration
-    /// Configuration for card appearance - uses concentric circle approach
-    private let cardCornerRadius: CGFloat = 44
-    /// Configuration for card shadow
-    private let cardPadding: CGFloat = 40  // 20 on each side
+    // Visual Configuration - Now using design tokens
+    /// Configuration for card appearance
+    private let cardCornerRadius: CGFloat = Tokens.Radius.heroCard
+    /// Configuration for card padding
+    private let cardPadding: CGFloat = Tokens.Spacing.quadXL
     /// Configuration for card border
-    private let borderWidth: CGFloat = 1
+    private let borderWidth: CGFloat = Tokens.Border.standard
     /// Configuration for inner border (concentric effect)
-    private let innerBorderWidth: CGFloat = 0.5
+    private let innerBorderWidth: CGFloat = Tokens.Border.thin
     /// Configuration for outer border offset
-    private let borderOffset: CGFloat = 8
-    /// Shadow configuration
-    private let shadowRadius: CGFloat = 10
-    /// Shadow offset values
-    private let shadowOffsetX: CGFloat = 0
-    /// Shadow offset values
-    private let shadowOffsetY: CGFloat = 4
-    /// Shadow opacity
-    private let shadowOpacity: Double = 0.1
+    private let borderOffset: CGFloat = Tokens.Border.concentricOffset
+    // Shadow configuration - Now using design tokens
+    private let shadowRadius: CGFloat = Tokens.Shadow.strong.radius
+    private let shadowOffsetX: CGFloat = Tokens.Shadow.strong.x
+    private let shadowOffsetY: CGFloat = Tokens.Shadow.strong.y
+    private let shadowOpacity: Double = Tokens.Opacity.light
 
     // Color Configuration (simplified)
     /// Threshold for when to fade help text
-    private let helpTextFadeThreshold: CGFloat = 0.3
+    private let helpTextFadeThreshold: CGFloat = Tokens.Opacity.medium
 
     // Animation Configuration
     /// Configuration for animation effects
@@ -72,17 +69,17 @@ struct CardView: View {
     /// Spring damping configuration
     private let springDamping: Double = Tokens.Spring.damping
 
-    // Answers Layout Configuration
+    // Answers Layout Configuration - Using design tokens
     /// Configuration for layout spacing
-    private let questionHorizontalPadding: CGFloat = 30
+    private let questionHorizontalPadding: CGFloat = Tokens.Spacing.tripleXL
     /// Configuration for help text layout
-    private let helpTextSpacing: CGFloat = 30
+    private let helpTextSpacing: CGFloat = Tokens.Spacing.tripleXL
     /// Configuration for help text icon spacing
-    private let helpTextIconSpacing: CGFloat = 8
+    private let helpTextIconSpacing: CGFloat = Tokens.Spacing.s
     /// Configuration for help text bottom padding
-    private let helpTextBottomPadding: CGFloat = 30
-    /// Configuration for help text bottom padding
-    private let contentPadding: CGFloat = 20
+    private let helpTextBottomPadding: CGFloat = Tokens.Spacing.tripleXL
+    /// Configuration for content padding
+    private let contentPadding: CGFloat = Tokens.Spacing.xl
     
     // MARK: Computed Properties
     /// How far along the card drag is relative to the drag threshold
@@ -159,8 +156,8 @@ struct CardView: View {
                         endRadius: 200
                     )
                 )
-                .scaleEffect(1.05)
-                .opacity(0.3)
+                .scaleEffect(Tokens.Scale.emphasized)
+                .opacity(Tokens.Opacity.medium)
 
                 // Outer border (subtle shadow border)
                 RoundedRectangle(cornerRadius: cardCornerRadius + borderOffset, style: .continuous)
@@ -200,7 +197,7 @@ struct CardView: View {
                         x: shadowOffsetX,
                         y: shadowOffsetY
                     )
-                    .opacity(0.7)
+                    .opacity(Tokens.Opacity.prominent)
 
                 // MARK: Card Content
                 // Interior Card content

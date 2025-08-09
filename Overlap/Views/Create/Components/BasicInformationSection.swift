@@ -12,12 +12,12 @@ struct BasicInformationSection: View {
     @FocusState.Binding var focusedField: CreateQuestionnaireView.FocusedField?
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: Tokens.Spacing.l) {
             SectionHeader(title: "Basic Information", icon: "info.circle.fill")
             
-            VStack(spacing: 12) {
+            VStack(spacing: Tokens.Spacing.m) {
                 // Title Field
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: Tokens.Spacing.s) {
                     HStack {
                         Text("Title")
                             .font(.subheadline)
@@ -42,7 +42,7 @@ struct BasicInformationSection: View {
                 }
                 
                 // Information Field
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: Tokens.Spacing.s) {
                     HStack {
                         Text("Description")
                             .font(.subheadline)
@@ -67,7 +67,7 @@ struct BasicInformationSection: View {
                 }
                 
                 // Instructions Field
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: Tokens.Spacing.s) {
                     HStack {
                         Text("Instructions")
                             .font(.subheadline)
@@ -92,7 +92,7 @@ struct BasicInformationSection: View {
                 }
                 
                 // Author Field
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: Tokens.Spacing.s) {
                     HStack {
                         Text("Author")
                             .font(.subheadline)
@@ -108,11 +108,11 @@ struct BasicInformationSection: View {
                     TextField("Your name", text: $questionnaire.author)
                         .textFieldStyle(.plain)
                         .textContentType(.name)
-                        .submitLabel(.done)
+                        .submitLabel(.next)
                         .padding()
                         .standardGlassCard()
                         .focused($focusedField, equals: .author)
-                        .onSubmit { focusedField = .question(0) }
+                        .onSubmit { focusedField = .emoji }
                 }
             }
             

@@ -39,7 +39,17 @@ struct QuestionListEditor: View {
                         .textFieldStyle(.plain)
                         .textInputAutocapitalization(.sentences)
                         .lineLimit(1...3)
+                        .submitLabel(index == questions.count - 1 ? .done : .next)
                         .focused($focusedField, equals: .question(index))
+                        .onSubmit {
+                            if index == questions.count - 1 {
+                                // On last question, add a new one and focus it
+                                addQuestion()
+                            } else {
+                                // Move to next question
+                                focusedField = .question(index + 1)
+                            }
+                        }
                     }
                     .padding(.vertical, Tokens.Spacing.m)
                     .padding(.horizontal, Tokens.Spacing.m)
@@ -63,9 +73,8 @@ struct QuestionListEditor: View {
 
     private func addQuestion() {
         questions.append("")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            focusedField = .question(questions.count - 1)
-        }
+        // Set focus immediately to prevent keyboard dismissal
+        focusedField = .question(questions.count - 1)
     }
 
     private func delete(at offsets: IndexSet) {
@@ -74,9 +83,8 @@ struct QuestionListEditor: View {
         // Remove from highest to lowest to preserve indices
         for i in sorted.reversed() { questions.remove(at: i) }
         let newIndex = min(first, max(questions.count - 1, 0))
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            focusedField = .question(newIndex)
-        }
+        // Set focus immediately to maintain keyboard
+        focusedField = .question(newIndex)
     }
 }
 

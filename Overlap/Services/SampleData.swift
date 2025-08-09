@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftData
+import SwiftUI
 
 class SampleData {
     static let sampleQuestions: [String] = [
@@ -22,7 +23,10 @@ class SampleData {
         information: "A fun sample questionnaire to test the Overlap app. This questionnaire is designed to be lighthearted and entertaining. It includes a variety of questions that cover different topics, from food preferences to travel experiences.",
         instructions:
             "Respond to each question honestly, select the best answer for each one. This questionnaire is for fun only and does not reflect any personal opinions or beliefs. The results are purely statistical and should not be interpreted as any kind of opinion or prediction. Good luck!",
-        questions: SampleData.sampleQuestions
+        questions: SampleData.sampleQuestions,
+        iconEmoji: "🍕",
+        startColor: .orange,
+        endColor: .red
     )
     
     static let sampleQuestions2: [String] = [
@@ -37,7 +41,10 @@ class SampleData {
         title: "Adventure & Experience Quiz",
         information: "A short quiz about adventure and personal experiences.",
         instructions: "Select the answer that best matches your experience. Be honest for the most interesting results!",
-        questions: SampleData.sampleQuestions2
+        questions: SampleData.sampleQuestions2,
+        iconEmoji: "🏔️",
+        startColor: .green,
+        endColor: .teal
     )
 
     static let sampleQuestions3: [String] = [
@@ -52,7 +59,10 @@ class SampleData {
         title: "Reading & Hobbies Survey",
         information: "A lighthearted survey about reading habits and hobbies.",
         instructions: "Answer each question based on your current habits and interests.",
-        questions: SampleData.sampleQuestions3
+        questions: SampleData.sampleQuestions3,
+        iconEmoji: "📚",
+        startColor: .purple,
+        endColor: .indigo
     )
 
     static let sampleParticipants = ["John", "Sally"]

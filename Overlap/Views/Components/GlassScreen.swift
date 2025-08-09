@@ -41,12 +41,12 @@ struct GlassScreen<Content: View>: View {
 
 #Preview("Scrollable") {
     GlassScreen(scrollable: true, emphasis: .none) {
-        VStack(spacing: 16) {
+        VStack(spacing: Tokens.Spacing.l) {
             ForEach(0..<20) { i in
                 Text("Row \(i)")
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Tokens.Radius.m))
             }
         }
         .padding()
@@ -55,12 +55,12 @@ struct GlassScreen<Content: View>: View {
 
 #Preview("Non-scrollable") {
     GlassScreen(scrollable: false, emphasis: .none) {
-        VStack(spacing: 16) {
-            Text("Static Content")
+        VStack(spacing: Tokens.Spacing.l) {
+            Text("Non-scrollable content")
                 .padding()
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Tokens.Radius.m))
+                .padding()
         }
-        .padding()
     }
 }
 

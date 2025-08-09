@@ -12,19 +12,18 @@ struct CompletedOverlapListItem: View {
     
     var body: some View {
         HStack(spacing: 12) {
-            // Leading icon with gradient
+            // Leading icon with gradient from overlap's colors
             Circle()
                 .fill(
                     LinearGradient(
-                        colors: [.green.opacity(0.8), .blue.opacity(0.6)],
+                        colors: [overlap.startColor.opacity(0.8), overlap.endColor.opacity(0.6)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
                 .frame(width: 50, height: 50)
                 .overlay(
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.white)
+                    Text(overlap.iconEmoji)
                         .font(.title2)
                 )
             

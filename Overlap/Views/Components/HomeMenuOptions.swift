@@ -19,7 +19,7 @@ struct HomeMenuOptions: View {
     @Environment(\.navigationPath) private var navigationPath
     
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: Tokens.Spacing.xl) {
             Button(action: {
                 navigate(to: .create, using: navigationPath)
             }) {

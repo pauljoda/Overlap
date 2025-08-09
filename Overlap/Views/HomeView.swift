@@ -29,11 +29,11 @@ struct HomeView: View {
                 // Setup Background
                 BlobBackgroundView()
                 
-                VStack(spacing: 40) {
+                VStack(spacing: Tokens.Spacing.quadXL) {
                     Spacer()
                     
                     //App Title
-                    VStack(spacing: 10) {
+                    VStack(spacing: Tokens.Spacing.s) {
                         Text("Overlap")
                             .font(.largeTitle)
                             .fontWeight(.bold)
@@ -50,13 +50,13 @@ struct HomeView: View {
                         Spacer()
                         HomeMenuOptions()
                             .padding()
-                            .frame(maxWidth: 400)
+                            .frame(maxWidth: Tokens.Size.maxContentWidth)
                         Spacer()
                     }
                     
                     Spacer()
                 }
-                .padding(30)
+                .padding(Tokens.Spacing.xl)
             }
             .navigationDestination(for: String.self) { destination in
                 switch destination {

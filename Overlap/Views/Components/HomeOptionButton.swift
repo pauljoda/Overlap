@@ -28,13 +28,13 @@ struct HomeOptionButton: View {
 
     var body: some View {
         // Horizontal stack to arrange icon, title, and chevron
-        HStack(spacing: 15) {
+        HStack(spacing: Tokens.Spacing.l) {
 
             // Icon with specified system name and color
             Image(systemName: icon)
                 .font(.title2)
                 .foregroundColor(color)
-                .frame(width: 30)
+                .frame(width: Tokens.Size.iconSmall)
 
             // Title text with styling
             Text(title)
@@ -49,14 +49,14 @@ struct HomeOptionButton: View {
                 .font(.callout)
                 .foregroundColor(.secondary)
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 15)
+        .padding(.horizontal, Tokens.Spacing.xl)
+        .padding(.vertical, Tokens.Spacing.l)
         .glassEffect(.clear.interactive())
     }
 }
 
 #Preview {
-    VStack(spacing: 20) {
+    VStack(spacing: Tokens.Spacing.xl) {
         HomeOptionButton(
             title: "Create an Overlap",
             icon: "plus.circle.fill",

@@ -11,11 +11,11 @@ struct CreateQuestionnaireHeader: View {
     let questionnaire: Questionnaire
     
     var body: some View {
-        VStack(spacing: 16) {
-            // Icon
+        VStack(spacing: Tokens.Spacing.l) {
+            // Circular gradient icon
             QuestionnaireIcon(questionnaire: questionnaire, size: .medium)
             
-            VStack(spacing: 8) {
+            VStack(spacing: Tokens.Spacing.s) {
                 Text("Create New Questionnaire")
                     .font(.title2)
                     .fontWeight(.bold)

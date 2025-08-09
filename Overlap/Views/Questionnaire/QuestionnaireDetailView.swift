@@ -39,14 +39,14 @@ struct QuestionnaireDetailView: View {
                             .foregroundColor(.secondary)
                             .font(.body)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .frame(height: 50)
+                    .padding(.horizontal, Tokens.Spacing.l)
+                    .padding(.vertical, Tokens.Spacing.m)
+                    .frame(height: Tokens.Size.buttonStandard)
                     .frame(maxWidth: .infinity)
                     .glassEffect(.regular)
-                    .cornerRadius(40)
+                    .cornerRadius(Tokens.Spacing.quadXL)
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, Tokens.Spacing.xl)
             }
             .padding(.horizontal, Tokens.Spacing.xl)
             .padding(.top, Tokens.Spacing.xl)
@@ -86,7 +86,7 @@ private struct DetailHeader: View {
             // Circular gradient icon matching CreateQuestionnaireHeader
             QuestionnaireIcon(questionnaire: questionnaire, size: .medium)
             
-            VStack(spacing: 8) {
+            VStack(spacing: Tokens.Spacing.s) {
                 Text(questionnaire.title)
                     .font(.title2)
                     .fontWeight(.bold)
@@ -118,8 +118,8 @@ private struct DetailInfo: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 
                 // Metadata row similar to QuestionnaireListItem
-                HStack(spacing: 12) {
-                    HStack(spacing: 4) {
+                HStack(spacing: Tokens.Spacing.m) {
+                    HStack(spacing: Tokens.Spacing.xs) {
                         Image(systemName: "questionmark.circle.fill")
                             .font(.caption2)
                             .foregroundColor(.secondary)
@@ -133,7 +133,7 @@ private struct DetailInfo: View {
                         .fill(Color.secondary)
                         .frame(width: 2, height: 2)
                     
-                    HStack(spacing: 4) {
+                    HStack(spacing: Tokens.Spacing.xs) {
                         Image(systemName: "person.fill")
                             .font(.caption2)
                             .foregroundColor(.secondary)
@@ -146,7 +146,7 @@ private struct DetailInfo: View {
                         .fill(Color.secondary)
                         .frame(width: 2, height: 2)
                     
-                    HStack(spacing: 4) {
+                    HStack(spacing: Tokens.Spacing.xs) {
                         Image(systemName: "calendar")
                             .font(.caption2)
                             .foregroundColor(.secondary)

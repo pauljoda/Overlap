@@ -47,16 +47,36 @@ struct EditQuestionnaireView: View {
 }
 
 #Preview {
-    let q = Questionnaire(
+    let container = try! ModelContainer(for: Questionnaire.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+    let context = container.mainContext
+    
+    let sampleQuestionnaire = Questionnaire(
         title: "Sample Questionnaire",
-        information: "A test questionnaire",
-        instructions: "Answer all questions",
+        information: "A test questionnaire for preview",
+        instructions: "Answer all questions honestly",
         author: "Test Author",
-        questions: ["Question 1", "Question 2"]
+        questions: ["Do you like pizza?", "Is the sky blue?", "Should we work from home?"]
     )
     
+    context.insert(sampleQuestionnaire)
+    try! context.save()
+    
     return NavigationStack {
-        EditQuestionnaireView(questionnaireId: q.id)
+        EditQuestionnaireView(questionnaireId: sampleQuestionnaire.id)
     }
-    .modelContainer(for: Questionnaire.self, inMemory: true)
+    .modelContainer(container)
+}
+
+#Preview("Empty Questionnaire") {
+    let container = try! ModelContainer(for: Questionnaire.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+    let context = container.mainContext
+    
+    let emptyQuestionnaire = Questionnaire()
+    context.insert(emptyQuestionnaire)
+    try! context.save()
+    
+    return NavigationStack {
+        EditQuestionnaireView(questionnaireId: emptyQuestionnaire.id)
+    }
+    .modelContainer(container)
 }

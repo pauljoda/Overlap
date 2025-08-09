@@ -11,17 +11,17 @@ struct ComingSoonView: View {
     let title: String
     
     var body: some View {
-        VStack(spacing: 30) {
+        VStack(spacing: Tokens.Spacing.tripleXL) {
             Spacer()
             
             // Icon to display
             Image(systemName: "hammer.fill")
-                .font(.system(size: 60))
+                .font(.system(size: Tokens.FontSize.hero))
                 .foregroundColor(.orange)
                 
             
             // Title and subtitle
-            VStack(spacing: 10) {
+            VStack(spacing: Tokens.Spacing.s) {
                 Text("Coming Soon")
                     .font(.largeTitle)
                     .fontWeight(.bold)
@@ -36,7 +36,7 @@ struct ComingSoonView: View {
                 .font(.body)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
+                .padding(.horizontal, Tokens.Spacing.quadXL)
             
             Spacer()
         }

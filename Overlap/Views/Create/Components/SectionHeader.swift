@@ -12,7 +12,7 @@ struct SectionHeader: View {
     let icon: String
     
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Tokens.Spacing.s) {
             Image(systemName: icon)
                 .font(.title3)
                 .foregroundColor(.blue)
@@ -26,7 +26,7 @@ struct SectionHeader: View {
 }
 
 #Preview {
-    VStack(spacing: 20) {
+    VStack(spacing: Tokens.Spacing.xl) {
         SectionHeader(title: "Basic Information", icon: "info.circle.fill")
         SectionHeader(title: "Visual Style", icon: "paintbrush.fill")
         SectionHeader(title: "Questions", icon: "questionmark.bubble.fill")

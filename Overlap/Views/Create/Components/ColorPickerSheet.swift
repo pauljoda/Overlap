@@ -19,20 +19,20 @@ struct ColorPickerSheet: View {
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
-                // Color Wheel Picker
-                ColorPicker("Custom Color", selection: $selectedColor, supportsOpacity: false)
-                    .labelsHidden()
-                    .scaleEffect(1.5)
+            VStack(spacing: Tokens.Spacing.xxl) {
+                // Preview of selected color
+                Circle()
+                    .fill(selectedColor)
+                    .frame(width: Tokens.Size.iconXL, height: Tokens.Size.iconXL)
+                    .scaleEffect(Tokens.Scale.colorPicker)
                     .padding()
                 
-                // Preset Colors
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: Tokens.Spacing.l) {
                     Text("Preset Colors")
                         .font(.headline)
                         .fontWeight(.semibold)
                     
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 16) {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: Tokens.Grid.colorPickerColumns), spacing: Tokens.Spacing.l) {
                         ForEach(presetColors, id: \.self) { color in
                             Button(action: {
                                 selectedColor = color
@@ -42,7 +42,7 @@ struct ColorPickerSheet: View {
                                     .frame(width: 44, height: 44)
                                     .overlay(
                                         Circle()
-                                            .stroke(selectedColor == color ? Color.primary : Color.clear, lineWidth: 3)
+                                            .stroke(selectedColor == color ? Color.primary : Color.clear, lineWidth: Tokens.Border.thick)
                                     )
                                     .scaleEffect(selectedColor == color ? 1.1 : 1.0)
                                     .animation(.easeInOut(duration: 0.2), value: selectedColor)

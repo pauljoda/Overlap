@@ -1,5 +1,5 @@
 //
-//  VisualCustomizationSection.swift
+//  VisualCus        VStack(alignment: .leading, spacing: Tokens.Spacing.l) {
 //  Overlap
 //
 //  Created by Paul Davis on 8/6/25.
@@ -11,6 +11,7 @@ struct VisualCustomizationSection: View {
     @Binding var questionnaire: Questionnaire
     @Binding var showingColorPicker: Bool
     @Binding var selectedColorType: CreateQuestionnaireView.ColorType
+    @FocusState.Binding var focusedField: CreateQuestionnaireView.FocusedField?
     @State private var isEmojiFieldFocused = false
     
     var body: some View {
@@ -27,7 +28,13 @@ struct VisualCustomizationSection: View {
                     
                     Button(action: {
                         // Toggle focus - if focused, unfocus to dismiss keyboard
-                        isEmojiFieldFocused.toggle()
+                        if focusedField == .emoji {
+                            focusedField = nil
+                            isEmojiFieldFocused = false
+                        } else {
+                            focusedField = .emoji
+                            isEmojiFieldFocused = true
+                        }
                     }) {
                         HStack {
                             ZStack {
@@ -39,14 +46,14 @@ struct VisualCustomizationSection: View {
                                             endPoint: .bottomTrailing
                                         )
                                     )
-                                    .frame(width: 50, height: 50)
+                                    .frame(width: Tokens.Size.iconMedium, height: Tokens.Size.iconMedium)
                                 
                                 Text(questionnaire.iconEmoji)
                                     .font(.title)
                                     .foregroundColor(.white)
                             }
                             
-                            VStack(alignment: .leading, spacing: 4) {
+                            VStack(alignment: .leading, spacing: Tokens.Spacing.xs) {
                                 Text(isEmojiFieldFocused ? "Tap to Close" : "Tap to Change")
                                     .font(.subheadline)
                                     .fontWeight(.semibold)
@@ -65,31 +72,34 @@ struct VisualCustomizationSection: View {
                                 placeholder: "📝",
                                 isFocused: $isEmojiFieldFocused
                             )
-                            .frame(width: 60, height: 60)
-                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                            .frame(width: Tokens.Size.iconLarge, height: Tokens.Size.iconLarge)
+                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Tokens.Radius.m))
                             .overlay(
-                                RoundedRectangle(cornerRadius: 12)
+                                RoundedRectangle(cornerRadius: Tokens.Radius.m)
                                     .stroke(
                                         isEmojiFieldFocused ? Color.blue : Color.blue.opacity(0.3), 
-                                        lineWidth: isEmojiFieldFocused ? 2 : 1
+                                        lineWidth: isEmojiFieldFocused ? Tokens.Border.thick : Tokens.Border.standard
                                     )
                             )
                             .allowsHitTesting(false) // Prevent double-tap issues
                         }
                     }
                     .buttonStyle(PlainButtonStyle())
+                    .onChange(of: focusedField) { oldValue, newValue in
+                        isEmojiFieldFocused = newValue == .emoji
+                    }
                     .padding()
                     .standardGlassCard()
                 }
                 
                 // Color Selection
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: Tokens.Spacing.m) {
                     Text("Colors")
                         .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundColor(.primary)
                     
-                    HStack(spacing: 16) {
+                    HStack(spacing: Tokens.Spacing.l) {
                         // Start Color (aligned center with bar)
                         Button(action: {
                             selectedColorType = .start
@@ -97,11 +107,11 @@ struct VisualCustomizationSection: View {
                         }) {
                             Circle()
                                 .fill(questionnaire.startColor)
-                                .frame(width: 50, height: 50)
+                                .frame(width: Tokens.Size.iconMedium, height: Tokens.Size.iconMedium)
                                 .overlay(
                                     Circle()
-                                        .stroke(Color.white, lineWidth: 3)
-                                        .shadow(radius: 2)
+                                        .stroke(Color.white, lineWidth: Tokens.Border.thick)
+                                        .shadow(radius: Tokens.Shadow.subtle.radius)
                                 )
                         }
                         .accessibilityLabel("Start color")
@@ -116,7 +126,7 @@ struct VisualCustomizationSection: View {
                                     endPoint: .trailing
                                 )
                             )
-                            .frame(height: 50)
+                            .frame(height: Tokens.Size.iconMedium)
                             .frame(maxWidth: .infinity)
 
                         // End Color (aligned center with bar)
@@ -126,11 +136,11 @@ struct VisualCustomizationSection: View {
                         }) {
                             Circle()
                                 .fill(questionnaire.endColor)
-                                .frame(width: 50, height: 50)
+                                .frame(width: Tokens.Size.iconMedium, height: Tokens.Size.iconMedium)
                                 .overlay(
                                     Circle()
-                                        .stroke(Color.white, lineWidth: 3)
-                                        .shadow(radius: 2)
+                                        .stroke(Color.white, lineWidth: Tokens.Border.thick)
+                                        .shadow(radius: Tokens.Shadow.subtle.radius)
                                 )
                         }
                         .accessibilityLabel("End color")
@@ -140,7 +150,7 @@ struct VisualCustomizationSection: View {
                     .standardGlassCard()
 
                     // Controls: Swap and Randomize
-                    HStack(spacing: 12) {
+                    HStack(spacing: Tokens.Spacing.m) {
                         Button {
                             swapColors()
                         } label: {
@@ -187,11 +197,13 @@ struct VisualCustomizationSection: View {
     @State var questionnaire = Questionnaire()
     @State var showingColorPicker = false
     @State var selectedColorType: CreateQuestionnaireView.ColorType = .start
+    @FocusState var focusedField: CreateQuestionnaireView.FocusedField?
     
     VisualCustomizationSection(
         questionnaire: $questionnaire,
         showingColorPicker: $showingColorPicker,
-        selectedColorType: $selectedColorType
+        selectedColorType: $selectedColorType,
+        focusedField: $focusedField
     )
     .padding()
 }

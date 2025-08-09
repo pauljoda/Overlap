@@ -2,7 +2,7 @@
 //  QuestionEditorCarousel.swift
 //  Overlap
 //
-//  A card-based, swipeable question editor with a trailing “add” card.
+//  A card-based, swipeable question editor with a trailing "add" card.
 //
 
 import SwiftUI
@@ -10,6 +10,7 @@ import SwiftUI
 struct QuestionEditorCarousel: View {
     @Binding var questions: [String]
     @FocusState.Binding var focusedField: CreateQuestionnaireView.FocusedField?
+    @Binding var selectedIndex: Int
 
     @State private var selection: Int = 0
     @State private var didAutoAddFromTrailingCard = false // legacy; no longer used
@@ -42,7 +43,9 @@ struct QuestionEditorCarousel: View {
                         canRemove: questions.count > 1,
                         onRemove: { removeQuestion(at: index) },
                         isNew: newlyAddedIndex == index,
-                        onNewAnimationComplete: { newlyAddedIndex = nil }
+                        onNewAnimationComplete: { newlyAddedIndex = nil },
+                        focusedField: $focusedField,
+                        questionIndex: index
                     )
                     .tag(index)
                     .padding(.horizontal, Tokens.Spacing.l)
@@ -63,13 +66,20 @@ struct QuestionEditorCarousel: View {
                 let maxIndex = max(questions.count - 1, 0)
                 if questions.isEmpty {
                     selection = 0
+                    selectedIndex = 0
                     cancelPendingAdd()
                     return
                 }
                 if newValue > questions.count { // can happen after deletions
                     selection = maxIndex
+                    selectedIndex = maxIndex
                     cancelPendingAdd()
                     return
+                }
+
+                // Update the parent's selected index
+                if newValue < questions.count {
+                    selectedIndex = newValue
                 }
 
                 // If user swiped to the trailing add card, insert and snap to the new card
@@ -77,6 +87,12 @@ struct QuestionEditorCarousel: View {
                     beginPendingAdd()
                 } else {
                     cancelPendingAdd()
+                }
+            }
+            .onChange(of: selectedIndex) { _, newValue in
+                // Sync external selection changes to local selection
+                if newValue != selection && newValue < questions.count {
+                    selection = newValue
                 }
             }
 
@@ -98,20 +114,23 @@ struct QuestionEditorCarousel: View {
 
     private func addQuestion() {
         questions.append("")
-        selection = max(questions.count - 1, 0)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            focusedField = .question(selection)
-        }
+        let newIndex = max(questions.count - 1, 0)
+        selection = newIndex
+        selectedIndex = newIndex
+        // Set focus immediately without delay to prevent keyboard dismissal
+        focusedField = .question(newIndex)
     }
 
     private func addQuestionFromSelection() {
         questions.append("")
         let newIndex = max(questions.count - 1, 0)
+        // Set focus immediately to maintain keyboard
+        focusedField = .question(newIndex)
         DispatchQueue.main.async {
             withAnimation {
                 selection = newIndex
+                selectedIndex = newIndex
             }
-            focusedField = .question(newIndex)
             addFeedbackKey &+= 1
             newlyAddedIndex = newIndex
         }
@@ -148,101 +167,9 @@ struct QuestionEditorCarousel: View {
         if newSelection > index { newSelection -= 1 }
         newSelection = min(newSelection, max(questions.count - 1, 0))
         selection = newSelection
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            focusedField = .question(selection)
-        }
-    }
-}
-
-private struct QuestionEditCard: View {
-    @Binding var question: String
-    let number: Int
-    let canRemove: Bool
-    let onRemove: () -> Void
-    let isNew: Bool
-    let onNewAnimationComplete: () -> Void
-    @FocusState private var isFocused: Bool
-    @State private var appearScale: CGFloat = 1.0
-    @State private var appearOpacity: Double = 1.0
-
-    var body: some View {
-        ZStack {
-            // Outer subtle ring similar to the answering card
-            RoundedRectangle(cornerRadius: 44)
-                .fill(
-                    RadialGradient(
-                        gradient: Gradient(colors: [Color(.separator).opacity(0.1), .clear]),
-                        center: .center, startRadius: 0, endRadius: 220
-                    )
-                )
-                .opacity(0.3)
-                .scaleEffect(1.03)
-
-            // Main card with concentric borders
-            RoundedRectangle(cornerRadius: 44)
-                .fill(Color(.systemBackground))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 44 - 8/2)
-                        .stroke(Color(.separator).opacity(0.5), lineWidth: 0.5)
-                        .padding(8/2)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 44)
-                        .stroke(Color(.separator), lineWidth: 1)
-                )
-                .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 6)
-                .opacity(0.85)
-
-            VStack(alignment: .leading, spacing: Tokens.Spacing.m) {
-                HStack {
-                    Text("Question \(number)")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.secondary)
-                    Spacer()
-                    if canRemove {
-                        Button(action: onRemove) {
-                            Image(systemName: "trash")
-                                .foregroundColor(.red)
-                                .font(.title3)
-                        }
-                        .accessibilityLabel("Remove question \(number)")
-                    }
-                }
-
-                Spacer()
-
-                // Centered large editor to resemble answering card text
-                TextField("Enter your question", text: $question, axis: .vertical)
-                    .textFieldStyle(.plain)
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2...4)
-                    .textInputAutocapitalization(.sentences)
-                    .submitLabel(.done)
-                    .focused($isFocused)
-                    .padding(.horizontal, Tokens.Spacing.xl)
-
-                Spacer()
-            }
-            .padding(24)
-            .scaleEffect(appearScale)
-            .opacity(appearOpacity)
-            .onAppear {
-                guard isNew else { return }
-                appearScale = 0.95
-                appearOpacity = 0
-                withAnimation(.spring(response: Tokens.Spring.response, dampingFraction: Tokens.Spring.damping)) {
-                    appearScale = 1
-                    appearOpacity = 1
-                }
-                // Clear new state after the animation completes
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
-                    onNewAnimationComplete()
-                }
-            }
-        }
+        selectedIndex = newSelection
+        // Set focus immediately to maintain keyboard
+        focusedField = .question(newSelection)
     }
 }
 
@@ -286,14 +213,19 @@ private struct AddMoreQuestionCard: View {
 #Preview("Carousel – 3 Questions") {
     struct Wrapper: View {
         @State var questions = [
-            "What’s your ideal vacation?",
+            "What's your ideal vacation?",
             "Do you prefer mornings or nights?",
             "Dogs, cats, or both?"
         ]
         @FocusState private var focusedField: CreateQuestionnaireView.FocusedField?
+        @State private var selectedIndex = 0
         var body: some View {
             VStack {
-                QuestionEditorCarousel(questions: $questions, focusedField: $focusedField)
+                QuestionEditorCarousel(
+                    questions: $questions, 
+                    focusedField: $focusedField,
+                    selectedIndex: $selectedIndex
+                )
             }
             .padding()
             .background(BlobBackgroundView())
@@ -301,4 +233,3 @@ private struct AddMoreQuestionCard: View {
     }
     return Wrapper()
 }
-

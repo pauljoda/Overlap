@@ -16,15 +16,15 @@ struct QuestionnaireIcon: View {
         
         var dimension: CGFloat {
             switch self {
-            case .small: return 50
-            case .medium: return 80
-            case .large: return 120
+            case .small: return Tokens.Size.iconMedium
+            case .medium: return Tokens.Size.iconXL
+            case .large: return Tokens.Size.iconHuge
             }
         }
         
         var cornerRadius: CGFloat {
             switch self {
-            case .small: return 8
+            case .small: return Tokens.Radius.s
             case .medium, .large: return dimension / 2  // Circle
             }
         }
@@ -33,7 +33,7 @@ struct QuestionnaireIcon: View {
             switch self {
             case .small: return .title3
             case .medium: return .largeTitle
-            case .large: return .system(size: 48)
+            case .large: return .system(size: Tokens.FontSize.extraLarge)
             }
         }
     }
@@ -70,7 +70,7 @@ struct QuestionnaireIcon: View {
 }
 
 #Preview {
-    VStack(spacing: 20) {
+    VStack(spacing: Tokens.Spacing.xl) {
         QuestionnaireIcon(questionnaire: SampleData.sampleQuestionnaire, size: .small)
         QuestionnaireIcon(questionnaire: SampleData.sampleQuestionnaire, size: .medium)
         QuestionnaireIcon(questionnaire: SampleData.sampleQuestionnaire, size: .large)
