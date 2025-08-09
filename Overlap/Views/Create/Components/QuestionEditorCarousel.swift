@@ -13,103 +13,185 @@ struct QuestionEditorCarousel: View {
     @Binding var selectedIndex: Int
 
     @State private var selection: Int = 0
-    @State private var didAutoAddFromTrailingCard = false // legacy; no longer used
-    @State private var pendingAddProgress: Double = 0
-    @State private var isPendingAdd: Bool = false
-    @State private var pendingWorkItem: DispatchWorkItem?
     @State private var newlyAddedIndex: Int? = nil
     @State private var addFeedbackKey: Int = 0
+    
+    // Pull-to-add gesture states
+    @State private var dragOffset: CGFloat = 0
+    @State private var isDragging: Bool = false
+    @State private var pullProgress: Double = 0
+    @State private var canTriggerAdd: Bool = false
+    
+    private let pullThreshold: CGFloat = 100
 
     var body: some View {
         VStack(alignment: .leading, spacing: Tokens.Spacing.m) {
-            HStack {
-                Spacer()
-                Button(action: addQuestion) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 18, weight: .semibold))
-                        .frame(width: 36, height: 36)
-                        .contentShape(RoundedRectangle(cornerRadius: 18))
-                }
-                .buttonStyle(.plain)
-                .actionGlassButton(tint: .blue)
-                .accessibilityLabel("Add Question")
-            }
-
-            TabView(selection: $selection) {
-                ForEach(questions.indices, id: \.self) { index in
-                    QuestionEditCard(
-                        question: $questions[index],
-                        number: index + 1,
-                        canRemove: questions.count > 1,
-                        onRemove: { removeQuestion(at: index) },
-                        isNew: newlyAddedIndex == index,
-                        onNewAnimationComplete: { newlyAddedIndex = nil },
-                        focusedField: $focusedField,
-                        questionIndex: index
-                    )
-                    .tag(index)
-                    .padding(.horizontal, Tokens.Spacing.l)
-                    .opacity(0.8)
-                }
-
-                // Trailing add card – swiping here auto-adds a new question
-                AddMoreQuestionCard(progress: pendingAddProgress)
-                    .tag(questions.count)
-                    .padding(.horizontal, Tokens.Spacing.l)
-                    // Add is now handled by selection change below to ensure snapping back
-            }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-            .frame(height: 460)
-            .sensoryFeedback(.success, trigger: addFeedbackKey)
-            .onChange(of: selection) { _, newValue in
-                // Clamp selection to valid range first to avoid SwiftUI assertion
-                let maxIndex = max(questions.count - 1, 0)
-                if questions.isEmpty {
-                    selection = 0
-                    selectedIndex = 0
-                    cancelPendingAdd()
-                    return
-                }
-                if newValue > questions.count { // can happen after deletions
-                    selection = maxIndex
-                    selectedIndex = maxIndex
-                    cancelPendingAdd()
-                    return
-                }
-
-                // Update the parent's selected index
-                if newValue < questions.count {
-                    selectedIndex = newValue
-                }
-
-                // If user swiped to the trailing add card, insert and snap to the new card
-                if newValue == questions.count {
-                    beginPendingAdd()
-                } else {
-                    cancelPendingAdd()
-                }
-            }
-            .onChange(of: selectedIndex) { _, newValue in
-                // Sync external selection changes to local selection
-                if newValue != selection && newValue < questions.count {
-                    selection = newValue
-                }
-            }
-
-            // Page indicators including a trailing add indicator
-            HStack(spacing: 6) {
-                ForEach(0..<questions.count, id: \.self) { idx in
-                    Circle()
-                        .fill(idx == min(selection, questions.count - 1) ? Color.primary : Color.secondary.opacity(0.4))
-                        .frame(width: 6, height: 6)
-                }
-                Image(systemName: "plus")
-                    .font(.system(size: 8))
-                    .foregroundColor(selection == questions.count ? .blue : .secondary.opacity(0.4))
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.top, Tokens.Spacing.s)
+            addQuestionButton
+            carouselWithGesture
+            pageIndicators
         }
+    }
+    
+    private var addQuestionButton: some View {
+        HStack {
+            Spacer()
+            Button(action: addQuestion) {
+                Image(systemName: "plus")
+                    .font(.system(size: 18, weight: .semibold))
+                    .frame(width: 36, height: 36)
+                    .contentShape(RoundedRectangle(cornerRadius: 18))
+            }
+            .buttonStyle(.plain)
+            .actionGlassButton(tint: .blue)
+            .accessibilityLabel("Add Question")
+        }
+    }
+    
+    private var carouselWithGesture: some View {
+        ZStack {
+            questionCarousel
+            pullToAddIndicator
+        }
+    }
+    
+    private var questionCarousel: some View {
+        TabView(selection: $selection) {
+            ForEach(questions.indices, id: \.self) { index in
+                QuestionEditCard(
+                    question: $questions[index],
+                    number: index + 1,
+                    canRemove: questions.count > 1,
+                    onRemove: { removeQuestion(at: index) },
+                    isNew: newlyAddedIndex == index,
+                    onNewAnimationComplete: { newlyAddedIndex = nil },
+                    focusedField: $focusedField,
+                    questionIndex: index
+                )
+                .tag(index)
+                .padding(.horizontal, Tokens.Spacing.l)
+                .opacity(0.8)
+            }
+        }
+        .tabViewStyle(.page(indexDisplayMode: .never))
+        .frame(height: 460)
+        .sensoryFeedback(.success, trigger: addFeedbackKey)
+        .onChange(of: selection) { _, newValue in
+            if newValue < questions.count {
+                selectedIndex = newValue
+            }
+        }
+        .onChange(of: selectedIndex) { _, newValue in
+            if newValue != selection && newValue < questions.count {
+                selection = newValue
+            }
+        }
+        .offset(x: dragOffset)
+        .simultaneousGesture(pullToAddGesture)
+    }
+    
+    private var pullToAddGesture: some Gesture {
+        DragGesture(minimumDistance: 10)
+            .onChanged(handleDragChanged)
+            .onEnded(handleDragEnded)
+    }
+    
+    @ViewBuilder
+    private var pullToAddIndicator: some View {
+        if isDragging && pullProgress > 0 {
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+                    PullToAddIndicator(progress: pullProgress, canTrigger: canTriggerAdd)
+                        .offset(x: -40) // Position it more visibly
+                        .zIndex(1) // Ensure it's above other content
+                }
+                Spacer()
+            }
+            .allowsHitTesting(false) // Don't interfere with gestures
+            .transition(.asymmetric(
+                insertion: .scale.combined(with: .opacity),
+                removal: .scale.combined(with: .opacity)
+            ))
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: pullProgress)
+        }
+    }
+    
+    private var pageIndicators: some View {
+        HStack(spacing: 6) {
+            ForEach(0..<questions.count, id: \.self) { idx in
+                Circle()
+                    .fill(idx == min(selection, questions.count - 1) ? Color.primary : Color.secondary.opacity(0.4))
+                    .frame(width: 6, height: 6)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, Tokens.Spacing.s)
+    }
+
+    
+    private func handleDragChanged(_ value: DragGesture.Value) {
+        // Only respond to horizontal drag when on the last card
+        guard selection == questions.count - 1 else { 
+            // Reset state if not on last card
+            if isDragging {
+                withAnimation(.easeOut(duration: 0.2)) {
+                    isDragging = false
+                    pullProgress = 0
+                    canTriggerAdd = false
+                    dragOffset = 0
+                }
+            }
+            return 
+        }
+        
+        let translation = value.translation.width
+        
+        // Only allow leftward drag (negative translation)
+        if translation < 0 {
+            isDragging = true
+            let dragDistance = abs(translation)
+            dragOffset = max(-pullThreshold, translation)
+            
+            // Calculate progress based on drag distance
+            pullProgress = min(1.0, dragDistance / pullThreshold)
+            
+            // Determine if we've dragged far enough to trigger add
+            let wasCanTrigger = canTriggerAdd
+            canTriggerAdd = dragDistance >= pullThreshold
+            
+            // Provide haptic feedback when threshold is reached for the first time
+            if canTriggerAdd && !wasCanTrigger {
+                let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                impactFeedback.impactOccurred()
+            }
+        } else {
+            // Reset state if dragging right or not dragging left enough
+            withAnimation(.easeOut(duration: 0.2)) {
+                isDragging = false
+                pullProgress = 0
+                canTriggerAdd = false
+                dragOffset = 0
+            }
+        }
+    }
+    
+    private func handleDragEnded(_ value: DragGesture.Value) {
+        guard isDragging else { return }
+        
+        if canTriggerAdd {
+            // Add new question
+            addQuestionWithAnimation()
+        }
+        
+        // Reset state
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+            dragOffset = 0
+            pullProgress = 0
+        }
+        
+        isDragging = false
+        canTriggerAdd = false
     }
 
     private func addQuestion() {
@@ -121,43 +203,19 @@ struct QuestionEditorCarousel: View {
         focusedField = .question(newIndex)
     }
 
-    private func addQuestionFromSelection() {
+    private func addQuestionWithAnimation() {
         questions.append("")
         let newIndex = max(questions.count - 1, 0)
         // Set focus immediately to maintain keyboard
         focusedField = .question(newIndex)
-        DispatchQueue.main.async {
-            withAnimation {
-                selection = newIndex
-                selectedIndex = newIndex
-            }
-            addFeedbackKey &+= 1
-            newlyAddedIndex = newIndex
+        
+        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+            selection = newIndex
+            selectedIndex = newIndex
         }
-    }
-
-    private func beginPendingAdd() {
-        cancelPendingAdd()
-        isPendingAdd = true
-        pendingAddProgress = 0
-        let work = DispatchWorkItem {
-            addQuestionFromSelection()
-            withAnimation(.easeOut(duration: Tokens.Duration.fast)) { pendingAddProgress = 0 }
-            isPendingAdd = false
-        }
-        pendingWorkItem = work
-        // Animate progress like pull-to-refresh
-        withAnimation(.linear(duration: 0.35)) { pendingAddProgress = 1 }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35, execute: work)
-    }
-
-    private func cancelPendingAdd() {
-        if isPendingAdd {
-            pendingWorkItem?.cancel()
-            pendingWorkItem = nil
-            isPendingAdd = false
-            withAnimation(.easeOut(duration: Tokens.Duration.fast)) { pendingAddProgress = 0 }
-        }
+        
+        addFeedbackKey &+= 1
+        newlyAddedIndex = newIndex
     }
 
     private func removeQuestion(at index: Int) {
@@ -173,40 +231,18 @@ struct QuestionEditorCarousel: View {
     }
 }
 
-private struct AddMoreQuestionCard: View {
+private struct PullToAddIndicator: View {
     let progress: Double
-
+    let canTrigger: Bool
+    
     var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: Tokens.Radius.xl)
-                .fill(Color(.systemBackground))
-                .overlay(
-                    RoundedRectangle(cornerRadius: Tokens.Radius.xl)
-                        .stroke(Color(.separator), style: StrokeStyle(lineWidth: 1, dash: [6]))
-                )
-                .largeGlassCard()
-                .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 3)
-
-            VStack(spacing: Tokens.Spacing.m) {
-                ZStack {
-                    Circle()
-                        .stroke(Color.green.opacity(0.2), lineWidth: 6)
-                        .frame(width: 40, height: 40)
-                    Circle()
-                        .trim(from: 0, to: progress)
-                        .stroke(Color.green, style: StrokeStyle(lineWidth: 6, lineCap: .round))
-                        .rotationEffect(.degrees(-90))
-                        .frame(width: 40, height: 40)
-                        .animation(.linear(duration: 0.01), value: progress)
-                    Image(systemName: "plus")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundColor(.green)
-                }
-                Text("Swipe to add a question")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-            }
-        }
+        // Simple green plus icon
+        Image(systemName: "plus")
+            .font(.system(size: 32, weight: .bold))
+            .foregroundColor(.green)
+            .scaleEffect(0.8 + (progress * 0.6)) // Scale from 0.8 to 1.4
+            .opacity(0.4 + (progress * 0.6)) // Fade in as progress increases
+            .animation(.spring(response: 0.4, dampingFraction: 0.6), value: progress)
     }
 }
 
