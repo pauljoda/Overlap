@@ -40,7 +40,7 @@ struct EmptyResultsState: View {
             title: title,
             message: subtitle,
             iconColor: .secondary,
-            iconSize: 48
+            iconSize: Tokens.Size.iconMedium
         )
         .opacity(isAnimated ? 1 : 0)
         .offset(y: isAnimated ? 0 : 20)
