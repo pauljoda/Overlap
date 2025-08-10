@@ -17,8 +17,22 @@ struct QuestionEditCard: View {
     let onNewAnimationComplete: () -> Void
     @FocusState.Binding var focusedField: CreateQuestionnaireView.FocusedField?
     let questionIndex: Int
+    @State private var slideOffset: CGFloat = 0
     @State private var appearScale: CGFloat = 1.0
     @State private var appearOpacity: Double = 1.0
+    
+    // Computed initial state based on isNew
+    private var initialSlideOffset: CGFloat {
+        isNew ? Tokens.Size.cardMaxHeight : 0  // Start below if new
+    }
+    
+    private var initialScale: CGFloat {
+        isNew ? Tokens.Scale.pressed : 1.0  // Start smaller if new
+    }
+    
+    private var initialOpacity: Double {
+        isNew ? 0.0 : 1.0  // Start invisible if new
+    }
 
     var body: some View {
         ZStack {
@@ -27,7 +41,7 @@ struct QuestionEditCard: View {
                 .fill(
                     RadialGradient(
                         gradient: Gradient(colors: [Color(.separator).opacity(Tokens.Opacity.light), .clear]),
-                        center: .center, startRadius: 0, endRadius: 220
+                        center: .center, startRadius: 0, endRadius: Tokens.Size.iconHuge * 1.83
                     )
                 )
                 .opacity(Tokens.Opacity.medium)
@@ -83,20 +97,37 @@ struct QuestionEditCard: View {
                 Spacer()
             }
             .padding(Tokens.Spacing.xxl)
-            .scaleEffect(appearScale)
-            .opacity(appearOpacity)
-            .onAppear {
-                guard isNew else { return }
-                appearScale = 0.95
-                appearOpacity = 0
-                withAnimation(.spring(response: Tokens.Spring.response, dampingFraction: Tokens.Spring.damping)) {
-                    appearScale = 1
-                    appearOpacity = 1
+        }
+        .scaleEffect(appearScale)
+        .opacity(appearOpacity)
+        .offset(y: slideOffset)
+        .onDisappear {
+            // If this card was focused and is disappearing (e.g., deleted), clear focus safely
+            if case .question(let idx) = focusedField, idx == questionIndex {
+                focusedField = nil
+            }
+        }
+        .onAppear {
+            // Set initial state immediately based on isNew
+            slideOffset = initialSlideOffset
+            appearScale = initialScale
+            appearOpacity = initialOpacity
+            
+            guard isNew else { return }
+            
+            // Slight delay to ensure view is rendered, then animate
+            DispatchQueue.main.asyncAfter(deadline: .now() + Tokens.Duration.fast) {
+                // Dramatic slide-up animation with spring physics
+                withAnimation(.spring(response: Tokens.Spring.response, dampingFraction: 0.65)) {
+                    slideOffset = 0          // Slide to final position
+                    appearScale = 1.0        // Scale to full size
+                    appearOpacity = 1.0      // Fade to visible
                 }
-                // Clear new state after the animation completes
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
-                    onNewAnimationComplete()
-                }
+            }
+            
+            // Clear new state after the animation completes
+            DispatchQueue.main.asyncAfter(deadline: .now() + Tokens.Duration.slow + Tokens.Duration.medium) {
+                onNewAnimationComplete()
             }
         }
     }

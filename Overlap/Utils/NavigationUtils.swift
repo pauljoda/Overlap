@@ -37,10 +37,25 @@ func navigate(to destination: NavigationDestination, using navigationPath: Bindi
     }
 }
 
-func navigate(to questionnaire: Questionnaire, using navigationPath: Binding<NavigationPath>) {
+func navigate(
+    to questionnaire: Questionnaire,
+    using navigationPath: Binding<NavigationPath>,
+    replaceCurrent: Bool = false
+) {
+    // When replacing, remove the current top entry so the push effectively replaces it
+    if replaceCurrent, navigationPath.wrappedValue.count > 0 {
+        navigationPath.wrappedValue.removeLast()
+    }
     navigationPath.wrappedValue.append(questionnaire)
 }
 
-func navigate(to overlap: Overlap, using navigationPath: Binding<NavigationPath>) {
+func navigate(
+    to overlap: Overlap,
+    using navigationPath: Binding<NavigationPath>,
+    replaceCurrent: Bool = false
+) {
+    if replaceCurrent, navigationPath.wrappedValue.count > 0 {
+        navigationPath.wrappedValue.removeLast()
+    }
     navigationPath.wrappedValue.append(overlap)
 }

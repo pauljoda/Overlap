@@ -9,168 +9,107 @@ import SwiftUI
 
 struct VisualCustomizationSection: View {
     @Binding var questionnaire: Questionnaire
-    @Binding var showingColorPicker: Bool
-    @Binding var selectedColorType: CreateQuestionnaireView.ColorType
-    @FocusState.Binding var focusedField: CreateQuestionnaireView.FocusedField?
-    @State private var isEmojiFieldFocused = false
+    @FocusState private var isEmojiFieldFocused: Bool
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: Tokens.Spacing.l) {
             SectionHeader(title: "Visual Style", icon: "paintbrush.fill")
             
-            VStack(spacing: 16) {
-                // Emoji Selection
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Emoji")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.primary)
+            VStack(spacing: Tokens.Spacing.l) {
+                // Color Pickers flanking the Icon
+                HStack(spacing: Tokens.Spacing.xl) {
+                    // Start Color Picker (Left)
+                    VStack(spacing: Tokens.Spacing.xs) {
+                        Text("Start")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        ColorPicker("Start", selection: $questionnaire.startColor, supportsOpacity: false)
+                            .labelsHidden()
+                            .scaleEffect(Tokens.Scale.colorPicker)
+                    }
                     
-                    Button(action: {
-                        // Toggle focus - if focused, unfocus to dismiss keyboard
-                        if focusedField == .emoji {
-                            focusedField = nil
-                            isEmojiFieldFocused = false
-                        } else {
-                            focusedField = .emoji
-                            isEmojiFieldFocused = true
-                        }
-                    }) {
-                        HStack {
-                            ZStack {
-                                Circle()
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [questionnaire.startColor, questionnaire.endColor],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        )
+                    Spacer()
+                    
+                    // Interactive Icon (Center)
+                    Button(action: { isEmojiFieldFocused.toggle() }) {
+                        ZStack {
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [questionnaire.startColor, questionnaire.endColor],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
                                     )
-                                    .frame(width: Tokens.Size.iconMedium, height: Tokens.Size.iconMedium)
-                                
-                                Text(questionnaire.iconEmoji)
-                                    .font(.title)
-                                    .foregroundColor(.white)
-                            }
+                                )
+                                .frame(width: Tokens.Size.iconXL, height: Tokens.Size.iconXL)
                             
-                            VStack(alignment: .leading, spacing: Tokens.Spacing.xs) {
-                                Text(isEmojiFieldFocused ? "Tap to Close" : "Tap to Change")
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(.primary)
-                                
-                                Text(isEmojiFieldFocused ? "Keyboard will close" : "Emoji keyboard opens automatically")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            
-                            Spacer()
-                            
-                            // Emoji Input Field
-                            EmojiTextField(
-                                text: $questionnaire.iconEmoji, 
-                                placeholder: "📝",
-                                isFocused: $isEmojiFieldFocused
-                            )
-                            .frame(width: Tokens.Size.iconLarge, height: Tokens.Size.iconLarge)
-                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Tokens.Radius.m))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: Tokens.Radius.m)
-                                    .stroke(
-                                        isEmojiFieldFocused ? Color.blue : Color.blue.opacity(0.3), 
-                                        lineWidth: isEmojiFieldFocused ? Tokens.Border.thick : Tokens.Border.standard
-                                    )
-                            )
-                            .allowsHitTesting(false) // Prevent double-tap issues
+                            Text(questionnaire.iconEmoji)
+                                .font(.largeTitle)
+                                .foregroundColor(.white)
                         }
+                        .overlay(
+                            Circle()
+                                .stroke(isEmojiFieldFocused ? Color.blue : Color.clear, lineWidth: Tokens.Border.thick)
+                        )
                     }
-                    .buttonStyle(PlainButtonStyle())
-                    .onChange(of: focusedField) { oldValue, newValue in
-                        isEmojiFieldFocused = newValue == .emoji
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Tap to change emoji")
+                    
+                    Spacer()
+                    
+                    // End Color Picker (Right)
+                    VStack(spacing: Tokens.Spacing.xs) {
+                        Text("End")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        ColorPicker("End", selection: $questionnaire.endColor, supportsOpacity: false)
+                            .labelsHidden()
+                            .scaleEffect(Tokens.Scale.colorPicker)
                     }
-                    .padding()
-                    .standardGlassCard()
                 }
+                .padding(.horizontal, Tokens.Spacing.xxl)
                 
-                // Color Selection
-                VStack(alignment: .leading, spacing: Tokens.Spacing.m) {
-                    Text("Colors")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.primary)
+                // Helper text
+                Text("Tap the icon to change emoji • Only emojis accepted")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                
+                // Hidden emoji input that gets focus (SwiftUI-native)
+                EmojiTextField(
+                    text: $questionnaire.iconEmoji, 
+                    placeholder: "📝",
+                    isFocused: $isEmojiFieldFocused
+                )
+                .frame(width: 0, height: 0)
+                .opacity(0)
+                
+                // Control Buttons
+                HStack(spacing: Tokens.Spacing.m) {
+                    Button {
+                        swapColors()
+                    } label: {
+                        Label("Swap", systemImage: "arrow.left.arrow.right")
+                            .font(.footnote)
+                            .fontWeight(.semibold)
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button {
+                        randomizeColors()
+                    } label: {
+                        Label("Randomize", systemImage: "sparkles")
+                            .font(.footnote)
+                            .fontWeight(.semibold)
+                    }
+                    .buttonStyle(.bordered)
                     
-                    HStack(spacing: Tokens.Spacing.l) {
-                        // Start Color (aligned center with bar)
-                        Button(action: {
-                            selectedColorType = .start
-                            showingColorPicker = true
-                        }) {
-                            Circle()
-                                .fill(questionnaire.startColor)
-                                .frame(width: Tokens.Size.iconMedium, height: Tokens.Size.iconMedium)
-                                .overlay(
-                                    Circle()
-                                        .stroke(Color.white, lineWidth: Tokens.Border.thick)
-                                        .shadow(radius: Tokens.Shadow.subtle.radius)
-                                )
-                        }
-                        .accessibilityLabel("Start color")
-                        .accessibilityHint("Tap to choose the start color of the gradient")
-
-                        // Gradient Preview (flexes in the middle)
-                        RoundedRectangle(cornerRadius: 25)
-                            .fill(
-                                LinearGradient(
-                                    colors: [questionnaire.startColor, questionnaire.endColor],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .frame(height: Tokens.Size.iconMedium)
-                            .frame(maxWidth: .infinity)
-
-                        // End Color (aligned center with bar)
-                        Button(action: {
-                            selectedColorType = .end
-                            showingColorPicker = true
-                        }) {
-                            Circle()
-                                .fill(questionnaire.endColor)
-                                .frame(width: Tokens.Size.iconMedium, height: Tokens.Size.iconMedium)
-                                .overlay(
-                                    Circle()
-                                        .stroke(Color.white, lineWidth: Tokens.Border.thick)
-                                        .shadow(radius: Tokens.Shadow.subtle.radius)
-                                )
-                        }
-                        .accessibilityLabel("End color")
-                        .accessibilityHint("Tap to choose the end color of the gradient")
-                    }
-                    .padding()
-                    .standardGlassCard()
-
-                    // Controls: Swap and Randomize
-                    HStack(spacing: Tokens.Spacing.m) {
-                        Button {
-                            swapColors()
-                        } label: {
-                            Label("Swap", systemImage: "arrow.left.arrow.right")
-                                .font(.footnote)
-                                .fontWeight(.semibold)
-                        }
-                        .buttonStyle(.bordered)
-
-                        Button {
-                            randomizeColors()
-                        } label: {
-                            Label("Randomize", systemImage: "sparkles")
-                                .font(.footnote)
-                                .fontWeight(.semibold)
-                        }
-                        .buttonStyle(.bordered)
-                    }
+                    Spacer()
                 }
             }
+            .padding()
+            .standardGlassCard()
         }
     }
 
@@ -183,7 +122,7 @@ struct VisualCustomizationSection: View {
     private func randomizeColors() {
         // Generate harmonious gradient using HSB
         let hue = Double.random(in: 0...1)
-        let offset = Double.random(in: 0.12...0.2) // pleasant separation
+        let offset = Double.random(in: 0.12...0.2) // pleasant separation using HSB color theory
         let startHue = hue
         let endHue = fmod(hue + offset, 1.0)
         let start = Color(hue: startHue, saturation: 0.7, brightness: 0.95)
@@ -195,15 +134,9 @@ struct VisualCustomizationSection: View {
 
 #Preview {
     @State var questionnaire = Questionnaire()
-    @State var showingColorPicker = false
-    @State var selectedColorType: CreateQuestionnaireView.ColorType = .start
-    @FocusState var focusedField: CreateQuestionnaireView.FocusedField?
     
     VisualCustomizationSection(
-        questionnaire: $questionnaire,
-        showingColorPicker: $showingColorPicker,
-        selectedColorType: $selectedColorType,
-        focusedField: $focusedField
+        questionnaire: $questionnaire
     )
     .padding()
 }
