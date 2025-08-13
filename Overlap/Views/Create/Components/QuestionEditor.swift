@@ -26,11 +26,9 @@ struct QuestionEditor: View {
     }
     
     // Carousel-specific state
-    @State private var selection: Int = 0
+    @State private var selection: Int? = 0
     @State private var newlyAddedIndex: Int? = nil
     @State private var addFeedbackKey: Int = 0
-    
-    // Pull-to-add now handled by TabView selection changes
     
     var body: some View {
         VStack(alignment: .leading, spacing: Tokens.Spacing.l) {
@@ -84,9 +82,11 @@ struct QuestionEditor: View {
             Group {
                 switch mode {
                 case .carousel:
-                    carouselEditor
-                        .frame(height: Tokens.Size.cardMaxHeight + Tokens.Spacing.quadXL)  // Height constraint only for carousel
-                    pageIndicators
+                    VStack(spacing: Tokens.Spacing.xs) {
+                        carouselEditor
+                            .frame(height: Tokens.Size.cardMaxHeight + Tokens.Spacing.quadXL)  // Height constraint only for carousel
+                        pageIndicators
+                    }
                 case .list:
                     listEditor
                 }
@@ -109,8 +109,8 @@ struct QuestionEditor: View {
     // MARK: - Carousel Mode
     
     private var carouselEditor: some View {
-        ZStack {
-            TabView(selection: $selection) {
+        ScrollView(.horizontal) {
+            HStack(spacing: 0) {
                 ForEach(questions.indices, id: \.self) { index in
                     // Create a safe binding that checks bounds
                     let safeBinding = Binding<String>(
@@ -136,56 +136,58 @@ struct QuestionEditor: View {
                         focusedField: $focusedField,
                         questionIndex: index
                     )
-                    .frame(height: Tokens.Size.cardMaxHeight - Tokens.Spacing.quadXL)  // Card height with some padding
-                    .tag(index)
+                    .frame(height: Tokens.Size.cardMaxHeight)
+                    .id(index) // Important: set id for scroll position tracking
                     .padding(.horizontal, Tokens.Spacing.l)
                     .opacity(Tokens.Opacity.prominent)
+                    .containerRelativeFrame(.horizontal, count: 1, spacing: 0) // One card per screen width
                 }
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-            .sensoryFeedback(.success, trigger: addFeedbackKey)
-            .onChange(of: selection) { _, newValue in
-                updateSelectedIndex(newValue)
-                // Clear focus when moving to a different card to prevent pull-to-add issues
-                focusedField = nil
-                
-                // Check if user is trying to go beyond the last card
-                if newValue >= questions.count {
-                                    // User tried to go beyond the last card - add a new question
-                DispatchQueue.main.asyncAfter(deadline: .now() + Tokens.Duration.fast) {
-                    addQuestion()
-                    // Reset selection to the new last card
-                    selection = questions.count - 1
-                }
-                }
+            .scrollTargetLayout()
+        }
+        .scrollTargetBehavior(.viewAligned)
+        .scrollPosition(id: $selection)
+        .scrollIndicators(.never)
+        .sensoryFeedback(.success, trigger: addFeedbackKey)
+        .onChange(of: selection) { _, newValue in
+            guard let newValue = newValue else { return }
+            updateSelectedIndex(newValue)
+        }
+        .onChange(of: selectedIndex) { _, newValue in
+            updateSelection(newValue)
+        }
+        .onChange(of: questions.count) { oldCount, newCount in
+            // If questions were removed and our selection is now invalid, fix it
+            if let currentSelection = selection, currentSelection >= newCount && newCount > 0 {
+                selection = newCount - 1
+                selectedIndex = newCount - 1
             }
-            .onChange(of: selectedIndex) { _, newValue in
-                updateSelection(newValue)
+        }
+        .onAppear {
+            // Set initial selection when the view appears
+            if questions.count > 0 && (selection ?? 0) >= questions.count {
+                selection = selectedIndex
             }
-            .onChange(of: questions.count) { oldCount, newCount in
-                // If questions were removed and our selection is now invalid, fix it
-                if selection >= newCount && newCount > 0 {
-                    selection = newCount - 1
-                    selectedIndex = newCount - 1
-                }
-            }
-            // No more drag offset needed
         }
     }
     
     private var pageIndicators: some View {
         HStack(spacing: Tokens.Spacing.xs) {
             ForEach(0..<questions.count, id: \.self) { idx in
-                Circle()
-                    .fill(idx == min(selection, questions.count - 1) ? Color.primary : Color.secondary.opacity(0.4))
-                    .frame(width: Tokens.Spacing.xs, height: Tokens.Spacing.xs)
+                Button {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        selection = idx
+                    }
+                } label: {
+                    Circle()
+                        .fill(idx == min(selection ?? 0, questions.count - 1) ? Color.primary : Color.secondary.opacity(0.4))
+                        .frame(width: Tokens.Spacing.xs, height: Tokens.Spacing.xs)
+                }
+                .buttonStyle(.plain)
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.top, Tokens.Spacing.s)
     }
-    
-        // Pull-to-add is now handled by detecting when selection goes beyond the last card
     
     // MARK: - List Mode
     
@@ -295,11 +297,15 @@ struct QuestionEditor: View {
             return // Exit immediately, do not proceed with deletion
         }
         
+        deleteQuestion(at: index)
+    }
+    
+    private func deleteQuestion(at index: Int) {
         guard index < questions.count, index >= 0 else { return }
         
         // Store current state before any changes
         let currentMode = mode
-        let currentSelection = (currentMode == .carousel ? selection : selectedIndex)
+        let currentSelection = (currentMode == .carousel ? (selection ?? 0) : selectedIndex)
         
         // Clear focus state immediately (SwiftUI-only)
         focusedField = nil
@@ -352,20 +358,21 @@ struct QuestionEditor: View {
     
     private func updateSelectedIndex(_ newValue: Int) {
         let safeSelection = min(max(newValue, 0), max(questions.count - 1, 0))
-        if safeSelection < questions.count && safeSelection != selectedIndex {
+        if safeSelection != selectedIndex {
             selectedIndex = safeSelection
         }
     }
     
-    private func updateSelection(_ newValue: Int) {
+    private func updateSelection(_ newValue: Int?) {
+        guard let newValue = newValue else { return }
         let safeIndex = min(max(newValue, 0), max(questions.count - 1, 0))
-        if safeIndex != selection && safeIndex < questions.count {
-            selection = safeIndex
+        if safeIndex != (selection ?? 0) && safeIndex < questions.count {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                selection = safeIndex
+            }
         }
     }
 }
-
-// PullToAddIndicator removed - no longer needed
 
 #Preview("Question Editor") {
     struct Wrapper: View {
@@ -388,5 +395,6 @@ struct QuestionEditor: View {
             .background(BlobBackgroundView())
         }
     }
+    
     return Wrapper()
 }
