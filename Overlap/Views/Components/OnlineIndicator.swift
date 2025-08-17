@@ -9,18 +9,25 @@ import SwiftUI
 
 struct OnlineIndicator: View {
     let isOnline: Bool
-    let hasUnreadChanges: Bool
+    let overlapId: UUID?
     let style: Style
+    
+    @Environment(\.overlapSyncManager) private var syncManager
     
     enum Style {
         case compact
         case detailed
     }
     
-    init(isOnline: Bool, hasUnreadChanges: Bool = false, style: Style = .compact) {
+    init(isOnline: Bool, overlapId: UUID? = nil, style: Style = .compact) {
         self.isOnline = isOnline
-        self.hasUnreadChanges = hasUnreadChanges
+        self.overlapId = overlapId
         self.style = style
+    }
+    
+    private var hasUnreadChanges: Bool {
+        guard let overlapId = overlapId, let syncManager = syncManager else { return false }
+        return syncManager.hasUnreadChanges(for: overlapId)
     }
     
     var body: some View {
@@ -89,12 +96,6 @@ struct OnlineIndicator: View {
             Text("Online:")
             OnlineIndicator(isOnline: true, style: .compact)
             OnlineIndicator(isOnline: true, style: .detailed)
-        }
-        
-        HStack {
-            Text("Unread:")
-            OnlineIndicator(isOnline: true, hasUnreadChanges: true, style: .compact)
-            OnlineIndicator(isOnline: true, hasUnreadChanges: true, style: .detailed)
         }
     }
     .padding()

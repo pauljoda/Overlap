@@ -301,6 +301,63 @@ class Overlap {
             generateRandomizedQuestionOrders()
         }
     }
+    
+    /// CloudKit-specific initializer for reconstructing overlaps from CKRecords
+    /// This initializer allows setting all properties directly without needing a Questionnaire object
+    init(
+        id: UUID,
+        beginDate: Date,
+        completeDate: Date?,
+        participants: [String],
+        isOnline: Bool,
+        title: String,
+        information: String,
+        instructions: String,
+        questions: [String],
+        iconEmoji: String,
+        startColorRed: Double,
+        startColorGreen: Double,
+        startColorBlue: Double,
+        startColorAlpha: Double,
+        endColorRed: Double,
+        endColorGreen: Double,
+        endColorBlue: Double,
+        endColorAlpha: Double,
+        randomizeQuestions: Bool,
+        currentState: OverlapState,
+        currentParticipantIndex: Int,
+        currentQuestionIndex: Int,
+        isCompleted: Bool
+    ) {
+        self.id = id
+        self.beginDate = beginDate
+        self.completeDate = completeDate
+        self.participants = participants
+        self.isOnline = isOnline
+        self.title = title
+        self.information = information
+        self.instructions = instructions
+        self.questions = questions
+        self.iconEmoji = iconEmoji
+        self.startColorRed = startColorRed
+        self.startColorGreen = startColorGreen
+        self.startColorBlue = startColorBlue
+        self.startColorAlpha = startColorAlpha
+        self.endColorRed = endColorRed
+        self.endColorGreen = endColorGreen
+        self.endColorBlue = endColorBlue
+        self.endColorAlpha = endColorAlpha
+        self.isRandomized = randomizeQuestions
+        self.currentState = currentState
+        self.currentParticipantIndex = currentParticipantIndex
+        self.currentQuestionIndex = currentQuestionIndex
+        self.isCompleted = isCompleted
+
+        initializeParticipantResponses()
+        if randomizeQuestions {
+            generateRandomizedQuestionOrders()
+        }
+    }
 
     // MARK: - Session Management
 

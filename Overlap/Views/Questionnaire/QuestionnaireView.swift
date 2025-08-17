@@ -9,6 +9,7 @@ import SwiftUI
 
 struct QuestionnaireView: View {
     let overlap: Overlap
+    @Environment(\.overlapSyncManager) private var syncManager
 
     var body: some View {
         ZStack {
@@ -30,6 +31,10 @@ struct QuestionnaireView: View {
             ? overlap.title : ""
         )
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            // Mark this overlap as read when user views it
+            syncManager?.markOverlapAsRead(overlap.id)
+        }
     }
 }
 

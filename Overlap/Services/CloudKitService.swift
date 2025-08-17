@@ -226,7 +226,7 @@ extension Overlap {
         // Randomization
         let isRandomized = record["isRandomized"] as? Bool ?? false
         
-        // Create the overlap
+        // Use the CloudKit-specific initializer
         let overlap = Overlap(
             id: id,
             beginDate: beginDate,
@@ -238,16 +238,20 @@ extension Overlap {
             instructions: instructions,
             questions: questions,
             iconEmoji: iconEmoji,
-            startColor: Color(red: startColorRed, green: startColorGreen, blue: startColorBlue, opacity: startColorAlpha),
-            endColor: Color(red: endColorRed, green: endColorGreen, blue: endColorBlue, opacity: endColorAlpha),
+            startColorRed: startColorRed,
+            startColorGreen: startColorGreen,
+            startColorBlue: startColorBlue,
+            startColorAlpha: startColorAlpha,
+            endColorRed: endColorRed,
+            endColorGreen: endColorGreen,
+            endColorBlue: endColorBlue,
+            endColorAlpha: endColorAlpha,
             randomizeQuestions: isRandomized,
-            currentState: currentState
+            currentState: currentState,
+            currentParticipantIndex: currentParticipantIndex,
+            currentQuestionIndex: currentQuestionIndex,
+            isCompleted: isCompleted
         )
-        
-        // Set current indices
-        overlap.currentParticipantIndex = currentParticipantIndex
-        overlap.currentQuestionIndex = currentQuestionIndex
-        overlap.isCompleted = isCompleted
         
         // Parse and restore responses
         if let responsesString = record["participantResponses"] as? String,

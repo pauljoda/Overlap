@@ -22,6 +22,8 @@ extension EnvironmentValues {
 
 struct HomeView: View {
     @State private var path = NavigationPath()
+    @Environment(\.modelContext) private var modelContext
+    @State private var syncManager: OverlapSyncManager?
     
     var body: some View {
         NavigationStack(path: $path) {
@@ -92,6 +94,13 @@ struct HomeView: View {
             }
         }
         .environment(\.navigationPath, $path)
+        .environment(\.overlapSyncManager, syncManager)
+        .onAppear {
+            // Initialize sync manager when we have model context
+            if syncManager == nil {
+                syncManager = OverlapSyncManager(modelContext: modelContext)
+            }
+        }
     }
 }
 
