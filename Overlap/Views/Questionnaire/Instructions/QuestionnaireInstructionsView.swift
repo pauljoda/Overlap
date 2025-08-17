@@ -16,7 +16,14 @@ struct QuestionnaireInstructionsView: View {
     @State private var animatingParticipants: Set<Int> = []
 
     private var canBegin: Bool {
-        overlap.participants.count >= 2
+        if overlap.isOnline {
+            // For online overlaps, allow beginning as long as there are participants
+            // (participants are set by the original creator)
+            return !overlap.participants.isEmpty
+        } else {
+            // For local overlaps, require at least 2 participants
+            return overlap.participants.count >= 2
+        }
     }
 
     var body: some View {
@@ -37,6 +44,9 @@ struct QuestionnaireInstructionsView: View {
                                 onAddParticipant: addParticipant,
                                 onRemoveParticipant: removeParticipant
                             )
+                        } else {
+                            // For online overlaps, show existing participants (read-only)
+                            OnlineParticipantsSection(overlap: overlap)
                         }
 
                         // Bottom spacing to account for floating button and safe area
@@ -48,15 +58,24 @@ struct QuestionnaireInstructionsView: View {
                 .ignoresSafeArea(.container, edges: .bottom)
             }
 
-            // Floating Begin Button - overlayed at bottom
-            VStack {
+            // Floating action buttons - overlayed at bottom
+            VStack(spacing: Tokens.Spacing.m) {
                 Spacer()
                 
+                // Share button for online overlaps
+                if overlap.isOnline && canBegin {
+                    HStack {
+                        ShareButton(overlap: overlap)
+                        Spacer()
+                    }
+                    .padding(.horizontal, Tokens.Spacing.xl)
+                }
+                
                 GlassActionButton(
-                    title: "Begin Overlap",
-                    icon: "play.fill",
+                    title: overlap.isOnline ? "Begin Online Overlap" : "Begin Overlap",
+                    icon: overlap.isOnline ? "icloud.fill" : "play.fill",
                     isEnabled: canBegin,
-                    tintColor: .green,
+                    tintColor: overlap.isOnline ? .blue : .green,
                     action: beginQuestionnaire
                 )
                 .padding(.horizontal, Tokens.Spacing.xl)
@@ -133,6 +152,57 @@ struct QuestionnaireInstructionsView: View {
         // Save the overlap to the model context when starting
         modelContext.insert(overlap)
         try? modelContext.save()        
+    }
+}
+
+// MARK: - Online Participants Section
+
+struct OnlineParticipantsSection: View {
+    let overlap: Overlap
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: Tokens.Spacing.m) {
+            SectionHeader(
+                title: "Participants",
+                icon: "person.2.fill"
+            )
+            
+            VStack(spacing: Tokens.Spacing.s) {
+                ForEach(Array(overlap.participants.enumerated()), id: \.offset) { index, participant in
+                    HStack {
+                        HStack(spacing: Tokens.Spacing.s) {
+                            Image(systemName: "person.fill")
+                                .foregroundColor(.blue)
+                                .frame(width: 20)
+                            
+                            Text(participant)
+                                .font(.body)
+                                .foregroundColor(.primary)
+                        }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "icloud.fill")
+                            .foregroundColor(.blue)
+                            .font(.caption)
+                    }
+                    .padding(.horizontal, Tokens.Spacing.m)
+                    .padding(.vertical, Tokens.Spacing.s)
+                    .standardGlassCard()
+                }
+            }
+            
+            // Info about online collaboration
+            HStack(spacing: Tokens.Spacing.s) {
+                Image(systemName: "info.circle.fill")
+                    .foregroundColor(.blue)
+                Text("Everyone answers questions independently, then results are shared")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.horizontal, Tokens.Spacing.s)
+        }
+        .padding(.horizontal, Tokens.Spacing.xl)
     }
 }
 

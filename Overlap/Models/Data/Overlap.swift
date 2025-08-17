@@ -9,11 +9,11 @@ import Foundation
 import SwiftData
 import SwiftUI
 
-enum OverlapState: Codable {
-    case instructions
-    case answering
-    case nextParticipant
-    case complete
+enum OverlapState: String, Codable, CaseIterable {
+    case instructions = "instructions"
+    case answering = "answering"
+    case nextParticipant = "nextParticipant"
+    case complete = "complete"
 }
 
 /// A comprehensive overlap session that handles questionnaire flow and response tracking
@@ -104,10 +104,20 @@ class Overlap {
     var currentParticipantIndex: Int = 0
     /// Current question index for the active participant
     var currentQuestionIndex: Int = 0
-    /// Overall session state for UI navigation
-    var currentState: OverlapState = OverlapState.instructions
+    /// Overall session state for UI navigation (stored as String for SwiftData compatibility)
+    private var currentStateRaw: String = OverlapState.instructions.rawValue
     /// Whether the overlap session has been completed (stored property for SwiftData queries)
     var isCompleted: Bool = false
+    
+    /// Public interface for currentState with safe conversion
+    var currentState: OverlapState {
+        get {
+            return OverlapState(rawValue: currentStateRaw) ?? .instructions
+        }
+        set {
+            currentStateRaw = newValue.rawValue
+        }
+    }
 
     // MARK: - Computed Properties
 
@@ -295,6 +305,63 @@ class Overlap {
         // Set colors using the computed properties
         self.startColor = startColor
         self.endColor = endColor
+
+        initializeParticipantResponses()
+        if randomizeQuestions {
+            generateRandomizedQuestionOrders()
+        }
+    }
+    
+    /// CloudKit-specific initializer for reconstructing overlaps from CKRecords
+    /// This initializer allows setting all properties directly without needing a Questionnaire object
+    init(
+        id: UUID,
+        beginDate: Date,
+        completeDate: Date?,
+        participants: [String],
+        isOnline: Bool,
+        title: String,
+        information: String,
+        instructions: String,
+        questions: [String],
+        iconEmoji: String,
+        startColorRed: Double,
+        startColorGreen: Double,
+        startColorBlue: Double,
+        startColorAlpha: Double,
+        endColorRed: Double,
+        endColorGreen: Double,
+        endColorBlue: Double,
+        endColorAlpha: Double,
+        randomizeQuestions: Bool,
+        currentState: OverlapState,
+        currentParticipantIndex: Int,
+        currentQuestionIndex: Int,
+        isCompleted: Bool
+    ) {
+        self.id = id
+        self.beginDate = beginDate
+        self.completeDate = completeDate
+        self.participants = participants
+        self.isOnline = isOnline
+        self.title = title
+        self.information = information
+        self.instructions = instructions
+        self.questions = questions
+        self.iconEmoji = iconEmoji
+        self.startColorRed = startColorRed
+        self.startColorGreen = startColorGreen
+        self.startColorBlue = startColorBlue
+        self.startColorAlpha = startColorAlpha
+        self.endColorRed = endColorRed
+        self.endColorGreen = endColorGreen
+        self.endColorBlue = endColorBlue
+        self.endColorAlpha = endColorAlpha
+        self.isRandomized = randomizeQuestions
+        self.currentState = currentState
+        self.currentParticipantIndex = currentParticipantIndex
+        self.currentQuestionIndex = currentQuestionIndex
+        self.isCompleted = isCompleted
 
         initializeParticipantResponses()
         if randomizeQuestions {
@@ -701,5 +768,17 @@ extension Overlap {
             questionnaire: questionnaire,
             randomizeQuestions: randomizeQuestions
         )
+    }
+    
+    // MARK: - CloudKit Support Methods
+    
+    /// Returns all participant responses for CloudKit sync
+    func getAllResponses() -> [String: [Answer?]] {
+        return participantResponses
+    }
+    
+    /// Restores participant responses from CloudKit data
+    func restoreResponses(_ responses: [String: [Answer?]]) {
+        participantResponses = responses
     }
 }

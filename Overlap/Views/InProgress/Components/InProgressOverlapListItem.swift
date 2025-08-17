@@ -67,6 +67,9 @@ struct InProgressOverlapListItem: View {
                             .foregroundColor(stateInfo.1)
                     }
                     
+                    // Online indicator
+                    OnlineIndicator(isOnline: overlap.isOnline, overlapId: overlap.id, style: .compact)
+                    
                     if overlap.currentState != .instructions {
                         // Separator
                         Circle()

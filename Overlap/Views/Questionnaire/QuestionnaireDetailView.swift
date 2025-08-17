@@ -30,20 +30,30 @@ struct QuestionnaireDetailView: View {
             }
             .ignoresSafeArea(.container, edges: .bottom)
             
-            // Floating bottom button
-            VStack {
+            // Floating bottom buttons
+            VStack(spacing: Tokens.Spacing.m) {
                 Spacer()
                 
+                // Local overlap button
                 GlassActionButton(
-                    title: "Begin Overlap",
+                    title: "Begin Local Overlap",
                     icon: "play.fill",
                     isEnabled: true,
                     tintColor: .green,
                     action: startLocal
                 )
-                .padding(.horizontal, Tokens.Spacing.xl)
-                .padding(.bottom, Tokens.Spacing.xl)
+                
+                // Online overlap button
+                GlassActionButton(
+                    title: "Start Online Overlap",
+                    icon: "icloud.fill",
+                    isEnabled: true,
+                    tintColor: .blue,
+                    action: startOnline
+                )
             }
+            .padding(.horizontal, Tokens.Spacing.xl)
+            .padding(.bottom, Tokens.Spacing.xl)
         }
         .navigationTitle(questionnaire.title)
         .navigationBarTitleDisplayMode(.inline)
@@ -59,6 +69,16 @@ struct QuestionnaireDetailView: View {
     private func startLocal() {
         // Create a new Overlap from the questionnaire for local play
         let overlap = Overlap(
+            questionnaire: questionnaire,
+            randomizeQuestions: false
+        )
+        navigate(to: overlap, using: navigationPath)
+    }
+    
+    private func startOnline() {
+        // Create a new Overlap from the questionnaire for online collaboration
+        let overlap = Overlap(
+            isOnline: true,
             questionnaire: questionnaire,
             randomizeQuestions: false
         )

@@ -62,14 +62,14 @@ extension Character {
         
         // For single scalar characters
         if scalars.count == 1 {
-            let scalar = scalars.first!
+            guard let scalar = scalars.first else { return false }
             // Use isEmojiPresentation for default emoji presentation
             // This excludes digits and other non-default emoji scalars
             return scalar.properties.isEmojiPresentation
         }
         
         // For multi-scalar characters (like emoji with variation selectors)
-        let baseScalar = scalars.first!
+        guard let baseScalar = scalars.first else { return false }
         
         // Check if base scalar is emoji and if there's a variation selector
         if baseScalar.properties.isEmoji {
