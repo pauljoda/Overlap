@@ -102,6 +102,20 @@ class CloudKitService: ObservableObject {
         print("CloudKit: Set manual display name: \(userDisplayName ?? "nil")")
     }
     
+    /// Validates if the service is ready for sharing operations
+    func validateSharingReadiness() -> CloudKitError? {
+        guard isAvailable else {
+            return .accountNotAvailable
+        }
+        
+        if needsDisplayNameSetup {
+            return .identityNotConfigured
+        }
+        
+        // Additional validation could be added here
+        return nil
+    }
+    
     /// Fetches the current CloudKit user's display name
     func fetchUserDisplayName() async {
         guard isAvailable else { return }
@@ -390,17 +404,34 @@ enum CloudKitError: LocalizedError {
     case recordConversionFailed
     case shareNotFound
     case zoneCreationFailed
+    case permissionRequired
+    case identityNotConfigured
     
     var errorDescription: String? {
         switch self {
         case .accountNotAvailable:
-            return "CloudKit account is not available"
+            return "CloudKit account is not available. Please sign in to iCloud in Settings."
         case .recordConversionFailed:
             return "Failed to convert data for CloudKit"
         case .shareNotFound:
             return "CloudKit share not found"
         case .zoneCreationFailed:
             return "Failed to create CloudKit zone"
+        case .permissionRequired:
+            return "Permission required to share. Please allow the app to use your iCloud identity or enter a custom name."
+        case .identityNotConfigured:
+            return "Please set up your display name before sharing overlaps."
+        }
+    }
+    
+    var recoverySuggestion: String? {
+        switch self {
+        case .accountNotAvailable:
+            return "Sign in to iCloud in the Settings app to enable sharing."
+        case .permissionRequired, .identityNotConfigured:
+            return "Tap the share button to set up your display name for sharing."
+        default:
+            return nil
         }
     }
 }

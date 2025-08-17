@@ -19,6 +19,28 @@ struct ShareButton: View {
     @State private var showingError = false
     @State private var showingDisplayNameSetup = false
     
+    private var buttonText: String {
+        if isSharing {
+            return "Sharing..."
+        } else if !cloudKitService.isAvailable {
+            return "iCloud Unavailable"
+        } else if cloudKitService.needsDisplayNameSetup {
+            return "Setup Sharing"
+        } else {
+            return "Share"
+        }
+    }
+    
+    private var buttonColor: Color {
+        if !cloudKitService.isAvailable {
+            return .gray
+        } else if cloudKitService.needsDisplayNameSetup {
+            return .orange
+        } else {
+            return .blue
+        }
+    }
+    
     var body: some View {
         Button(action: {
             Task {
@@ -29,10 +51,15 @@ struct ShareButton: View {
                 if isSharing {
                     ProgressView()
                         .scaleEffect(0.8)
+                } else if !cloudKitService.isAvailable {
+                    Image(systemName: "icloud.slash")
+                } else if cloudKitService.needsDisplayNameSetup {
+                    Image(systemName: "person.crop.circle.badge.questionmark")
                 } else {
                     Image(systemName: "square.and.arrow.up")
                 }
-                Text("Share")
+                
+                Text(buttonText)
                     .fontWeight(.medium)
             }
             .foregroundColor(.white)
@@ -40,10 +67,10 @@ struct ShareButton: View {
             .padding(.vertical, Tokens.Spacing.s)
             .background(
                 RoundedRectangle(cornerRadius: Tokens.Radius.m)
-                    .fill(.blue.gradient)
+                    .fill(buttonColor.gradient)
             )
         }
-        .disabled(isSharing || !cloudKitService.isAvailable)
+        .disabled(isSharing)
         .opacity(cloudKitService.isAvailable ? 1.0 : 0.6)
         .sheet(isPresented: $showingDisplayNameSetup) {
             NavigationView {
@@ -66,22 +93,34 @@ struct ShareButton: View {
         .alert("Sharing Error", isPresented: $showingError) {
             Button("OK") { }
         } message: {
-            Text(shareError?.localizedDescription ?? "Failed to share overlap")
+            VStack(alignment: .leading, spacing: 8) {
+                Text(shareError?.localizedDescription ?? "Failed to share overlap")
+                
+                if let cloudKitError = shareError as? CloudKitError,
+                   let suggestion = cloudKitError.recoverySuggestion {
+                    Text(suggestion)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
         }
     }
     
     private func shareOverlap() async {
-        guard cloudKitService.isAvailable else { 
-            print("ShareButton: CloudKit not available")
-            return 
-        }
-        
-        // Check if we need to setup display name first
-        if cloudKitService.needsDisplayNameSetup {
-            await MainActor.run {
-                showingDisplayNameSetup = true
+        // Validate sharing readiness
+        if let validationError = cloudKitService.validateSharingReadiness() {
+            if validationError == .identityNotConfigured {
+                await MainActor.run {
+                    showingDisplayNameSetup = true
+                }
+                return
+            } else {
+                await MainActor.run {
+                    shareError = validationError
+                    showingError = true
+                }
+                return
             }
-            return
         }
         
         print("ShareButton: Starting share process for overlap: \(overlap.title)")

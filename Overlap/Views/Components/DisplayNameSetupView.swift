@@ -15,6 +15,28 @@ struct DisplayNameSetupView: View {
     @State private var isRequestingPermission = false
     @State private var showingManualEntry = false
     
+    private var permissionButtonText: String {
+        if isRequestingPermission {
+            return "Requesting..."
+        } else if cloudKitService.discoverabilityPermission == .granted {
+            return "Permission Granted ✓"
+        } else if cloudKitService.discoverabilityPermission == .denied {
+            return "Request Again"
+        } else {
+            return "Use iCloud Name"
+        }
+    }
+    
+    private var permissionButtonColor: Color {
+        if cloudKitService.discoverabilityPermission == .granted {
+            return .green
+        } else if cloudKitService.discoverabilityPermission == .denied {
+            return .orange
+        } else {
+            return .blue
+        }
+    }
+    
     var body: some View {
         GlassScreen {
             VStack(spacing: Tokens.Spacing.xl) {
@@ -58,18 +80,18 @@ struct DisplayNameSetupView: View {
                                 } else {
                                     Image(systemName: "person.badge.key.fill")
                                 }
-                                Text(isRequestingPermission ? "Requesting..." : "Use iCloud Name")
+                                Text(permissionButtonText)
                                     .fontWeight(.medium)
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, Tokens.Spacing.m)
                             .background(
                                 RoundedRectangle(cornerRadius: Tokens.Radius.m)
-                                    .fill(.blue.gradient)
+                                    .fill(permissionButtonColor.gradient)
                             )
                             .foregroundColor(.white)
                         }
-                        .disabled(isRequestingPermission)
+                        .disabled(isRequestingPermission || cloudKitService.discoverabilityPermission == .granted)
                         .glassEffect(in: .rect(cornerRadius: Tokens.Radius.m))
                     }
                     
