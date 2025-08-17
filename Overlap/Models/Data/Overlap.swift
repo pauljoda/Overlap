@@ -702,4 +702,16 @@ extension Overlap {
             randomizeQuestions: randomizeQuestions
         )
     }
+    
+    // MARK: - CloudKit Support Methods
+    
+    /// Returns all participant responses for CloudKit sync
+    func getAllResponses() -> [String: [Answer?]] {
+        return participantResponses
+    }
+    
+    /// Restores participant responses from CloudKit data
+    func restoreResponses(_ responses: [String: [Answer?]]) {
+        participantResponses = responses
+    }
 }

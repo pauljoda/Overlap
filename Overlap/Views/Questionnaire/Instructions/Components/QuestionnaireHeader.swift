@@ -18,6 +18,11 @@ struct QuestionnaireHeader: View {
     
     var body: some View {
         VStack(spacing: 16) {
+            HStack {
+                Spacer()
+                OnlineIndicator(isOnline: overlap.isOnline, style: .detailed)
+            }
+            
             Text(overlap.title)
                 .font(.largeTitle)
                 .fontWeight(.bold)

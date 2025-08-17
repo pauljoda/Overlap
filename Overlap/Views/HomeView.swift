@@ -69,7 +69,7 @@ struct HomeView: View {
                 case "completed":
                     CompletedView()
                 case "join":
-                    ComingSoonView(title: "Join")
+                    JoinOverlapView()
                 case "browse":
                     ComingSoonView(title: "Browse")
                 case let editPath where editPath.hasPrefix("edit-"):

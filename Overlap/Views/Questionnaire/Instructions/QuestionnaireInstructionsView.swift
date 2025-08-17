@@ -48,15 +48,24 @@ struct QuestionnaireInstructionsView: View {
                 .ignoresSafeArea(.container, edges: .bottom)
             }
 
-            // Floating Begin Button - overlayed at bottom
-            VStack {
+            // Floating action buttons - overlayed at bottom
+            VStack(spacing: Tokens.Spacing.m) {
                 Spacer()
                 
+                // Share button for online overlaps
+                if overlap.isOnline && canBegin {
+                    HStack {
+                        ShareButton(overlap: overlap)
+                        Spacer()
+                    }
+                    .padding(.horizontal, Tokens.Spacing.xl)
+                }
+                
                 GlassActionButton(
-                    title: "Begin Overlap",
-                    icon: "play.fill",
+                    title: overlap.isOnline ? "Begin Online Overlap" : "Begin Overlap",
+                    icon: overlap.isOnline ? "icloud.fill" : "play.fill",
                     isEnabled: canBegin,
-                    tintColor: .green,
+                    tintColor: overlap.isOnline ? .blue : .green,
                     action: beginQuestionnaire
                 )
                 .padding(.horizontal, Tokens.Spacing.xl)
