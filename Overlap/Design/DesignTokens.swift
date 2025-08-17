@@ -130,11 +130,37 @@ enum Tokens {
         static let response: Double = 0.6
         static let damping: Double = 0.8
     }
+    
+    enum Delay {
+        static let short: Double = 0.2
+        static let medium: Double = 0.4
+        static let long: Double = 0.6
+        static let extraLong: Double = 0.8
+    }
 
     // MARK: - Layout Grid
     enum Grid {
         static let colorPickerColumns: Int = 6
         static let standardSpacing: CGFloat = 16
+    }
+    
+    // MARK: - Strings
+    enum Strings {
+        // Button text
+        static let beginOverlap = "Begin Overlap"
+        static let beginLocalOverlap = "Begin Local Overlap"
+        static let beginOnlineOverlap = "Begin Online Overlap"
+        static let startOnlineOverlap = "Start Online Overlap"
+        static let beginQuestions = "Begin Questions"
+        
+        // Status text
+        static let awaitingResponses = "Awaiting Responses"
+        static let completedResponses = "Completed Responses"
+        static let pendingResponses = "Pending Responses"
+        
+        // Error/empty states
+        static let noMoreQuestions = "No more questions"
+        static let unknown = "Unknown"
     }
 }
 

@@ -27,13 +27,15 @@ struct QuestionnaireNextParticipantView: View {
                             isAnimated: isAnimated
                         )
 
-                        // Hand-off Instructions Card
-                        InstructionCard(
-                            icon: "hand.point.right.fill",
-                            text: "Pass to the next participant",
-                            isAnimated: isAnimated,
-                            animationDelay: 0.4
-                        )
+                        // Hand-off Instructions Card - only show for offline overlaps
+                        if !overlap.isOnline {
+                            InstructionCard(
+                                icon: "hand.point.right.fill",
+                                text: "Pass to the next participant",
+                                isAnimated: isAnimated,
+                                animationDelay: Tokens.Delay.medium
+                            )
+                        }
                     }
                     .padding(.horizontal, Tokens.Spacing.xl)
                     .padding(.top, Tokens.Spacing.quadXL)
@@ -42,7 +44,7 @@ struct QuestionnaireNextParticipantView: View {
                     QuestionnaireInstructionsSection(
                         overlap: overlap,
                         isAnimated: isAnimated,
-                        animationDelay: 0.6
+                        animationDelay: Tokens.Delay.long
                     )
                     .padding(.horizontal, Tokens.Spacing.xl)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -64,7 +66,7 @@ struct QuestionnaireNextParticipantView: View {
                 Spacer()
                 
                 GlassActionButton(
-                    title: "Begin Questions",
+                    title: Tokens.Strings.beginQuestions,
                     icon: "play.fill",
                     isEnabled: true,
                     tintColor: .green,

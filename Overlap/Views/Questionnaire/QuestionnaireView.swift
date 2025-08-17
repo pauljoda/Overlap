@@ -21,6 +21,8 @@ struct QuestionnaireView: View {
                 QuestionnaireNextParticipantView(overlap: overlap)
             case .answering:
                 QuestionnaireAnsweringView(overlap: overlap)
+            case .awaitingResponses:
+                QuestionnaireAwaitingResponsesView(overlap: overlap)
             case .complete:
                 QuestionnaireCompleteView(overlap: overlap)
             }

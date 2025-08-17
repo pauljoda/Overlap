@@ -72,7 +72,7 @@ struct QuestionnaireInstructionsView: View {
                 }
                 
                 GlassActionButton(
-                    title: overlap.isOnline ? "Begin Online Overlap" : "Begin Overlap",
+                    title: overlap.isOnline ? Tokens.Strings.beginOnlineOverlap : Tokens.Strings.beginOverlap,
                     icon: overlap.isOnline ? "icloud.fill" : "play.fill",
                     isEnabled: canBegin,
                     tintColor: overlap.isOnline ? .blue : .green,

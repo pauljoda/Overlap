@@ -18,6 +18,8 @@ struct InProgressOverlapListItem: View {
             return ("Ready to start", .green, "play.fill")
         case .answering:
             return ("In progress", .orange, "clock.fill")
+        case .awaitingResponses:
+            return ("Awaiting responses", .orange, "clock.badge.checkmark")
         case .complete:
             return ("Complete", .green, "checkmark.circle.fill")
         }
@@ -98,8 +100,8 @@ struct InProgressOverlapListItem: View {
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
-        .padding(.vertical, 8)
-        .padding(.horizontal, 12)
+        .padding(.vertical, Tokens.Spacing.s)
+        .padding(.horizontal, Tokens.Spacing.m)
         .frame(maxWidth: .infinity, alignment: .leading) // Ensure full width touch target
         .contentShape(Rectangle()) // Make entire area tappable
         .standardGlassCard()

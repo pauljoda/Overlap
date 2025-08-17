@@ -36,7 +36,7 @@ struct QuestionnaireDetailView: View {
                 
                 // Local overlap button
                 GlassActionButton(
-                    title: "Begin Local Overlap",
+                    title: Tokens.Strings.beginLocalOverlap,
                     icon: "play.fill",
                     isEnabled: true,
                     tintColor: .green,
@@ -45,7 +45,7 @@ struct QuestionnaireDetailView: View {
                 
                 // Online overlap button
                 GlassActionButton(
-                    title: "Start Online Overlap",
+                    title: Tokens.Strings.startOnlineOverlap,
                     icon: "icloud.fill",
                     isEnabled: true,
                     tintColor: .blue,
