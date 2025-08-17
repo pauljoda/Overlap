@@ -52,12 +52,12 @@ struct QuestionnaireNextParticipantView: View {
                         value: isAnimated
                     )
 
-                    // Bottom padding to account for floating button
-                    Rectangle()
-                        .fill(Color.clear)
-                        .frame(height: Tokens.Size.iconHuge)
+                    // Bottom spacing to account for floating button
+                    Spacer()
+                        .frame(height: Tokens.Size.buttonLarge + Tokens.Spacing.xl * 2)
                 }
             }
+            .ignoresSafeArea(.container, edges: .bottom)
 
             // Floating Begin Button - overlayed at bottom
             VStack {

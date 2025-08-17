@@ -97,6 +97,8 @@ struct InProgressOverlapListItem: View {
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 12)
+        .frame(maxWidth: .infinity, alignment: .leading) // Ensure full width touch target
+        .contentShape(Rectangle()) // Make entire area tappable
         .standardGlassCard()
     }
 }

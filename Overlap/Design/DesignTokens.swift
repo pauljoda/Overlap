@@ -44,6 +44,7 @@ enum Tokens {
         static let iconHuge: CGFloat = 120
         
         // Button heights
+        static let buttonLarge: CGFloat = 60 
         static let buttonStandard: CGFloat = 50
         static let buttonCompact: CGFloat = 44
         

@@ -13,29 +13,37 @@ struct QuestionnaireDetailView: View {
     @Environment(\.navigationPath) private var navigationPath
 
     var body: some View {
-        VStack(spacing: 0) {
+        ZStack {
             // Scrollable content area
             GlassScreen {
                 VStack(spacing: Tokens.Spacing.xxl) {
                     DetailHeader(questionnaire: questionnaire)
                     DetailInfo(questionnaire: questionnaire)
                     DetailQuestions(questionnaire: questionnaire)
+                    
+                    // Bottom spacing to account for floating button
+                    Spacer()
+                        .frame(height: Tokens.Size.buttonLarge + Tokens.Spacing.xl * 2)
                 }
                 .padding(.horizontal, Tokens.Spacing.xl)
                 .padding(.top, Tokens.Spacing.xl)
-                .padding(.bottom, Tokens.Spacing.xxl)
             }
+            .ignoresSafeArea(.container, edges: .bottom)
             
-            // Fixed bottom button
-            GlassActionButton(
-                title: "Begin Overlap",
-                icon: "play.fill",
-                isEnabled: true,
-                tintColor: .green,
-                action: startLocal
-            )
-            .padding(.horizontal, Tokens.Spacing.xl)
-            .padding(.bottom, Tokens.Spacing.xl)
+            // Floating bottom button
+            VStack {
+                Spacer()
+                
+                GlassActionButton(
+                    title: "Begin Overlap",
+                    icon: "play.fill",
+                    isEnabled: true,
+                    tintColor: .green,
+                    action: startLocal
+                )
+                .padding(.horizontal, Tokens.Spacing.xl)
+                .padding(.bottom, Tokens.Spacing.xl)
+            }
         }
         .navigationTitle(questionnaire.title)
         .navigationBarTitleDisplayMode(.inline)

@@ -39,13 +39,13 @@ struct QuestionnaireInstructionsView: View {
                             )
                         }
 
-                        // Bottom padding to account for floating button
-                        Rectangle()
-                            .fill(Color.clear)
-                            .frame(height: Tokens.Size.iconHuge)
+                        // Bottom spacing to account for floating button and safe area
+                        Spacer()
+                            .frame(height: Tokens.Size.buttonLarge + Tokens.Spacing.xl * 2)
                     }
                     .padding(.top, Tokens.Spacing.xl)
                 }
+                .ignoresSafeArea(.container, edges: .bottom)
             }
 
             // Floating Begin Button - overlayed at bottom
@@ -61,6 +61,8 @@ struct QuestionnaireInstructionsView: View {
                 )
                 .padding(.horizontal, Tokens.Spacing.xl)
                 .padding(.bottom, Tokens.Spacing.xl)
+                .offset(y: canBegin ? 0 : 150)
+                .animation(.easeInOut(duration: 0.5), value: canBegin)
             }
         }
         .onTapGesture {

@@ -8,7 +8,7 @@
 import SwiftUI
 
 /// A reusable glass-effect action button component
-/// 
+///
 /// Features:
 /// - Customizable glass effect styling
 /// - Icon and text support
@@ -20,7 +20,7 @@ struct GlassActionButton: View {
     let isEnabled: Bool
     let tintColor: Color
     let action: () -> Void
-    
+
     init(
         title: String,
         icon: String? = nil,
@@ -34,29 +34,31 @@ struct GlassActionButton: View {
         self.tintColor = tintColor
         self.action = action
     }
-    
+
     var body: some View {
         Button(action: action) {
             HStack {
                 if let icon = icon {
                     Image(systemName: icon)
+                        .foregroundColor(isEnabled ? tintColor : .gray)
                 }
                 Text(title)
                     .fontWeight(.semibold)
+                    .foregroundColor(.primary)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, Tokens.Spacing.l)
+            .frame(height: Tokens.Size.buttonLarge)
+            .glassEffect(
+                .regular.interactive(isEnabled)
+            )
         }
         .disabled(!isEnabled)
-        .glassEffect(
-            .clear.tint(isEnabled ? tintColor : .gray).interactive(isEnabled)
-        )
-        .tint(.primary)
     }
 }
 
 #Preview {
     VStack(spacing: Tokens.Spacing.l) {
+        Spacer()
         GlassActionButton(
             title: "Begin Overlap",
             icon: "play.fill",
@@ -65,7 +67,7 @@ struct GlassActionButton: View {
         ) {
             print("Begin action")
         }
-        
+
         GlassActionButton(
             title: "Disabled Button",
             icon: "play.fill",
