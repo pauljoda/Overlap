@@ -511,10 +511,11 @@ class Overlap {
         // Determine appropriate state based on completion status
         if shouldBeComplete {
             markAsComplete()
-        } else if shouldAwaitResponses {
+        } else if currentQuestionIndex == 0 && isOnline {
+            // For online mode, participant finished their questions - go to awaiting responses
             currentState = .awaitingResponses
-        } else if currentQuestionIndex == 0 {
-            // We moved to the next participant (for offline mode)
+        } else if currentQuestionIndex == 0 && !isOnline {
+            // We moved to the next participant (for offline mode only)
             currentState = .nextParticipant
         }
 
@@ -585,7 +586,12 @@ class Overlap {
         if currentQuestionIndex >= questions.count {
             // Finished all questions for current participant
             currentQuestionIndex = 0
-            currentParticipantIndex += 1
+            
+            // For online overlaps, don't advance participant index - each participant answers on their own device
+            // For offline overlaps, advance to next participant for pass-and-play mode
+            if !isOnline {
+                currentParticipantIndex += 1
+            }
         }
     }
 

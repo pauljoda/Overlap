@@ -73,6 +73,22 @@ struct QuestionnaireAwaitingResponsesView: View {
                     }
                 }
                 
+                // Share button to invite more participants
+                VStack(spacing: Tokens.Spacing.m) {
+                    ShareButton(overlap: overlap)
+                        .opacity(isAnimated ? 1 : 0)
+                        .offset(y: isAnimated ? 0 : 20)
+                        .animation(.easeIn(duration: Tokens.Duration.medium).delay(Tokens.Delay.extraLong + 0.2), value: isAnimated)
+                    
+                    Text("Invite more participants to get their responses")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .opacity(isAnimated ? 1 : 0)
+                        .animation(.easeIn(duration: Tokens.Duration.medium).delay(Tokens.Delay.extraLong + 0.4), value: isAnimated)
+                }
+                .padding(.top, Tokens.Spacing.l)
+                
                 Spacer()
             }
             .padding(Tokens.Spacing.xl)
@@ -92,7 +108,7 @@ struct QuestionnaireAwaitingResponsesView: View {
         guard let syncManager = syncManager else { return }
         
         do {
-            try await syncManager.syncOverlap(overlap)
+            try await syncManager.fetchUpdates()
         } catch {
             print("Failed to sync overlap updates: \(error)")
         }
