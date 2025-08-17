@@ -22,6 +22,8 @@ class CloudKitService: ObservableObject {
     @Published var accountStatus: CKAccountStatus = .couldNotDetermine
     @Published var hasUnreadChanges = false
     @Published var userDisplayName: String?
+    @Published var discoverabilityPermission: CKContainer.ApplicationPermissionStatus = .initialState
+    @Published var needsDisplayNameSetup = false
     
     // MARK: - Initialization
     
@@ -32,6 +34,7 @@ class CloudKitService: ObservableObject {
         
         Task {
             await checkAccountStatus()
+            await checkDiscoverabilityPermission()
             await fetchUserDisplayName()
         }
     }
@@ -54,68 +57,129 @@ class CloudKitService: ObservableObject {
         }
     }
     
+    /// Checks the current user discoverability permission status
+    func checkDiscoverabilityPermission() async {
+        guard isAvailable else { return }
+        
+        do {
+            let status = try await container.applicationPermission(for: .userDiscoverability)
+            await MainActor.run {
+                discoverabilityPermission = status
+                print("CloudKit: Current discoverability permission: \(status)")
+            }
+        } catch {
+            print("CloudKit: Failed to check discoverability permission: \(error)")
+            await MainActor.run {
+                discoverabilityPermission = .initialState
+            }
+        }
+    }
+    
+    /// Requests user discoverability permission from the user
+    func requestDiscoverabilityPermission() async -> CKContainer.ApplicationPermissionStatus {
+        guard isAvailable else { return .initialState }
+        
+        do {
+            let status = try await container.requestApplicationPermission(.userDiscoverability)
+            await MainActor.run {
+                discoverabilityPermission = status
+                print("CloudKit: User discoverability permission result: \(status)")
+            }
+            return status
+        } catch {
+            print("CloudKit: Failed to request discoverability permission: \(error)")
+            await MainActor.run {
+                discoverabilityPermission = .denied
+            }
+            return .denied
+        }
+    }
+    
+    /// Sets a manual display name for the user
+    func setManualDisplayName(_ name: String) {
+        userDisplayName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        needsDisplayNameSetup = false
+        print("CloudKit: Set manual display name: \(userDisplayName ?? "nil")")
+    }
+    
     /// Fetches the current CloudKit user's display name
     func fetchUserDisplayName() async {
         guard isAvailable else { return }
         
         do {
-            // Try to get user identity first
+            // Try to get user record ID first
             let userRecordID = try await container.userRecordID()
             print("CloudKit: Got user record ID: \(userRecordID.recordName)")
             
-            var displayName = "CloudKit User"
+            var displayName: String?
             
-            // Try to discover user identity (this requires user discoverability to be enabled)
-            do {
-                let userIdentity = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<CKUserIdentity, Error>) in
-                    container.discoverUserIdentity(withUserRecordID: userRecordID) { identity, error in
-                        if let error = error {
-                            continuation.resume(throwing: error)
-                        } else if let identity = identity {
-                            continuation.resume(returning: identity)
-                        } else {
-                            continuation.resume(throwing: CKError(.userIdentityLookupFailed))
+            // Check if we already have permission to discover user identity
+            await checkDiscoverabilityPermission()
+            
+            if discoverabilityPermission == .granted {
+                // Try to discover user identity since we have permission
+                do {
+                    let userIdentity = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<CKUserIdentity, Error>) in
+                        container.discoverUserIdentity(withUserRecordID: userRecordID) { identity, error in
+                            if let error = error {
+                                continuation.resume(throwing: error)
+                            } else if let identity = identity {
+                                continuation.resume(returning: identity)
+                            } else {
+                                continuation.resume(throwing: CKError(.userIdentityLookupFailed))
+                            }
                         }
                     }
-                }
-                
-                // Successfully got user identity, extract display name
-                if let nameComponents = userIdentity.nameComponents {
-                    if let givenName = nameComponents.givenName {
-                        displayName = givenName
-                        if let familyName = nameComponents.familyName {
-                            displayName += " \(familyName)"
+                    
+                    // Successfully got user identity, extract display name
+                    if let nameComponents = userIdentity.nameComponents {
+                        if let givenName = nameComponents.givenName {
+                            displayName = givenName
+                            if let familyName = nameComponents.familyName {
+                                displayName! += " \(familyName)"
+                            }
                         }
                     }
+                    print("CloudKit: Successfully got user identity display name: \(displayName ?? "nil")")
+                    
+                } catch {
+                    print("CloudKit: User identity discovery failed despite having permission: \(error)")
                 }
-                print("CloudKit: Successfully got user identity display name: \(displayName)")
-                
-            } catch {
-                print("CloudKit: User identity discovery failed (likely discoverability not enabled): \(error)")
-                // This is expected if user hasn't enabled discoverability, so continue with fallback
+            } else {
+                print("CloudKit: User discoverability not granted (status: \(discoverabilityPermission)), will need user action")
             }
             
-            // If we still have the default name, try alternative approaches
-            if displayName == "CloudKit User" {
-                // Extract a user-friendly ID from the record name if possible
+            // If we still don't have a display name, we need user action
+            if displayName == nil {
+                // Extract a user-friendly ID from the record name as temporary fallback
                 let recordName = userRecordID.recordName
                 if recordName.hasPrefix("_") && recordName.count > 8 {
                     // Take first 8 characters after the underscore for a short ID
                     let shortID = String(recordName.dropFirst().prefix(8))
                     displayName = "User \(shortID)"
+                } else {
+                    displayName = "CloudKit User"
                 }
-                print("CloudKit: Using fallback display name: \(displayName)")
+                
+                await MainActor.run {
+                    self.needsDisplayNameSetup = true
+                }
+                print("CloudKit: Using temporary fallback display name: \(displayName!), user action needed")
             }
             
             await MainActor.run {
                 self.userDisplayName = displayName
+                if displayName != nil && !displayName!.starts(with: "User ") && !displayName!.contains("CloudKit User") {
+                    self.needsDisplayNameSetup = false
+                }
             }
-            print("CloudKit: Final user display name: \(displayName)")
+            print("CloudKit: Final user display name: \(displayName!)")
             
         } catch {
             print("CloudKit: Failed to fetch user record ID: \(error)")
             await MainActor.run {
                 self.userDisplayName = "CloudKit User"
+                self.needsDisplayNameSetup = true
             }
         }
     }

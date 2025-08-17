@@ -17,6 +17,7 @@ struct ShareButton: View {
     @State private var isSharing = false
     @State private var shareError: Error?
     @State private var showingError = false
+    @State private var showingDisplayNameSetup = false
     
     var body: some View {
         Button(action: {
@@ -44,6 +45,11 @@ struct ShareButton: View {
         }
         .disabled(isSharing || !cloudKitService.isAvailable)
         .opacity(cloudKitService.isAvailable ? 1.0 : 0.6)
+        .sheet(isPresented: $showingDisplayNameSetup) {
+            NavigationView {
+                DisplayNameSetupView(cloudKitService: cloudKitService)
+            }
+        }
         .sheet(isPresented: $showingShareSheet) {
             if let share = shareItem as? CKShare {
                 if let shareURL = share.url {
@@ -68,6 +74,14 @@ struct ShareButton: View {
         guard cloudKitService.isAvailable else { 
             print("ShareButton: CloudKit not available")
             return 
+        }
+        
+        // Check if we need to setup display name first
+        if cloudKitService.needsDisplayNameSetup {
+            await MainActor.run {
+                showingDisplayNameSetup = true
+            }
+            return
         }
         
         print("ShareButton: Starting share process for overlap: \(overlap.title)")
