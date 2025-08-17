@@ -151,6 +151,9 @@ class Overlap {
     }
     
     /// Whether the overlap should be marked as complete based on online/offline mode
+    /// 
+    /// For online overlaps: Requires at least 2 participants to have completed AND all participants finished
+    /// For offline overlaps: Uses the original sequential logic (all local participants done)
     private var shouldBeComplete: Bool {
         if isOnline {
             // For online overlaps, require at least 2 participants to have completed
@@ -163,6 +166,9 @@ class Overlap {
     }
     
     /// Whether the overlap should be in awaiting responses state
+    /// 
+    /// Only applies to online overlaps when at least one participant has completed
+    /// but not all participants have finished their responses
     private var shouldAwaitResponses: Bool {
         if isOnline {
             let completedParticipants = participants.filter { isParticipantComplete($0) }

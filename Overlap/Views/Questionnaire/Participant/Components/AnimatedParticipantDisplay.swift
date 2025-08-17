@@ -42,7 +42,7 @@ struct AnimatedParticipantDisplay: View {
                     value: isAnimated
                 )
 
-            Text(overlap.currentParticipant ?? "Unknown")
+            Text(overlap.currentParticipant ?? Tokens.Strings.unknown)
                 .font(
                     .system(
                         size: 48,

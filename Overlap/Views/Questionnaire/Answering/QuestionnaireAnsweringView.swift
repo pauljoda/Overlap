@@ -78,7 +78,7 @@ struct QuestionnaireAnsweringView: View {
                         }
                     }
                 } else {
-                    Text("No more questions")
+                    Text(Tokens.Strings.noMoreQuestions)
                         .font(.title2)
                         .foregroundColor(.secondary)
                 }

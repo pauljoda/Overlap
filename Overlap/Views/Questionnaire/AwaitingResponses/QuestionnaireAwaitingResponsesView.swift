@@ -32,7 +32,7 @@ struct QuestionnaireAwaitingResponsesView: View {
                         .scaleEffect(isAnimated ? 1.0 : 0.8)
                         .animation(.spring(response: Tokens.Spring.response, dampingFraction: Tokens.Spring.damping), value: isAnimated)
                     
-                    Text("Awaiting Responses")
+                    Text(Tokens.Strings.awaitingResponses)
                         .font(.largeTitle)
                         .fontWeight(.bold)
                         .foregroundColor(.primary)
@@ -52,7 +52,7 @@ struct QuestionnaireAwaitingResponsesView: View {
                 VStack(spacing: Tokens.Spacing.l) {
                     if !completedParticipants.isEmpty {
                         ParticipantStatusSection(
-                            title: "Completed Responses",
+                            title: Tokens.Strings.completedResponses,
                             icon: "checkmark.circle.fill",
                             participants: completedParticipants,
                             color: .green,
@@ -63,7 +63,7 @@ struct QuestionnaireAwaitingResponsesView: View {
                     
                     if !pendingParticipants.isEmpty {
                         ParticipantStatusSection(
-                            title: "Pending Responses",
+                            title: Tokens.Strings.pendingResponses,
                             icon: "clock.circle.fill", 
                             participants: pendingParticipants,
                             color: .orange,

@@ -66,7 +66,7 @@ struct QuestionnaireNextParticipantView: View {
                 Spacer()
                 
                 GlassActionButton(
-                    title: "Begin Questions",
+                    title: Tokens.Strings.beginQuestions,
                     icon: "play.fill",
                     isEnabled: true,
                     tintColor: .green,
