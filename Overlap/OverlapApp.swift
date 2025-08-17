@@ -7,14 +7,31 @@
 
 import SwiftData
 import SwiftUI
+import CloudKit
 
 @main
 struct OverlapApp: App {
+    @StateObject private var cloudKitService = CloudKitService()
+    @State private var pendingShareURL: URL?
+    
     var body: some Scene {
         WindowGroup {
             HomeView()
                 .onOpenURL { url in
                     handleCloudKitShareURL(url)
+                }
+                .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { userActivity in
+                    if let url = userActivity.webpageURL {
+                        handleCloudKitShareURL(url)
+                    }
+                }
+                .sheet(item: Binding<ShareURLItem?>(
+                    get: { pendingShareURL.map(ShareURLItem.init) },
+                    set: { _ in pendingShareURL = nil }
+                )) { item in
+                    NavigationView {
+                        JoinOverlapView(shareURL: item.url)
+                    }
                 }
         }
         .modelContainer(for: [
@@ -24,8 +41,23 @@ struct OverlapApp: App {
     }
     
     private func handleCloudKitShareURL(_ url: URL) {
-        // CloudKit share URLs will be handled by the JoinOverlapView
-        // This is just a placeholder for global URL handling if needed
         print("Received URL: \(url)")
+        
+        // Check if this is a CloudKit share URL (handles both www.icloud.com and share.icloud.com)
+        let urlString = url.absoluteString.lowercased()
+        if urlString.contains("icloud.com/share") || 
+           urlString.contains("www.icloud.com") ||
+           urlString.contains("share.icloud.com") {
+            print("Detected CloudKit share URL, presenting join view")
+            pendingShareURL = url
+        } else {
+            print("URL is not a CloudKit share URL: \(urlString)")
+        }
     }
+}
+
+// Helper struct for sheet presentation
+struct ShareURLItem: Identifiable {
+    let id = UUID()
+    let url: URL
 }

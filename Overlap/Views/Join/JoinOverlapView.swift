@@ -10,6 +10,8 @@ import SwiftData
 import CloudKit
 
 struct JoinOverlapView: View {
+    let shareURL: URL?
+    
     @Environment(\.modelContext) private var modelContext
     @Environment(\.navigationPath) private var navigationPath
     @StateObject private var cloudKitService = CloudKitService()
@@ -18,6 +20,10 @@ struct JoinOverlapView: View {
     @State private var joinError: Error?
     @State private var showingError = false
     @State private var joinedOverlap: Overlap?
+    
+    init(shareURL: URL? = nil) {
+        self.shareURL = shareURL
+    }
     
     var body: some View {
         GlassScreen(scrollable: false) {
@@ -128,27 +134,69 @@ struct JoinOverlapView: View {
                 await handleIncomingURL(url)
             }
         }
+        .onAppear {
+            // If we have a share URL, automatically try to join
+            if let shareURL = shareURL {
+                Task {
+                    await handleIncomingURL(shareURL)
+                }
+            }
+        }
     }
     
     private func handleIncomingURL(_ url: URL) async {
-        guard url.scheme == "https" && url.host?.hasSuffix("icloud.com") == true else {
+        print("JoinOverlapView: Processing URL: \(url)")
+        
+        // Check if this is a CloudKit share URL
+        let urlString = url.absoluteString.lowercased()
+        guard urlString.contains("icloud.com/share") || 
+              urlString.contains("www.icloud.com") ||
+              urlString.contains("share.icloud.com") else {
+            print("JoinOverlapView: URL is not a CloudKit share URL: \(url)")
+            await MainActor.run {
+                joinError = CloudKitError.shareNotFound
+                showingError = true
+            }
             return
         }
         
-        isJoining = true
+        print("JoinOverlapView: Processing CloudKit share URL: \(url)")
+        
+        await MainActor.run {
+            isJoining = true
+        }
         
         do {
+            // Use the correct CloudKit container
+            let container = CKContainer(identifier: "iCloud.com.pauljoda.Overlap")
+            
+            // First, test if we can get the share metadata (this will show us the exact error)
+            print("JoinOverlapView: Testing share URL first...")
+            try await cloudKitService.testShareURL(url)
+            
             // Parse CloudKit share metadata from URL
-            let metadata = try await CKContainer.default().shareMetadata(for: url)
+            print("JoinOverlapView: Fetching share metadata from container: \(container.containerIdentifier ?? "unknown")")
+            let metadata = try await container.shareMetadata(for: url)
+            print("JoinOverlapView: Got share metadata for record: \(metadata.rootRecordID.recordName)")
             
             // Accept the share
+            print("JoinOverlapView: Accepting share...")
             let overlap = try await cloudKitService.acceptShare(with: metadata)
+            print("JoinOverlapView: Successfully accepted share: \(overlap.title)")
             
             await MainActor.run {
                 joinedOverlap = overlap
                 isJoining = false
             }
         } catch {
+            print("JoinOverlapView: Error processing share URL: \(error)")
+            
+            // Provide more detailed error information
+            if let ckError = error as? CKError {
+                print("JoinOverlapView: CloudKit error code: \(ckError.code.rawValue)")
+                print("JoinOverlapView: CloudKit error description: \(ckError.localizedDescription)")
+            }
+            
             await MainActor.run {
                 joinError = error
                 showingError = true

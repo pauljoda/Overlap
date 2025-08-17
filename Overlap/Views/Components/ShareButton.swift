@@ -12,6 +12,7 @@ import UIKit
 struct ShareButton: View {
     let overlap: Overlap
     @StateObject private var cloudKitService = CloudKitService()
+    @StateObject private var userPreferences = UserPreferences.shared
     @State private var showingShareSheet = false
     @State private var shareItem: Any?
     @State private var isSharing = false
@@ -24,7 +25,7 @@ struct ShareButton: View {
             return "Sharing..."
         } else if !cloudKitService.isAvailable {
             return "iCloud Unavailable"
-        } else if cloudKitService.needsDisplayNameSetup {
+        } else if userPreferences.needsDisplayNameSetup {
             return "Setup Sharing"
         } else {
             return "Share"
@@ -34,7 +35,7 @@ struct ShareButton: View {
     private var buttonColor: Color {
         if !cloudKitService.isAvailable {
             return .gray
-        } else if cloudKitService.needsDisplayNameSetup {
+        } else if userPreferences.needsDisplayNameSetup {
             return .orange
         } else {
             return .blue
@@ -53,7 +54,7 @@ struct ShareButton: View {
                         .scaleEffect(0.8)
                 } else if !cloudKitService.isAvailable {
                     Image(systemName: "icloud.slash")
-                } else if cloudKitService.needsDisplayNameSetup {
+                } else if userPreferences.needsDisplayNameSetup {
                     Image(systemName: "person.crop.circle.badge.questionmark")
                 } else {
                     Image(systemName: "square.and.arrow.up")

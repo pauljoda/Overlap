@@ -24,6 +24,9 @@ struct HomeView: View {
     @State private var path = NavigationPath()
     @Environment(\.modelContext) private var modelContext
     @State private var syncManager: OverlapSyncManager?
+    @StateObject private var userPreferences = UserPreferences.shared
+    @StateObject private var cloudKitService = CloudKitService()
+    @State private var showingDisplayNameSetup = false
     
     var body: some View {
         NavigationStack(path: $path) {
@@ -97,10 +100,28 @@ struct HomeView: View {
         }
         .environment(\.navigationPath, $path)
         .environment(\.overlapSyncManager, syncManager)
+        .sheet(isPresented: $showingDisplayNameSetup) {
+            NavigationView {
+                DisplayNameSetupView(cloudKitService: cloudKitService)
+            }
+        }
         .onAppear {
             // Initialize sync manager when we have model context
             if syncManager == nil {
                 syncManager = OverlapSyncManager(modelContext: modelContext)
+            }
+            
+            // Check if we need to prompt for display name setup
+            // Only prompt if CloudKit is available and user hasn't set up their name
+            Task {
+                await cloudKitService.checkAccountStatus()
+                
+                if cloudKitService.isAvailable && userPreferences.needsDisplayNameSetup {
+                    // Delay showing the sheet to avoid SwiftUI conflicts with onAppear
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        showingDisplayNameSetup = true
+                    }
+                }
             }
         }
     }

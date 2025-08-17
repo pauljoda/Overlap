@@ -17,13 +17,20 @@ class CloudKitService: ObservableObject {
     private let container: CKContainer
     private let privateDatabase: CKDatabase
     private let sharedDatabase: CKDatabase
+    private let userPreferences = UserPreferences.shared
     
     @Published var isAvailable = false
     @Published var accountStatus: CKAccountStatus = .couldNotDetermine
     @Published var hasUnreadChanges = false
-    @Published var userDisplayName: String?
-    @Published var discoverabilityPermission: CKContainer.ApplicationPermissionStatus = .initialState
-    @Published var needsDisplayNameSetup = false
+    
+    // Computed properties that read from UserPreferences
+    var userDisplayName: String? {
+        userPreferences.userDisplayName
+    }
+    
+    var needsDisplayNameSetup: Bool {
+        userPreferences.needsDisplayNameSetup
+    }
     
     // MARK: - Initialization
     
@@ -32,10 +39,23 @@ class CloudKitService: ObservableObject {
         privateDatabase = container.privateCloudDatabase
         sharedDatabase = container.sharedCloudDatabase
         
+        print("CloudKit: Initialized with container: \(container.containerIdentifier ?? "unknown")")
+        
         Task {
             await checkAccountStatus()
-            await checkDiscoverabilityPermission()
             await fetchUserDisplayName()
+            await validateContainer()
+        }
+    }
+    
+    // MARK: - Container Validation
+    
+    private func validateContainer() async {
+        do {
+            let userRecordID = try await container.userRecordID()
+            print("CloudKit: Container validation successful, user record ID: \(userRecordID.recordName)")
+        } catch {
+            print("CloudKit: Container validation failed: \(error)")
         }
     }
     
@@ -57,49 +77,51 @@ class CloudKitService: ObservableObject {
         }
     }
     
-    /// Checks the current user discoverability permission status
-    func checkDiscoverabilityPermission() async {
+    /// Fetches the current CloudKit user's display name using modern approach
+    func fetchUserDisplayName() async {
         guard isAvailable else { return }
         
-        do {
-            let status = try await container.applicationPermission(for: .userDiscoverability)
-            await MainActor.run {
-                discoverabilityPermission = status
-                print("CloudKit: Current discoverability permission: \(status)")
-            }
-        } catch {
-            print("CloudKit: Failed to check discoverability permission: \(error)")
-            await MainActor.run {
-                discoverabilityPermission = .initialState
-            }
+        // If user has already set a display name, use it
+        if let existingName = userPreferences.userDisplayName, 
+           userPreferences.isDisplayNameSetup {
+            print("CloudKit: Using existing display name from preferences: \(existingName)")
+            return
         }
-    }
-    
-    /// Requests user discoverability permission from the user
-    func requestDiscoverabilityPermission() async -> CKContainer.ApplicationPermissionStatus {
-        guard isAvailable else { return .initialState }
         
         do {
-            let status = try await container.requestApplicationPermission(.userDiscoverability)
-            await MainActor.run {
-                discoverabilityPermission = status
-                print("CloudKit: User discoverability permission result: \(status)")
+            // Try to get user record ID first
+            let userRecordID = try await container.userRecordID()
+            print("CloudKit: Got user record ID: \(userRecordID.recordName)")
+            
+            // For iOS 16+ and modern CloudKit sharing, we don't need to discover user identity
+            // Instead, we'll use a simplified approach that works without user discovery permissions
+            
+            // Extract a user-friendly ID from the record name as our display name approach
+            let recordName = userRecordID.recordName
+            var displayName: String?
+            
+            if recordName.hasPrefix("_") && recordName.count > 8 {
+                // Take first 8 characters after the underscore for a short ID
+                let shortID = String(recordName.dropFirst().prefix(8))
+                displayName = "User \(shortID)"
+            } else {
+                displayName = "CloudKit User"
             }
-            return status
+            
+            // Don't automatically set this - let user choose their display name
+            print("CloudKit: Generated fallback name: \(displayName!), user should set custom name")
+            
         } catch {
-            print("CloudKit: Failed to request discoverability permission: \(error)")
-            await MainActor.run {
-                discoverabilityPermission = .denied
-            }
-            return .denied
+            print("CloudKit: Failed to fetch user record ID: \(error)")
         }
     }
     
     /// Sets a manual display name for the user
     func setManualDisplayName(_ name: String) {
-        userDisplayName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        needsDisplayNameSetup = false
-        print("CloudKit: Set manual display name: \(userDisplayName ?? "nil")")
+        userPreferences.setDisplayName(name)
+        // Trigger UI update
+        objectWillChange.send()
+        print("CloudKit: Set manual display name via UserPreferences: \(name)")
     }
     
     /// Validates if the service is ready for sharing operations
@@ -108,97 +130,13 @@ class CloudKitService: ObservableObject {
             return .accountNotAvailable
         }
         
-        if needsDisplayNameSetup {
+        if userPreferences.needsDisplayNameSetup {
             return .identityNotConfigured
         }
         
         // Additional validation could be added here
         return nil
-    }
-    
-    /// Fetches the current CloudKit user's display name
-    func fetchUserDisplayName() async {
-        guard isAvailable else { return }
-        
-        do {
-            // Try to get user record ID first
-            let userRecordID = try await container.userRecordID()
-            print("CloudKit: Got user record ID: \(userRecordID.recordName)")
-            
-            var displayName: String?
-            
-            // Check if we already have permission to discover user identity
-            await checkDiscoverabilityPermission()
-            
-            if discoverabilityPermission == .granted {
-                // Try to discover user identity since we have permission
-                do {
-                    let userIdentity = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<CKUserIdentity, Error>) in
-                        container.discoverUserIdentity(withUserRecordID: userRecordID) { identity, error in
-                            if let error = error {
-                                continuation.resume(throwing: error)
-                            } else if let identity = identity {
-                                continuation.resume(returning: identity)
-                            } else {
-                                continuation.resume(throwing: CKError(.userIdentityLookupFailed))
-                            }
-                        }
-                    }
-                    
-                    // Successfully got user identity, extract display name
-                    if let nameComponents = userIdentity.nameComponents {
-                        if let givenName = nameComponents.givenName {
-                            displayName = givenName
-                            if let familyName = nameComponents.familyName {
-                                displayName! += " \(familyName)"
-                            }
-                        }
-                    }
-                    print("CloudKit: Successfully got user identity display name: \(displayName ?? "nil")")
-                    
-                } catch {
-                    print("CloudKit: User identity discovery failed despite having permission: \(error)")
-                }
-            } else {
-                print("CloudKit: User discoverability not granted (status: \(discoverabilityPermission)), will need user action")
-            }
-            
-            // If we still don't have a display name, we need user action
-            if displayName == nil {
-                // Extract a user-friendly ID from the record name as temporary fallback
-                let recordName = userRecordID.recordName
-                if recordName.hasPrefix("_") && recordName.count > 8 {
-                    // Take first 8 characters after the underscore for a short ID
-                    let shortID = String(recordName.dropFirst().prefix(8))
-                    displayName = "User \(shortID)"
-                } else {
-                    displayName = "CloudKit User"
-                }
-                
-                await MainActor.run {
-                    self.needsDisplayNameSetup = true
-                }
-                print("CloudKit: Using temporary fallback display name: \(displayName!), user action needed")
-            }
-            
-            await MainActor.run {
-                self.userDisplayName = displayName
-                if displayName != nil && !displayName!.starts(with: "User ") && !displayName!.contains("CloudKit User") {
-                    self.needsDisplayNameSetup = false
-                }
-            }
-            print("CloudKit: Final user display name: \(displayName!)")
-            
-        } catch {
-            print("CloudKit: Failed to fetch user record ID: \(error)")
-            await MainActor.run {
-                self.userDisplayName = "CloudKit User"
-                self.needsDisplayNameSetup = true
-            }
-        }
-    }
-    
-    // MARK: - Sharing Operations
+    }    // MARK: - Sharing Operations
     
     /// Creates a CloudKit share for an overlap session
     func shareOverlap(_ overlap: Overlap) async throws -> CKShare {
@@ -281,14 +219,20 @@ class CloudKitService: ObservableObject {
     
     /// Accepts a CloudKit share invitation
     func acceptShare(with metadata: CKShare.Metadata) async throws -> Overlap {
-        let share = try await container.accept(metadata)
+        guard isAvailable else {
+            throw CloudKitError.accountNotAvailable
+        }
         
-        // Fetch the root record using the metadata's rootRecordID
-        let recordID = metadata.rootRecordID
-        let record = try await sharedDatabase.record(for: recordID)
+        // Accept the share
+        let _ = try await container.accept(metadata)
         
-        // Convert back to Overlap
-        return try Overlap.from(ckRecord: record)
+        // Fetch the root record from shared database
+        let record = try await sharedDatabase.record(for: metadata.rootRecordID)
+        
+        // Convert to Overlap
+        let overlap = try Overlap.from(ckRecord: record)
+        
+        return overlap
     }
     
     /// Syncs local overlap with CloudKit
@@ -358,7 +302,14 @@ class CloudKitService: ObservableObject {
         return overlaps
     }
     
-    // MARK: - Private Helper Methods
+    // MARK: - Testing & Debugging
+    
+    /// Tests if a CloudKit share URL can be processed (for debugging)
+    func testShareURL(_ url: URL) async throws {
+        let metadata = try await container.shareMetadata(for: url)
+        // Simply verify we can get metadata - that's sufficient for testing
+        print("CloudKit: Share URL is valid and accessible")
+    }
     
     /// Populates a CKRecord with overlap data
     private func populateRecord(_ record: CKRecord, with overlap: Overlap) throws {

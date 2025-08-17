@@ -11,31 +11,9 @@ import CloudKit
 struct DisplayNameSetupView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var cloudKitService: CloudKitService
+    @StateObject private var userPreferences = UserPreferences.shared
     @State private var manualName = ""
-    @State private var isRequestingPermission = false
-    @State private var showingManualEntry = false
-    
-    private var permissionButtonText: String {
-        if isRequestingPermission {
-            return "Requesting..."
-        } else if cloudKitService.discoverabilityPermission == .granted {
-            return "Permission Granted ✓"
-        } else if cloudKitService.discoverabilityPermission == .denied {
-            return "Request Again"
-        } else {
-            return "Use iCloud Name"
-        }
-    }
-    
-    private var permissionButtonColor: Color {
-        if cloudKitService.discoverabilityPermission == .granted {
-            return .green
-        } else if cloudKitService.discoverabilityPermission == .denied {
-            return .orange
-        } else {
-            return .blue
-        }
-    }
+    @State private var showingManualEntry = true
     
     var body: some View {
         GlassScreen {
@@ -51,121 +29,46 @@ struct DisplayNameSetupView: View {
                         .fontWeight(.semibold)
                         .multilineTextAlignment(.center)
                     
-                    Text("To share overlaps with others, we need a display name to identify you to participants.")
+                    Text("Enter a name that others will see when you share overlaps with them.")
                         .font(.body)
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
                 }
                 
-                VStack(spacing: Tokens.Spacing.l) {
-                    // Option 1: Use iCloud Name
-                    VStack(spacing: Tokens.Spacing.m) {
-                        Text("Option 1: Use your iCloud name")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        
-                        Text("This will use the name from your Apple ID. You'll need to allow the app to discover your identity.")
-                            .font(.callout)
-                            .foregroundColor(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        
-                        Button(action: {
-                            requestDiscoverabilityPermission()
-                        }) {
-                            HStack {
-                                if isRequestingPermission {
-                                    ProgressView()
-                                        .scaleEffect(0.8)
-                                } else {
-                                    Image(systemName: "person.badge.key.fill")
-                                }
-                                Text(permissionButtonText)
-                                    .fontWeight(.medium)
+                // Name Entry Section
+                VStack(spacing: Tokens.Spacing.m) {
+                    VStack(spacing: Tokens.Spacing.s) {
+                        TextField("Enter your display name", text: $manualName)
+                            .textFieldStyle(.roundedBorder)
+                            .font(.body)
+                            .onSubmit {
+                                setManualName()
                             }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, Tokens.Spacing.m)
-                            .background(
-                                RoundedRectangle(cornerRadius: Tokens.Radius.m)
-                                    .fill(permissionButtonColor.gradient)
-                            )
-                            .foregroundColor(.white)
-                        }
-                        .disabled(isRequestingPermission || cloudKitService.discoverabilityPermission == .granted)
-                        .glassEffect(in: .rect(cornerRadius: Tokens.Radius.m))
-                    }
-                    
-                    // Divider
-                    HStack {
-                        Rectangle()
-                            .fill(.secondary.opacity(0.3))
-                            .frame(height: 1)
-                        Text("OR")
+                        
+                        Text("This name will be visible to other participants when you share overlaps.")
                             .font(.caption)
                             .foregroundColor(.secondary)
-                            .padding(.horizontal)
-                        Rectangle()
-                            .fill(.secondary.opacity(0.3))
-                            .frame(height: 1)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     
-                    // Option 2: Manual Entry
-                    VStack(spacing: Tokens.Spacing.m) {
-                        Text("Option 2: Enter a custom name")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        
-                        Text("Enter any name you'd like others to see when you share overlaps.")
-                            .font(.callout)
-                            .foregroundColor(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        
-                        if showingManualEntry {
-                            VStack(spacing: Tokens.Spacing.s) {
-                                TextField("Enter your display name", text: $manualName)
-                                    .textFieldStyle(.roundedBorder)
-                                    .onSubmit {
-                                        setManualName()
-                                    }
-                                
-                                HStack(spacing: Tokens.Spacing.s) {
-                                    Button("Cancel") {
-                                        showingManualEntry = false
-                                        manualName = ""
-                                    }
-                                    .foregroundColor(.secondary)
-                                    
-                                    Spacer()
-                                    
-                                    Button("Set Name") {
-                                        setManualName()
-                                    }
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.blue)
-                                    .disabled(manualName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                                }
-                            }
-                        } else {
-                            Button(action: {
-                                showingManualEntry = true
-                            }) {
-                                HStack {
-                                    Image(systemName: "textformat")
-                                    Text("Enter Custom Name")
-                                        .fontWeight(.medium)
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, Tokens.Spacing.m)
-                                .background(
-                                    RoundedRectangle(cornerRadius: Tokens.Radius.m)
-                                        .stroke(.secondary, lineWidth: 1)
-                                )
-                                .foregroundColor(.primary)
-                            }
-                            .glassEffect(in: .rect(cornerRadius: Tokens.Radius.m))
-                        }
+                    Button("Set Display Name") {
+                        setManualName()
                     }
+                    .font(.headline)
+                    .fontWeight(.medium)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Tokens.Spacing.m)
+                    .background(
+                        RoundedRectangle(cornerRadius: Tokens.Radius.m)
+                            .fill(Color.blue.gradient)
+                    )
+                    .disabled(manualName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .glassEffect(in: .rect(cornerRadius: Tokens.Radius.m))
                 }
+                .padding()
+                .standardGlassCard()
                 
                 Spacer()
                 
@@ -186,33 +89,14 @@ struct DisplayNameSetupView: View {
                 }
             }
         }
-    }
-    
-    private func requestDiscoverabilityPermission() {
-        isRequestingPermission = true
-        
-        Task {
-            let status = await cloudKitService.requestDiscoverabilityPermission()
-            
-            await MainActor.run {
-                isRequestingPermission = false
-                
-                if status == .granted {
-                    // Refetch the display name now that we have permission
-                    Task {
-                        await cloudKitService.fetchUserDisplayName()
-                        // Dismiss if we successfully got a name
-                        if let name = cloudKitService.userDisplayName,
-                           !name.starts(with: "User "),
-                           !name.contains("CloudKit User") {
-                            dismiss()
-                        }
-                    }
-                }
+        .onAppear {
+            // Pre-populate with the current display name if available
+            if let currentName = userPreferences.userDisplayName {
+                manualName = currentName
             }
         }
     }
-    
+
     private func setManualName() {
         let trimmedName = manualName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else { return }
