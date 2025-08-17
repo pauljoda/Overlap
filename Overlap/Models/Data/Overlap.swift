@@ -9,11 +9,11 @@ import Foundation
 import SwiftData
 import SwiftUI
 
-enum OverlapState: Codable {
-    case instructions
-    case answering
-    case nextParticipant
-    case complete
+enum OverlapState: String, Codable, CaseIterable {
+    case instructions = "instructions"
+    case answering = "answering"
+    case nextParticipant = "nextParticipant"
+    case complete = "complete"
 }
 
 /// A comprehensive overlap session that handles questionnaire flow and response tracking
@@ -104,10 +104,20 @@ class Overlap {
     var currentParticipantIndex: Int = 0
     /// Current question index for the active participant
     var currentQuestionIndex: Int = 0
-    /// Overall session state for UI navigation
-    var currentState: OverlapState = OverlapState.instructions
+    /// Overall session state for UI navigation (stored as String for SwiftData compatibility)
+    private var currentStateRaw: String = OverlapState.instructions.rawValue
     /// Whether the overlap session has been completed (stored property for SwiftData queries)
     var isCompleted: Bool = false
+    
+    /// Public interface for currentState with safe conversion
+    var currentState: OverlapState {
+        get {
+            return OverlapState(rawValue: currentStateRaw) ?? .instructions
+        }
+        set {
+            currentStateRaw = newValue.rawValue
+        }
+    }
 
     // MARK: - Computed Properties
 

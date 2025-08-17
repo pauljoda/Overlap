@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import CloudKit
+import Combine
 
 @MainActor
 class OverlapSyncManager: ObservableObject {
@@ -17,11 +18,11 @@ class OverlapSyncManager: ObservableObject {
     private let modelContext: ModelContext
     
     // Track overlaps that have unread changes
-    private(set) var overlapsWithUnreadChanges: Set<UUID> = []
+    @Published private(set) var overlapsWithUnreadChanges: Set<UUID> = []
     
     // Sync status tracking
-    private(set) var isSyncing = false
-    private(set) var lastSyncDate: Date?
+    @Published private(set) var isSyncing = false
+    @Published private(set) var lastSyncDate: Date?
     
     // MARK: - Initialization
     
@@ -72,8 +73,11 @@ class OverlapSyncManager: ObservableObject {
     /// Processes a remote overlap update and merges with local data
     private func processRemoteOverlapUpdate(_ remoteOverlap: Overlap) async {
         // Find the local overlap
+        let remoteId = remoteOverlap.id
         let localOverlapRequest = FetchDescriptor<Overlap>(
-            predicate: #Predicate { $0.id == remoteOverlap.id }
+            predicate: #Predicate<Overlap> { overlap in
+                overlap.id == remoteId
+            }
         )
         
         guard let localOverlaps = try? modelContext.fetch(localOverlapRequest),
@@ -167,7 +171,7 @@ class OverlapSyncManager: ObservableObject {
             try? await Task.sleep(nanoseconds: 30_000_000_000)
             
             do {
-                await fetchUpdates()
+                try await fetchUpdates()
             } catch {
                 print("Periodic sync failed: \(error)")
             }

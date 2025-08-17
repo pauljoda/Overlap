@@ -8,6 +8,7 @@
 import CloudKit
 import SwiftUI
 import SwiftData
+import Combine
 
 @MainActor
 class CloudKitService: ObservableObject {
@@ -20,6 +21,7 @@ class CloudKitService: ObservableObject {
     @Published var isAvailable = false
     @Published var accountStatus: CKAccountStatus = .couldNotDetermine
     @Published var hasUnreadChanges = false
+    @Published var userDisplayName: String?
     
     // MARK: - Initialization
     
@@ -30,6 +32,7 @@ class CloudKitService: ObservableObject {
         
         Task {
             await checkAccountStatus()
+            await fetchUserDisplayName()
         }
     }
     
@@ -51,6 +54,65 @@ class CloudKitService: ObservableObject {
         }
     }
     
+    /// Fetches the current CloudKit user's display name
+    func fetchUserDisplayName() async {
+        guard isAvailable else { return }
+        
+        do {
+            // Try to get user identity first
+            let userRecordID = try await container.userRecordID()
+            print("CloudKit: Got user record ID: \(userRecordID.recordName)")
+            
+            // Try to discover user identity using completion handler
+            let userIdentity = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<CKUserIdentity, Error>) in
+                container.discoverUserIdentity(withUserRecordID: userRecordID) { identity, error in
+                    if let error = error {
+                        continuation.resume(throwing: error)
+                    } else if let identity = identity {
+                        continuation.resume(returning: identity)
+                    } else {
+                        continuation.resume(throwing: CloudKitError.recordConversionFailed)
+                    }
+                }
+            }
+            
+            // Try to get display name from user identity
+            var displayName = "CloudKit User"
+            
+            if let nameComponents = userIdentity.nameComponents {
+                if let givenName = nameComponents.givenName {
+                    displayName = givenName
+                    if let familyName = nameComponents.familyName {
+                        displayName += " \(familyName)"
+                    }
+                }
+            }
+            
+            // Fallback: try to get the user record from the private database
+            if displayName == "CloudKit User" {
+                do {
+                    let userRecord = try await privateDatabase.record(for: userRecordID)
+                    displayName = userRecord["firstName"] as? String ?? 
+                                 userRecord["displayName"] as? String ?? 
+                                 userRecord["name"] as? String ?? 
+                                 "CloudKit User"
+                } catch {
+                    print("CloudKit: Could not fetch user record from private database: \(error)")
+                }
+            }
+            
+            await MainActor.run {
+                self.userDisplayName = displayName
+            }
+            print("CloudKit: User display name: \(displayName)")
+        } catch {
+            print("CloudKit: Failed to fetch user display name: \(error)")
+            await MainActor.run {
+                self.userDisplayName = "CloudKit User"
+            }
+        }
+    }
+    
     // MARK: - Sharing Operations
     
     /// Creates a CloudKit share for an overlap session
@@ -59,28 +121,85 @@ class CloudKitService: ObservableObject {
             throw CloudKitError.accountNotAvailable
         }
         
-        // Convert overlap to CKRecord
-        let overlapRecord = try overlap.toCKRecord()
+        print("CloudKit: Starting share creation for overlap: \(overlap.title)")
         
-        // Create share
+        // Create a custom zone for this overlap
+        let zoneID = CKRecordZone.ID(zoneName: overlap.id.uuidString, ownerName: CKCurrentUserDefaultName)
+        let zone = CKRecordZone(zoneID: zoneID)
+        
+        print("CloudKit: Creating custom zone: \(zoneID.zoneName)")
+        
+        // Try to save the zone (ignore if it already exists)
+        do {
+            let savedZone = try await privateDatabase.save(zone)
+            print("CloudKit: Successfully created zone: \(savedZone.zoneID.zoneName)")
+        } catch let error as CKError {
+            switch error.code {
+            case .serverRecordChanged, .unknownItem:
+                print("CloudKit: Zone already exists or similar issue, continuing...")
+            case .zoneNotFound:
+                print("CloudKit: Zone operation issue, continuing...")
+            default:
+                print("CloudKit: Zone creation error: \(error.localizedDescription), continuing anyway...")
+            }
+        } catch {
+            print("CloudKit: General zone error: \(error.localizedDescription), continuing anyway...")
+        }
+        
+        // Create the overlap record in the custom zone
+        let recordID = CKRecord.ID(recordName: overlap.id.uuidString, zoneID: zoneID)
+        let overlapRecord = CKRecord(recordType: "Overlap", recordID: recordID)
+        
+        // Populate the record with overlap data
+        try populateRecord(overlapRecord, with: overlap)
+        
+        print("CloudKit: Created CKRecord with ID: \(overlapRecord.recordID.recordName) in zone: \(zoneID.zoneName)")
+        
+        // Create share using the record
         let share = CKShare(rootRecord: overlapRecord)
         share[CKShare.SystemFieldKey.title] = overlap.title
+        share[CKShare.SystemFieldKey.shareType] = "com.pauljoda.Overlap.overlap"
+        share[CKShare.SystemFieldKey.thumbnailImageData] = nil // Could add thumbnail data here
+        share.publicPermission = .none
+        print("CloudKit: Created CKShare with title: \(overlap.title)")
         
-        // Save record and share
-        let (savedRecords, _) = try await privateDatabase.modifyRecords(
+        // Save both record and share together
+        let (saveResults, _) = try await privateDatabase.modifyRecords(
             saving: [overlapRecord, share],
             deleting: []
         )
         
-        return savedRecords.compactMap { $0 as? CKShare }.first!
+        print("CloudKit: Successfully completed save operation with \(saveResults.count) results")
+        
+        // Extract successful records from the results
+        var savedRecords: [CKRecord] = []
+        for (recordID, result) in saveResults {
+            switch result {
+            case .success(let record):
+                savedRecords.append(record)
+                print("CloudKit: Saved record: \(type(of: record)) - ID: \(recordID.recordName)")
+                if let savedShare = record as? CKShare {
+                    print("CloudKit: Found CKShare with URL: \(savedShare.url?.absoluteString ?? "no URL yet")")
+                    // Return the saved share immediately if we found it
+                    print("CloudKit: Share creation completed successfully")
+                    return savedShare
+                }
+            case .failure(let error):
+                print("CloudKit: Failed to save record \(recordID.recordName): \(error)")
+            }
+        }
+        
+        // Fallback: if we didn't find a saved share, return the original
+        print("CloudKit: No saved CKShare found in results, returning original share")
+        return share
     }
     
     /// Accepts a CloudKit share invitation
     func acceptShare(with metadata: CKShare.Metadata) async throws -> Overlap {
         let share = try await container.accept(metadata)
         
-        // Fetch the root record
-        let recordID = share.rootRecordID!
+        // Fetch the root record using the metadata's rootRecordID
+        let recordID = metadata.rootRecordID
         let record = try await sharedDatabase.record(for: recordID)
         
         // Convert back to Overlap
@@ -93,8 +212,12 @@ class CloudKitService: ObservableObject {
             throw CloudKitError.accountNotAvailable
         }
         
+        print("CloudKit: Syncing overlap: \(overlap.title)")
         let record = try overlap.toCKRecord()
+        print("CloudKit: Created record for sync with ID: \(record.recordID.recordName)")
+        
         let _ = try await privateDatabase.save(record)
+        print("CloudKit: Successfully synced overlap to CloudKit")
     }
     
     /// Fetches updates for shared overlaps
@@ -103,25 +226,89 @@ class CloudKitService: ObservableObject {
             throw CloudKitError.accountNotAvailable
         }
         
-        let query = CKQuery(recordType: "Overlap", predicate: NSPredicate(value: true))
-        let (matchResults, _) = try await sharedDatabase.records(matching: query)
+        // For shared database, we need to fetch shares first, then get the records
+        // SharedDB doesn't support zone-wide queries directly
+        print("CloudKit: Fetching shared overlap updates...")
         
         var overlaps: [Overlap] = []
-        for (_, result) in matchResults {
-            switch result {
-            case .success(let record):
-                do {
-                    let overlap = try Overlap.from(ckRecord: record)
-                    overlaps.append(overlap)
-                } catch {
-                    print("Failed to convert record to overlap: \(error)")
+        
+        // Get all shared record zones
+        let zones = try await sharedDatabase.allRecordZones()
+        print("CloudKit: Found \(zones.count) shared zones")
+        
+        for zone in zones {
+            // Skip the default zone for shared databases
+            if zone.zoneID.zoneName == CKRecordZone.default().zoneID.zoneName {
+                continue
+            }
+            
+            // Query for Overlap records in this specific zone
+            let query = CKQuery(recordType: "Overlap", predicate: NSPredicate(value: true))
+            
+            do {
+                let (matchResults, _) = try await sharedDatabase.records(
+                    matching: query,
+                    inZoneWith: zone.zoneID
+                )
+                
+                for (_, result) in matchResults {
+                    switch result {
+                    case .success(let record):
+                        do {
+                            let overlap = try Overlap.from(ckRecord: record)
+                            overlaps.append(overlap)
+                        } catch {
+                            print("Failed to convert record to overlap: \(error)")
+                        }
+                    case .failure(let error):
+                        print("Failed to fetch record: \(error)")
+                    }
                 }
-            case .failure(let error):
-                print("Failed to fetch record: \(error)")
+            } catch {
+                print("Failed to query zone \(zone.zoneID.zoneName): \(error)")
             }
         }
         
+        print("CloudKit: Retrieved \(overlaps.count) shared overlaps")
         return overlaps
+    }
+    
+    // MARK: - Private Helper Methods
+    
+    /// Populates a CKRecord with overlap data
+    private func populateRecord(_ record: CKRecord, with overlap: Overlap) throws {
+        // Basic properties
+        record["title"] = overlap.title
+        record["information"] = overlap.information
+        record["instructions"] = overlap.instructions
+        record["questions"] = overlap.questions
+        record["participants"] = overlap.participants
+        record["beginDate"] = overlap.beginDate
+        record["completeDate"] = overlap.completeDate
+        record["isCompleted"] = overlap.isCompleted
+        record["isOnline"] = overlap.isOnline
+        record["currentState"] = overlap.currentState.rawValue
+        record["currentParticipantIndex"] = overlap.currentParticipantIndex
+        record["currentQuestionIndex"] = overlap.currentQuestionIndex
+        
+        // Visual properties
+        record["iconEmoji"] = overlap.iconEmoji
+        record["startColorRed"] = overlap.startColorRed
+        record["startColorGreen"] = overlap.startColorGreen
+        record["startColorBlue"] = overlap.startColorBlue
+        record["startColorAlpha"] = overlap.startColorAlpha
+        record["endColorRed"] = overlap.endColorRed
+        record["endColorGreen"] = overlap.endColorGreen
+        record["endColorBlue"] = overlap.endColorBlue
+        record["endColorAlpha"] = overlap.endColorAlpha
+        
+        // Randomization
+        record["isRandomized"] = overlap.isRandomized
+        
+        // Responses (convert to JSON)
+        if let responsesData = try? JSONEncoder().encode(overlap.getAllResponses()) {
+            record["participantResponses"] = String(data: responsesData, encoding: .utf8)
+        }
     }
 }
 
@@ -131,6 +318,7 @@ enum CloudKitError: LocalizedError {
     case accountNotAvailable
     case recordConversionFailed
     case shareNotFound
+    case zoneCreationFailed
     
     var errorDescription: String? {
         switch self {
@@ -140,6 +328,8 @@ enum CloudKitError: LocalizedError {
             return "Failed to convert data for CloudKit"
         case .shareNotFound:
             return "CloudKit share not found"
+        case .zoneCreationFailed:
+            return "Failed to create CloudKit zone"
         }
     }
 }
@@ -148,8 +338,14 @@ enum CloudKitError: LocalizedError {
 
 extension Overlap {
     /// Converts an Overlap to a CKRecord for CloudKit storage
-    func toCKRecord() throws -> CKRecord {
-        let recordID = CKRecord.ID(recordName: id.uuidString)
+    func toCKRecord(in zoneID: CKRecordZone.ID? = nil) throws -> CKRecord {
+        let recordID: CKRecord.ID
+        if let zoneID = zoneID {
+            recordID = CKRecord.ID(recordName: id.uuidString, zoneID: zoneID)
+        } else {
+            recordID = CKRecord.ID(recordName: id.uuidString)
+        }
+        
         let record = CKRecord(recordType: "Overlap", recordID: recordID)
         
         // Basic properties
@@ -205,9 +401,15 @@ extension Overlap {
         let isCompleted = record["isCompleted"] as? Bool ?? false
         let isOnline = record["isOnline"] as? Bool ?? true
         
-        // Parse current state
-        let currentStateRaw = record["currentState"] as? String ?? "instructions"
-        let currentState = OverlapState(rawValue: currentStateRaw) ?? .instructions
+        // Parse current state - handle Optional<Any> safely
+        let currentState: OverlapState
+        if let stateValue = record["currentState"],
+           let stateString = stateValue as? String,
+           let parsedState = OverlapState(rawValue: stateString) {
+            currentState = parsedState
+        } else {
+            currentState = .instructions // Default fallback
+        }
         
         let currentParticipantIndex = record["currentParticipantIndex"] as? Int ?? 0
         let currentQuestionIndex = record["currentQuestionIndex"] as? Int ?? 0
@@ -264,24 +466,4 @@ extension Overlap {
     }
 }
 
-// Add missing OverlapState rawValue support
-extension OverlapState: RawRepresentable {
-    public var rawValue: String {
-        switch self {
-        case .instructions: return "instructions"
-        case .answering: return "answering"
-        case .nextParticipant: return "nextParticipant"
-        case .complete: return "complete"
-        }
-    }
-    
-    public init?(rawValue: String) {
-        switch rawValue {
-        case "instructions": self = .instructions
-        case "answering": self = .answering
-        case "nextParticipant": self = .nextParticipant
-        case "complete": self = .complete
-        default: return nil
-        }
-    }
-}
+

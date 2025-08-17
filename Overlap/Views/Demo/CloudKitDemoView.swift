@@ -85,7 +85,7 @@ struct CloudKitDemoView: View {
                 if !localOverlaps.isEmpty {
                     VStack(alignment: .leading, spacing: Tokens.Spacing.m) {
                         HStack {
-                            Image(systemName: "device.iphone")
+                            Image(systemName: "iphone")
                                 .foregroundColor(.gray)
                             Text("Local Overlaps")
                                 .font(.headline)
@@ -127,8 +127,11 @@ struct CloudKitDemoView: View {
     }
     
     private func createDemoOnlineOverlap() {
+        let participantName = cloudKitService.userDisplayName ?? "Demo User"
+        print("Demo: Using participant name: \(participantName)")
+        
         let demoOverlap = Overlap(
-            participants: ["Demo User"],
+            participants: [participantName],
             isOnline: true,
             title: "Demo Online Session",
             information: "This is a demonstration of online collaborative features",

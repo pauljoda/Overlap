@@ -105,7 +105,7 @@ struct QuestionnaireAnsweringView: View {
         }
     }
 }
-}
+
 
 #Preview {
     ZStack {
