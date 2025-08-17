@@ -5,51 +5,37 @@
 //  Shows a saved questionnaire's details with a clean, modular layout.
 //
 
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 struct QuestionnaireDetailView: View {
     let questionnaire: Questionnaire
     @Environment(\.navigationPath) private var navigationPath
 
     var body: some View {
-        GlassScreen {
-            VStack(spacing: Tokens.Spacing.xxl) {
-                DetailHeader(questionnaire: questionnaire)
-                DetailInfo(questionnaire: questionnaire)
-                DetailQuestions(questionnaire: questionnaire)
-                
-                // Extra bottom padding for content comfort
-                Spacer(minLength: Tokens.Spacing.tripleXL)
-
-                Button(action: startLocal) {
-                    HStack {
-                        Image(systemName: "play.fill")
-                            .foregroundColor(.green)
-                            .font(.title2)
-
-                        Text("Begin Overlap")
-                            .font(.body)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.primary)
-
-                        Spacer()
-
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(.secondary)
-                            .font(.body)
-                    }
-                    .padding(.horizontal, Tokens.Spacing.l)
-                    .padding(.vertical, Tokens.Spacing.m)
-                    .frame(height: Tokens.Size.buttonStandard)
-                    .frame(maxWidth: .infinity)
-                    .glassEffect(.regular)
-                    .cornerRadius(Tokens.Spacing.quadXL)
+        VStack(spacing: 0) {
+            // Scrollable content area
+            GlassScreen {
+                VStack(spacing: Tokens.Spacing.xxl) {
+                    DetailHeader(questionnaire: questionnaire)
+                    DetailInfo(questionnaire: questionnaire)
+                    DetailQuestions(questionnaire: questionnaire)
                 }
                 .padding(.horizontal, Tokens.Spacing.xl)
+                .padding(.top, Tokens.Spacing.xl)
+                .padding(.bottom, Tokens.Spacing.xxl)
             }
+            
+            // Fixed bottom button
+            GlassActionButton(
+                title: "Begin Overlap",
+                icon: "play.fill",
+                isEnabled: true,
+                tintColor: .green,
+                action: startLocal
+            )
             .padding(.horizontal, Tokens.Spacing.xl)
-            .padding(.top, Tokens.Spacing.xl)
+            .padding(.bottom, Tokens.Spacing.xl)
         }
         .navigationTitle(questionnaire.title)
         .navigationBarTitleDisplayMode(.inline)
@@ -61,7 +47,7 @@ struct QuestionnaireDetailView: View {
             }
         }
     }
-    
+
     private func startLocal() {
         // Create a new Overlap from the questionnaire for local play
         let overlap = Overlap(
@@ -70,29 +56,32 @@ struct QuestionnaireDetailView: View {
         )
         navigate(to: overlap, using: navigationPath)
     }
-    
+
     private func editQuestionnaire() {
         // Navigate to edit mode of the questionnaire
-        navigate(to: .edit(questionnaireId: questionnaire.id), using: navigationPath)
+        navigate(
+            to: .edit(questionnaireId: questionnaire.id),
+            using: navigationPath
+        )
     }
 }
 
 // Centered header similar to CreateQuestionnaireHeader
 private struct DetailHeader: View {
     let questionnaire: Questionnaire
-    
+
     var body: some View {
         VStack(spacing: Tokens.Spacing.l) {
             // Circular gradient icon matching CreateQuestionnaireHeader
             QuestionnaireIcon(questionnaire: questionnaire, size: .medium)
-            
+
             VStack(spacing: Tokens.Spacing.s) {
                 Text(questionnaire.title)
                     .font(.title2)
                     .fontWeight(.bold)
                     .foregroundColor(.primary)
                     .multilineTextAlignment(.center)
-                
+
                 Text(questionnaire.information)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
@@ -106,17 +95,17 @@ private struct DetailHeader: View {
 // Information card with metadata
 private struct DetailInfo: View {
     let questionnaire: Questionnaire
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: Tokens.Spacing.m) {
             SectionHeader(title: "Instructions", icon: "text.alignleft")
-            
+
             VStack(alignment: .leading, spacing: Tokens.Spacing.m) {
                 Text(questionnaire.instructions)
                     .font(.body)
                     .foregroundColor(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                
+
                 // Metadata row similar to QuestionnaireListItem
                 HStack(spacing: Tokens.Spacing.m) {
                     HStack(spacing: Tokens.Spacing.xs) {
@@ -128,11 +117,11 @@ private struct DetailInfo: View {
                             .fontWeight(.medium)
                             .foregroundColor(.secondary)
                     }
-                    
+
                     Circle()
                         .fill(Color.secondary)
                         .frame(width: 2, height: 2)
-                    
+
                     HStack(spacing: Tokens.Spacing.xs) {
                         Image(systemName: "person.fill")
                             .font(.caption2)
@@ -141,20 +130,25 @@ private struct DetailInfo: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
-                    
+
                     Circle()
                         .fill(Color.secondary)
                         .frame(width: 2, height: 2)
-                    
+
                     HStack(spacing: Tokens.Spacing.xs) {
                         Image(systemName: "calendar")
                             .font(.caption2)
                             .foregroundColor(.secondary)
-                        Text(questionnaire.creationDate.formatted(date: .abbreviated, time: .omitted))
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                        Text(
+                            questionnaire.creationDate.formatted(
+                                date: .abbreviated,
+                                time: .omitted
+                            )
+                        )
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                     }
-                    
+
                     Spacer()
                 }
             }
@@ -169,7 +163,9 @@ private struct DetailQuestions: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Tokens.Spacing.m) {
             SectionHeader(title: "Questions", icon: "questionmark.bubble.fill")
-            ForEach(Array(questionnaire.questions.enumerated()), id: \.offset) { idx, q in
+            ForEach(Array(questionnaire.questions.enumerated()), id: \.offset) {
+                idx,
+                q in
                 HStack(alignment: .top, spacing: Tokens.Spacing.m) {
                     Text("\(idx + 1).")
                         .font(.subheadline)
@@ -196,7 +192,8 @@ private struct DetailQuestions: View {
         instructions: "Answer honestly with yes/no/maybe.",
         author: "Alex",
         questions: ["Hike a trail?", "Try a new cafe?", "See a movie?"],
-        startColor: .blue, endColor: .purple
+        startColor: .blue,
+        endColor: .purple
     )
     return NavigationStack { QuestionnaireDetailView(questionnaire: q) }
         .modelContainer(for: Questionnaire.self, inMemory: true)

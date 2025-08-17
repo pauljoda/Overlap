@@ -130,9 +130,7 @@ struct QuestionnaireInstructionsView: View {
         
         // Save the overlap to the model context when starting
         modelContext.insert(overlap)
-        try? modelContext.save()
-        
-        // The session automatically handles participant and question index management
+        try? modelContext.save()        
     }
 }
 
