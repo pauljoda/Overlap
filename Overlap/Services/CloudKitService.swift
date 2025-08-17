@@ -63,50 +63,57 @@ class CloudKitService: ObservableObject {
             let userRecordID = try await container.userRecordID()
             print("CloudKit: Got user record ID: \(userRecordID.recordName)")
             
-            // Try to discover user identity using completion handler
-            let userIdentity = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<CKUserIdentity, Error>) in
-                container.discoverUserIdentity(withUserRecordID: userRecordID) { identity, error in
-                    if let error = error {
-                        continuation.resume(throwing: error)
-                    } else if let identity = identity {
-                        continuation.resume(returning: identity)
-                    } else {
-                        continuation.resume(throwing: CloudKitError.recordConversionFailed)
-                    }
-                }
-            }
-            
-            // Try to get display name from user identity
             var displayName = "CloudKit User"
             
-            if let nameComponents = userIdentity.nameComponents {
-                if let givenName = nameComponents.givenName {
-                    displayName = givenName
-                    if let familyName = nameComponents.familyName {
-                        displayName += " \(familyName)"
+            // Try to discover user identity (this requires user discoverability to be enabled)
+            do {
+                let userIdentity = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<CKUserIdentity, Error>) in
+                    container.discoverUserIdentity(withUserRecordID: userRecordID) { identity, error in
+                        if let error = error {
+                            continuation.resume(throwing: error)
+                        } else if let identity = identity {
+                            continuation.resume(returning: identity)
+                        } else {
+                            continuation.resume(throwing: CKError(.userIdentityLookupFailed))
+                        }
                     }
                 }
+                
+                // Successfully got user identity, extract display name
+                if let nameComponents = userIdentity.nameComponents {
+                    if let givenName = nameComponents.givenName {
+                        displayName = givenName
+                        if let familyName = nameComponents.familyName {
+                            displayName += " \(familyName)"
+                        }
+                    }
+                }
+                print("CloudKit: Successfully got user identity display name: \(displayName)")
+                
+            } catch {
+                print("CloudKit: User identity discovery failed (likely discoverability not enabled): \(error)")
+                // This is expected if user hasn't enabled discoverability, so continue with fallback
             }
             
-            // Fallback: try to get the user record from the private database
+            // If we still have the default name, try alternative approaches
             if displayName == "CloudKit User" {
-                do {
-                    let userRecord = try await privateDatabase.record(for: userRecordID)
-                    displayName = userRecord["firstName"] as? String ?? 
-                                 userRecord["displayName"] as? String ?? 
-                                 userRecord["name"] as? String ?? 
-                                 "CloudKit User"
-                } catch {
-                    print("CloudKit: Could not fetch user record from private database: \(error)")
+                // Extract a user-friendly ID from the record name if possible
+                let recordName = userRecordID.recordName
+                if recordName.hasPrefix("_") && recordName.count > 8 {
+                    // Take first 8 characters after the underscore for a short ID
+                    let shortID = String(recordName.dropFirst().prefix(8))
+                    displayName = "User \(shortID)"
                 }
+                print("CloudKit: Using fallback display name: \(displayName)")
             }
             
             await MainActor.run {
                 self.userDisplayName = displayName
             }
-            print("CloudKit: User display name: \(displayName)")
+            print("CloudKit: Final user display name: \(displayName)")
+            
         } catch {
-            print("CloudKit: Failed to fetch user display name: \(error)")
+            print("CloudKit: Failed to fetch user record ID: \(error)")
             await MainActor.run {
                 self.userDisplayName = "CloudKit User"
             }
