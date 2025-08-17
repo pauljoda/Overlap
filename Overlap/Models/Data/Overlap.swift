@@ -65,6 +65,10 @@ class Overlap {
     var participants: [String] = []
     /// Whether this is an online collaborative session or local only
     var isOnline: Bool = false
+    /// CloudKit share information (if this overlap is shared)
+    var shareRecordName: String?
+    /// Whether this overlap was received via a CloudKit share (not owned by current user)
+    var isSharedToMe: Bool = false
 
     // MARK: - Questionnaire Data
     /// The title for this overlap session

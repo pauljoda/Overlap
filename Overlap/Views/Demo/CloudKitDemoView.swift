@@ -178,6 +178,25 @@ struct DemoOverlapCard: View {
                     HStack {
                         OnlineIndicator(isOnline: isOnline, overlapId: overlap.id, style: .detailed)
                         
+                        // Show sharing status for online overlaps
+                        if isOnline {
+                            Group {
+                                if overlap.isSharedToMe {
+                                    Label("Shared to me", systemImage: "arrow.down.circle.fill")
+                                        .font(.caption2)
+                                        .foregroundColor(.blue)
+                                } else if overlap.shareRecordName != nil {
+                                    Label("I shared this", systemImage: "arrow.up.circle.fill")
+                                        .font(.caption2)
+                                        .foregroundColor(.green)
+                                } else {
+                                    Label("Not shared", systemImage: "lock.circle")
+                                        .font(.caption2)
+                                        .foregroundColor(.orange)
+                                }
+                            }
+                        }
+                        
                         Spacer()
                         
                         Text("\(overlap.participants.count) participants")

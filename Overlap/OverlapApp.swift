@@ -13,6 +13,20 @@ import CloudKit
 struct OverlapApp: App {
     @StateObject private var cloudKitService = CloudKitService()
     @State private var pendingShareURL: URL?
+
+    let overlapModelContainer: ModelContainer = {
+        do {
+            let configuration = ModelConfiguration("OverlapContainer", cloudKitDatabase: .private("iCloud.com.pauljoda.Overlap"))
+            
+            return try ModelContainer(
+                for: Questionnaire.self,
+                Overlap.self,
+                configurations: configuration
+            )
+        } catch {
+            fatalError("Failed to create ModelContainer: \(error)")
+        }
+    }()
     
     var body: some Scene {
         WindowGroup {
@@ -34,10 +48,7 @@ struct OverlapApp: App {
                     }
                 }
         }
-        .modelContainer(for: [
-            Questionnaire.self,
-            Overlap.self,
-        ])
+        .modelContainer(overlapModelContainer)
     }
     
     private func handleCloudKitShareURL(_ url: URL) {

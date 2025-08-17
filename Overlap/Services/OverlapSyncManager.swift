@@ -61,9 +61,17 @@ class OverlapSyncManager: ObservableObject {
         isSyncing = true
         defer { isSyncing = false }
         
-        let remoteOverlaps = try await cloudKitService.fetchSharedOverlapUpdates()
+        // Fetch both types of shared overlaps:
+        // 1. Overlaps shared to us (from shared database)
+        let sharedToUsOverlaps = try await cloudKitService.fetchSharedOverlapUpdates()
         
-        for remoteOverlap in remoteOverlaps {
+        // 2. Overlaps we own and have shared (from private database) 
+        let ownSharedOverlaps = try await cloudKitService.fetchOwnSharedOverlapUpdates()
+        
+        // Combine and process all remote overlaps
+        let allRemoteOverlaps = sharedToUsOverlaps + ownSharedOverlaps
+        
+        for remoteOverlap in allRemoteOverlaps {
             await processRemoteOverlapUpdate(remoteOverlap)
         }
         

@@ -48,9 +48,15 @@ extension SampleData {
 @MainActor
 let cloudKitPreviewContainer: ModelContainer = {
     do {
+        let configuration = ModelConfiguration(
+            "OverlapPreviewContainer",
+            cloudKitContainerIdentifier: "iCloud.com.pauljoda.Overlap"
+        )
+        
         let container = try ModelContainer(
             for: Questionnaire.self,
-            Overlap.self
+            Overlap.self,
+            configurations: configuration
         )
         
         // Clear existing data
