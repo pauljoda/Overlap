@@ -13,6 +13,7 @@ enum OverlapState: String, Codable, CaseIterable {
     case instructions = "instructions"
     case answering = "answering"
     case nextParticipant = "nextParticipant"
+    case awaitingResponses = "awaitingResponses"
     case complete = "complete"
 }
 
@@ -147,6 +148,27 @@ class Overlap {
     /// Whether all participants have completed all questions
     var isComplete: Bool {
         return currentParticipantIndex >= participants.count
+    }
+    
+    /// Whether the overlap should be marked as complete based on online/offline mode
+    private var shouldBeComplete: Bool {
+        if isOnline {
+            // For online overlaps, require at least 2 participants to have completed
+            let completedParticipants = participants.filter { isParticipantComplete($0) }
+            return completedParticipants.count >= 2 && completedParticipants.count == participants.count
+        } else {
+            // For offline overlaps, use the original logic
+            return isComplete
+        }
+    }
+    
+    /// Whether the overlap should be in awaiting responses state
+    private var shouldAwaitResponses: Bool {
+        if isOnline {
+            let completedParticipants = participants.filter { isParticipantComplete($0) }
+            return completedParticipants.count >= 1 && completedParticipants.count < participants.count
+        }
+        return false
     }
 
     /// Total number of questions in the questionnaire
@@ -480,11 +502,13 @@ class Overlap {
         // Advance to next question or participant
         advanceSession()
 
-        // Check if session is complete
-        if isComplete {
+        // Determine appropriate state based on completion status
+        if shouldBeComplete {
             markAsComplete()
+        } else if shouldAwaitResponses {
+            currentState = .awaitingResponses
         } else if currentQuestionIndex == 0 {
-            // We moved to the next participant
+            // We moved to the next participant (for offline mode)
             currentState = .nextParticipant
         }
 
@@ -528,20 +552,6 @@ class Overlap {
     }
 
     // MARK: - Question Management
-
-    /// Returns the current question being answered by the current participant.
-    ///
-    /// - Returns: The current question string, or nil if no current question exists.
-    func getCurrentQuestion() -> String? {
-        return currentQuestion
-    }
-
-    /// Returns the current participant name.
-    ///
-    /// - Returns: The current participant string, or nil if no current participant exists.
-    func getCurrentParticipant() -> String? {
-        return currentParticipant
-    }
 
     /// Gets a question by its index in the original questionnaire
     ///
@@ -746,32 +756,8 @@ class Overlap {
     }
 }
 
-// MARK: - Questionnaire Integration Extensions
+// MARK: - CloudKit Support Methods
 extension Overlap {
-    /// Creates an Overlap from a Questionnaire template
-    ///
-    /// - Parameters:
-    ///   - questionnaire: The questionnaire template to copy data from
-    ///   - participants: Array of participant names
-    ///   - randomizeQuestions: Whether to enable question randomization
-    ///   - isOnline: Whether this is an online collaborative session
-    /// - Returns: A new Overlap instance with questionnaire data copied
-    static func from(
-        questionnaire: Questionnaire,
-        participants: [String] = [],
-        randomizeQuestions: Bool = false,
-        isOnline: Bool = false
-    ) -> Overlap {
-        return Overlap(
-            participants: participants,
-            isOnline: isOnline,
-            questionnaire: questionnaire,
-            randomizeQuestions: randomizeQuestions
-        )
-    }
-    
-    // MARK: - CloudKit Support Methods
-    
     /// Returns all participant responses for CloudKit sync
     func getAllResponses() -> [String: [Answer?]] {
         return participantResponses

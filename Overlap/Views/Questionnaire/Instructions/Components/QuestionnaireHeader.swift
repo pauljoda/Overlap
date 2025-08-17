@@ -33,9 +33,9 @@ struct QuestionnaireHeader: View {
                 .font(.body)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 20)
+                .padding(.horizontal, Tokens.Spacing.xl)
         }
-        .padding(.top, 20)
+        .padding(.top, Tokens.Spacing.xl)
     }
 }
 

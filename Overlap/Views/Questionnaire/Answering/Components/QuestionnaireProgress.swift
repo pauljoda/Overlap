@@ -21,7 +21,7 @@ struct QuestionnaireProgress: View {
             Text("\(overlap.currentQuestionIndex + 1) / \(overlap.totalQuestions)")
         } else {
             HStack {
-                Text(overlap.getCurrentParticipant() ?? "Unknown")
+                Text(overlap.currentParticipant ?? "Unknown")
                     .bold()
                 Text("\(overlap.currentQuestionIndex + 1) / \(overlap.totalQuestions)")
                 

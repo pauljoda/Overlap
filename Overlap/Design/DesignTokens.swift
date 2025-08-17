@@ -130,6 +130,13 @@ enum Tokens {
         static let response: Double = 0.6
         static let damping: Double = 0.8
     }
+    
+    enum Delay {
+        static let short: Double = 0.2
+        static let medium: Double = 0.4
+        static let long: Double = 0.6
+        static let extraLong: Double = 0.8
+    }
 
     // MARK: - Layout Grid
     enum Grid {

@@ -23,7 +23,7 @@ struct QuestionnaireAnsweringView: View {
     var body: some View {
         GlassScreen(scrollable: false, emphasis: blobEmphasis) {
             VStack(spacing: Tokens.Spacing.xs) {
-                if let currentQuestion = overlap.getCurrentQuestion() {
+                if let currentQuestion = overlap.currentQuestion {
                     CardView(
                         question: currentQuestion,
                         onSwipe: { answer in
@@ -54,9 +54,9 @@ struct QuestionnaireAnsweringView: View {
                             cardOpacity = 0.0
 
                             // Animate in the next card with a slight delay to ensure state is updated
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + Tokens.Delay.short) {
                                 withAnimation(
-                                    .spring(response: 0.6, dampingFraction: 0.8)
+                                    .spring(response: Tokens.Spring.response, dampingFraction: Tokens.Spring.damping)
                                 ) {
                                     cardScale = 1.0
                                     cardOpacity = 1.0
@@ -85,10 +85,10 @@ struct QuestionnaireAnsweringView: View {
                 
                 // Progress
                 QuestionnaireProgress(overlap: overlap)
-                    .padding(.top, 12)
-                    .padding(.bottom, 20)
+                    .padding(.top, Tokens.Spacing.m)
+                    .padding(.bottom, Tokens.Spacing.xl)
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, Tokens.Spacing.xl)
         }
     }
     
