@@ -301,6 +301,11 @@ class Overlap {
         if randomizeQuestions {
             generateRandomizedQuestionOrders()
         }
+        
+        // Debug logging for empty overlaps
+        if participants.isEmpty || questions.isEmpty {
+            print("⚠️ Overlap: Created overlap with empty content - ID: \(id), participants: \(participants.count), questions: \(questions.count), title: '\(title)'")
+        }
     }
     
     /// Convenience initializer for creating an overlap with direct question data
@@ -341,6 +346,11 @@ class Overlap {
         initializeParticipantResponses()
         if randomizeQuestions {
             generateRandomizedQuestionOrders()
+        }
+        
+        // Debug logging for empty overlaps
+        if participants.isEmpty || questions.isEmpty {
+            print("⚠️ Overlap: Created overlap with empty content (convenience init) - ID: \(id), participants: \(participants.count), questions: \(questions.count), title: '\(title)'")
         }
     }
     
@@ -398,6 +408,11 @@ class Overlap {
         initializeParticipantResponses()
         if randomizeQuestions {
             generateRandomizedQuestionOrders()
+        }
+        
+        // Debug logging for empty overlaps
+        if participants.isEmpty || questions.isEmpty {
+            print("⚠️ Overlap: Created overlap with empty content (CloudKit init) - ID: \(id), participants: \(participants.count), questions: \(questions.count), title: '\(title)'")
         }
     }
 

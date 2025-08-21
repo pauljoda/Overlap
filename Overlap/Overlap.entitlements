@@ -17,6 +17,7 @@
 	<key>com.apple.developer.associated-domains</key>
 	<array>
 		<string>applinks:www.icloud.com</string>
+		<string>applinks:share.icloud.com</string>
 	</array>
 </dict>
 </plist>

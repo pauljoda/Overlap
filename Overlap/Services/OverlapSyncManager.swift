@@ -56,7 +56,10 @@ class OverlapSyncManager: ObservableObject {
     
     /// Fetches updates from CloudKit for shared overlaps
     func fetchUpdates() async throws {
-        guard cloudKitService.isAvailable else { return }
+        guard cloudKitService.isAvailable else { 
+            print("CloudKit: Skipping fetch - CloudKit not available")
+            return 
+        }
         
         isSyncing = true
         defer { isSyncing = false }
@@ -90,7 +93,14 @@ class OverlapSyncManager: ObservableObject {
         
         guard let localOverlaps = try? modelContext.fetch(localOverlapRequest),
               let localOverlap = localOverlaps.first else {
+            // Validate the remote overlap before adding it
+            guard !remoteOverlap.participants.isEmpty && !remoteOverlap.questions.isEmpty else {
+                print("⚠️ OverlapSyncManager: Skipping empty remote overlap - ID: \(remoteOverlap.id), participants: \(remoteOverlap.participants.count), questions: \(remoteOverlap.questions.count)")
+                return
+            }
+            
             // New overlap - add it
+            print("📥 OverlapSyncManager: Adding new remote overlap - \(remoteOverlap.title)")
             modelContext.insert(remoteOverlap)
             overlapsWithUnreadChanges.insert(remoteOverlap.id)
             return
@@ -175,13 +185,15 @@ class OverlapSyncManager: ObservableObject {
     
     private func startPeriodicSync() async {
         while true {
-            // Sync every 30 seconds for active shared overlaps
-            try? await Task.sleep(nanoseconds: 30_000_000_000)
+            // Sync every 2 minutes to reduce CloudKit API calls
+            try? await Task.sleep(nanoseconds: 120_000_000_000)
             
             do {
                 try await fetchUpdates()
             } catch {
-                print("Periodic sync failed: \(error)")
+                print("CloudKit: Periodic sync failed: \(error.localizedDescription)")
+                // Wait longer after an error before retrying
+                try? await Task.sleep(nanoseconds: 60_000_000_000)
             }
         }
     }

@@ -14,7 +14,7 @@ import Combine
 class CloudKitService: ObservableObject {
     // MARK: - Properties
     
-    private let container: CKContainer
+    let container: CKContainer
     private let privateDatabase: CKDatabase
     private let sharedDatabase: CKDatabase
     private let userPreferences = UserPreferences.shared
@@ -301,6 +301,11 @@ class CloudKitService: ObservableObject {
                 continue
             }
             
+            // Skip Apple's internal zones
+            if zone.zoneID.zoneName.contains("com.apple.coredata.cloudkit") {
+                continue
+            }
+            
             // Query for Overlap records in this specific zone
             let query = CKQuery(recordType: "Overlap", predicate: NSPredicate(value: true))
             
@@ -317,14 +322,15 @@ class CloudKitService: ObservableObject {
                             let overlap = try Overlap.from(ckRecord: record)
                             overlaps.append(overlap)
                         } catch {
-                            print("Failed to convert record to overlap: \(error)")
+                            print("CloudKit: Failed to convert shared record to overlap: \(error)")
                         }
                     case .failure(let error):
-                        print("Failed to fetch record: \(error)")
+                        print("CloudKit: Failed to fetch shared record: \(error)")
                     }
                 }
             } catch {
-                print("Failed to query zone \(zone.zoneID.zoneName): \(error)")
+                // Log the error but continue with other zones
+                print("CloudKit: Failed to query shared zone \(zone.zoneID.zoneName): \(error.localizedDescription)")
             }
         }
         
@@ -352,6 +358,16 @@ class CloudKitService: ObservableObject {
                 continue
             }
             
+            // Skip Apple's internal zones
+            if zone.zoneID.zoneName.contains("com.apple.coredata.cloudkit") {
+                continue
+            }
+            
+            // Only query zones that look like UUID (our Overlap zones)
+            if UUID(uuidString: zone.zoneID.zoneName) == nil && zone.zoneID.zoneName != "OverlapSharingZone" {
+                continue
+            }
+            
             // Query for Overlap records in this specific zone
             let query = CKQuery(recordType: "Overlap", predicate: NSPredicate(value: true))
             
@@ -371,14 +387,15 @@ class CloudKitService: ObservableObject {
                                 overlaps.append(overlap)
                             }
                         } catch {
-                            print("Failed to convert record to overlap: \(error)")
+                            print("CloudKit: Failed to convert private record to overlap: \(error)")
                         }
                     case .failure(let error):
-                        print("Failed to fetch record: \(error)")
+                        print("CloudKit: Failed to fetch private record: \(error)")
                     }
                 }
             } catch {
-                print("Failed to query zone \(zone.zoneID.zoneName): \(error)")
+                // Log the error but continue with other zones
+                print("CloudKit: Failed to query private zone \(zone.zoneID.zoneName): \(error.localizedDescription)")
             }
         }
         
@@ -393,6 +410,27 @@ class CloudKitService: ObservableObject {
         let metadata = try await container.shareMetadata(for: url)
         // Simply verify we can get metadata - that's sufficient for testing
         print("CloudKit: Share URL is valid and accessible")
+    }
+    
+    /// Gets overlap details from a share URL without accepting the share
+    func getOverlapFromShareURL(_ url: URL) async throws -> Overlap {
+        guard isAvailable else {
+            throw CloudKitError.accountNotAvailable
+        }
+        
+        let metadata = try await container.shareMetadata(for: url)
+        
+        // Try to get the root record from metadata first
+        if let rootRecord = metadata.rootRecord {
+            return try Overlap.from(ckRecord: rootRecord)
+        }
+        
+        // If root record is not available in metadata, we need to fetch it
+        // This requires accepting the share temporarily or using the shared database
+        let database = container.sharedCloudDatabase
+        let record = try await database.record(for: metadata.rootRecordID)
+        
+        return try Overlap.from(ckRecord: record)
     }
     
     /// Populates a CKRecord with overlap data
@@ -538,6 +576,12 @@ extension Overlap {
               let participants = record["participants"] as? [String],
               let beginDate = record["beginDate"] as? Date
         else {
+            throw CloudKitError.recordConversionFailed
+        }
+        
+        // Validate that we have actual content
+        guard !questions.isEmpty, !participants.isEmpty else {
+            print("⚠️ CloudKit: Skipping record with empty content - questions: \(questions.count), participants: \(participants.count)")
             throw CloudKitError.recordConversionFailed
         }
         

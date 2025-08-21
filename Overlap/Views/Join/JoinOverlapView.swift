@@ -11,18 +11,22 @@ import CloudKit
 
 struct JoinOverlapView: View {
     let shareURL: URL?
+    let shareMetadata: CKShare.Metadata?
     
     @Environment(\.modelContext) private var modelContext
     @Environment(\.navigationPath) private var navigationPath
     @StateObject private var cloudKitService = CloudKitService()
+    @StateObject private var userPreferences = UserPreferences.shared
     
     @State private var isJoining = false
     @State private var joinError: Error?
     @State private var showingError = false
     @State private var joinedOverlap: Overlap?
+    @State private var showingDisplayNameSetup = false
     
-    init(shareURL: URL? = nil) {
+    init(shareURL: URL? = nil, shareMetadata: CKShare.Metadata? = nil) {
         self.shareURL = shareURL
+        self.shareMetadata = shareMetadata
     }
     
     var body: some View {
@@ -119,9 +123,21 @@ struct JoinOverlapView: View {
         } message: {
             Text(joinError?.localizedDescription ?? "Failed to join overlap")
         }
+        .sheet(isPresented: $showingDisplayNameSetup) {
+            NavigationView {
+                DisplayNameSetupView(cloudKitService: cloudKitService)
+            }
+        }
         .onChange(of: joinedOverlap) { _, overlap in
             if let overlap = overlap {
+                // Validate overlap before adding to SwiftData
+                guard !overlap.participants.isEmpty && !overlap.questions.isEmpty else {
+                    print("⚠️ JoinOverlapView: Skipping empty joined overlap - participants: \(overlap.participants.count), questions: \(overlap.questions.count)")
+                    return
+                }
+                
                 // Add the joined overlap to SwiftData
+                print("📥 JoinOverlapView: Adding joined overlap - \(overlap.title)")
                 modelContext.insert(overlap)
                 try? modelContext.save()
                 
@@ -135,11 +151,69 @@ struct JoinOverlapView: View {
             }
         }
         .onAppear {
-            // If we have a share URL, automatically try to join
-            if let shareURL = shareURL {
-                Task {
+            Task {
+                await cloudKitService.checkAccountStatus()
+                
+                // Check if user needs display name setup before proceeding
+                if cloudKitService.isAvailable && userPreferences.needsDisplayNameSetup {
+                    showingDisplayNameSetup = true
+                    return
+                }
+                
+                // If we have share metadata, process it directly
+                if let shareMetadata = shareMetadata {
+                    await handleIncomingMetadata(shareMetadata)
+                }
+                // If we have a share URL, automatically try to join
+                else if let shareURL = shareURL {
                     await handleIncomingURL(shareURL)
                 }
+            }
+        }
+        .onChange(of: userPreferences.isDisplayNameSetup) { _, isSetup in
+            // When display name setup is completed, try to process the share
+            if isSetup {
+                Task {
+                    if let shareMetadata = shareMetadata {
+                        await handleIncomingMetadata(shareMetadata)
+                    } else if let shareURL = shareURL {
+                        await handleIncomingURL(shareURL)
+                    }
+                }
+            }
+        }
+    }
+    
+    private func handleIncomingMetadata(_ metadata: CKShare.Metadata) async {
+        print("JoinOverlapView: Processing share metadata: \(metadata.rootRecordID.recordName)")
+        
+        await MainActor.run {
+            isJoining = true
+        }
+        
+        do {
+            // Accept the share using the metadata
+            print("JoinOverlapView: Accepting share from metadata...")
+            let overlap = try await cloudKitService.acceptShare(with: metadata)
+            print("JoinOverlapView: Successfully accepted share: \(overlap.title)")
+            
+            await MainActor.run {
+                joinedOverlap = overlap
+                isJoining = false
+            }
+        } catch {
+            print("JoinOverlapView: Error processing share metadata: \(error)")
+            
+            // Provide more detailed error information
+            if let ckError = error as? CKError {
+                print("JoinOverlapView: CloudKit error code: \(ckError.code.rawValue)")
+                print("JoinOverlapView: CloudKit error description: \(ckError.localizedDescription)")
+            }
+            
+            await MainActor.run {
+                joinError = error
+                showingError = true
+                isJoining = false
             }
         }
     }

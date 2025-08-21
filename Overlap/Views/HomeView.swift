@@ -124,6 +124,12 @@ struct HomeView: View {
                 }
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("NavigateToOverlap"))) { notification in
+            if let overlap = notification.object as? Overlap {
+                // Navigate to the overlap when opened from a share link
+                navigate(to: overlap, using: $path)
+            }
+        }
     }
 }
 
