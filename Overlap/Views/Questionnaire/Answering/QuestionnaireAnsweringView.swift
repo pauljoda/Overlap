@@ -32,16 +32,24 @@ struct QuestionnaireAnsweringView: View {
                             // Save answer first (this changes the question index)
                             let wasCompleted = overlap.isCompleted
                             let previousState = overlap.currentState
-                            overlap.saveResponse(answer: answer)
+                            let saveSuccessful = overlap.saveResponse(answer: answer)
+                            
+                            print("🔍 QuestionnaireAnsweringView: saveResponse result: \(saveSuccessful)")
                             
                             // Save changes to model context
-                            try? modelContext.save()
+                            do {
+                                try modelContext.save()
+                                print("🔍 QuestionnaireAnsweringView: ModelContext saved successfully")
+                            } catch {
+                                print("🔍 QuestionnaireAnsweringView: ModelContext save failed: \(error)")
+                            }
                             
                             // Sync to CloudKit if this is an online overlap and participant completed their portion
                             if overlap.isOnline && !wasCompleted && 
                                (overlap.currentState == .nextParticipant || overlap.currentState == .complete) &&
                                previousState == .answering {
                                 Task {
+                                    print("🔍 QuestionnaireAnsweringView: Starting CloudKit sync...")
                                     await syncParticipantCompletion()
                                 }
                             }
@@ -95,7 +103,12 @@ struct QuestionnaireAnsweringView: View {
     // MARK: - Sync Functions
     
     private func syncParticipantCompletion() async {
-        guard let syncManager = syncManager else { return }
+        guard let syncManager = syncManager else { 
+            print("🔍 QuestionnaireAnsweringView: syncManager is nil")
+            return 
+        }
+        
+        print("🔍 QuestionnaireAnsweringView: About to call syncOverlapCompletion")
         
         do {
             try await syncManager.syncOverlapCompletion(overlap)

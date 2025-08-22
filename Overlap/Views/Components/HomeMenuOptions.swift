@@ -9,7 +9,6 @@ import SwiftUI
 
 struct HomeMenuOptions: View {
     @Environment(\.navigationPath) private var navigationPath
-    @State private var showDeveloperOptions = false
     
     var body: some View {
         VStack(spacing: Tokens.Spacing.xl) {
@@ -53,17 +52,6 @@ struct HomeMenuOptions: View {
                 )
             }
             
-            
-            Button(action: {
-                navigate(to: .join, using: navigationPath)
-            }) {
-                HomeOptionButton(
-                    title: "Join",
-                    icon: "person.2.fill",
-                    color: .teal
-                )
-            }
-            
             Button(action: {
                 navigate(to: .browse, using: navigationPath)
             }) {
@@ -72,24 +60,6 @@ struct HomeMenuOptions: View {
                     icon: "list.bullet.rectangle.fill",
                     color: .red
                 )
-            }
-            
-            // Developer demo (hidden behind long press)
-            Button(action: {
-                navigationPath.wrappedValue.append("cloudkit-demo")
-            }) {
-                HomeOptionButton(
-                    title: "CloudKit Demo",
-                    icon: "cloud.fill",
-                    color: .cyan
-                )
-            }
-            .opacity(showDeveloperOptions ? 1.0 : 0.0)
-            .animation(.easeInOut, value: showDeveloperOptions)
-        }
-        .onLongPressGesture {
-            withAnimation {
-                showDeveloperOptions.toggle()
             }
         }
     }

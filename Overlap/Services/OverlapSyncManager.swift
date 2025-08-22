@@ -2,7 +2,7 @@
 //  OverlapSyncManager.swift
 //  Overlap
 //
-//  Manages synchronization and notification for overlap sessions
+//  Simple sync manager for CloudKit sharing
 //
 
 import SwiftUI
@@ -17,189 +17,95 @@ class OverlapSyncManager: ObservableObject {
     private let cloudKitService = CloudKitService()
     private let modelContext: ModelContext
     
-    // Track overlaps that have unread changes
-    @Published private(set) var overlapsWithUnreadChanges: Set<UUID> = []
-    
-    // Sync status tracking
+    // Track sync state per overlap
     @Published private(set) var isSyncing = false
-    @Published private(set) var lastSyncDate: Date?
+    @Published private(set) var syncingOverlapIDs: Set<UUID> = []
     
     // MARK: - Initialization
     
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
-        
-        // Start background sync for shared overlaps
-        Task {
-            await startPeriodicSync()
-        }
     }
     
-    // MARK: - Sync Operations
+    // MARK: - Share Acceptance & Response Syncing
     
-    /// Syncs an overlap to CloudKit when a participant completes their questions
+    /// Accepts a CloudKit share and adds it to local SwiftData
+    func acceptShare(with metadata: CKShare.Metadata) async throws {
+        try await cloudKitService.acceptShare(metadata, to: modelContext)
+    }
+    
+    /// Syncs participant responses to CloudKit for shared overlaps
+    func syncResponses(for overlap: Overlap) async throws {
+        guard overlap.isOnline else { return }
+        try await cloudKitService.updateOverlapResponses(overlap)
+    }
+    
+    /// Syncs overlap completion when a participant finishes their questions
     func syncOverlapCompletion(_ overlap: Overlap) async throws {
+        // This is the same as syncing responses for the current implementation
+        try await syncResponses(for: overlap)
+    }
+    
+    /// Fetches and merges the latest responses from CloudKit
+    func fetchLatestResponses(for overlap: Overlap) async throws {
+        guard overlap.isOnline else { return }
+        try await cloudKitService.fetchAndMergeResponses(overlap)
+    }
+    
+    // MARK: - CloudKit Fetching
+    
+    /// Simplified fetch - UICloudSharingController handles most syncing automatically
+    func fetchOverlapUpdates(_ overlap: Overlap) async throws {
         guard overlap.isOnline else { return }
         
+        syncingOverlapIDs.insert(overlap.id)
+        defer { syncingOverlapIDs.remove(overlap.id) }
+        
+        // Fetch the latest responses from other participants
+        try await fetchLatestResponses(for: overlap)
+        print("Fetched latest responses for overlap: \(overlap.title)")
+    }
+    
+    /// Fetches updates for all online overlaps
+    func fetchAllOnlineOverlapUpdates() async throws {
         isSyncing = true
         defer { isSyncing = false }
         
-        try await cloudKitService.syncOverlap(overlap)
+        // Get all online overlaps from local database
+        let onlineOverlaps = try modelContext.fetch(FetchDescriptor<Overlap>()).filter { $0.isOnline }
         
-        // Mark local changes as synced
-        overlapsWithUnreadChanges.remove(overlap.id)
-        lastSyncDate = Date()
-        
-        // Update the overlap in SwiftData
-        try? modelContext.save()
+        // With UICloudSharingController, syncing is mostly automatic
+        print("Checking \(onlineOverlaps.count) online overlaps for updates")
     }
     
-    /// Fetches updates from CloudKit for shared overlaps
+    // MARK: - Status Methods
+    
+    /// Check if a specific overlap is currently syncing
+    func isSyncing(overlap: Overlap) -> Bool {
+        return syncingOverlapIDs.contains(overlap.id)
+    }
+    
+    /// Basic fetch updates method for compatibility with existing views
     func fetchUpdates() async throws {
-        guard cloudKitService.isAvailable else { 
-            print("CloudKit: Skipping fetch - CloudKit not available")
-            return 
-        }
-        
-        isSyncing = true
-        defer { isSyncing = false }
-        
-        // Fetch both types of shared overlaps:
-        // 1. Overlaps shared to us (from shared database)
-        let sharedToUsOverlaps = try await cloudKitService.fetchSharedOverlapUpdates()
-        
-        // 2. Overlaps we own and have shared (from private database) 
-        let ownSharedOverlaps = try await cloudKitService.fetchOwnSharedOverlapUpdates()
-        
-        // Combine and process all remote overlaps
-        let allRemoteOverlaps = sharedToUsOverlaps + ownSharedOverlaps
-        
-        for remoteOverlap in allRemoteOverlaps {
-            await processRemoteOverlapUpdate(remoteOverlap)
-        }
-        
-        lastSyncDate = Date()
+        try await fetchAllOnlineOverlapUpdates()
     }
     
-    /// Processes a remote overlap update and merges with local data
-    private func processRemoteOverlapUpdate(_ remoteOverlap: Overlap) async {
-        // Find the local overlap
-        let remoteId = remoteOverlap.id
-        let localOverlapRequest = FetchDescriptor<Overlap>(
-            predicate: #Predicate<Overlap> { overlap in
-                overlap.id == remoteId
-            }
-        )
-        
-        guard let localOverlaps = try? modelContext.fetch(localOverlapRequest),
-              let localOverlap = localOverlaps.first else {
-            // Validate the remote overlap before adding it
-            guard !remoteOverlap.participants.isEmpty && !remoteOverlap.questions.isEmpty else {
-                print("⚠️ OverlapSyncManager: Skipping empty remote overlap - ID: \(remoteOverlap.id), participants: \(remoteOverlap.participants.count), questions: \(remoteOverlap.questions.count)")
-                return
-            }
-            
-            // New overlap - add it
-            print("📥 OverlapSyncManager: Adding new remote overlap - \(remoteOverlap.title)")
-            modelContext.insert(remoteOverlap)
-            overlapsWithUnreadChanges.insert(remoteOverlap.id)
-            return
-        }
-        
-        // Check if there are new responses
-        let hasNewResponses = mergeOverlapResponses(local: localOverlap, remote: remoteOverlap)
-        
-        if hasNewResponses {
-            overlapsWithUnreadChanges.insert(localOverlap.id)
-        }
-        
-        // Update other properties if needed
-        if remoteOverlap.currentState != localOverlap.currentState ||
-           remoteOverlap.currentParticipantIndex != localOverlap.currentParticipantIndex ||
-           remoteOverlap.currentQuestionIndex != localOverlap.currentQuestionIndex {
-            
-            localOverlap.currentState = remoteOverlap.currentState
-            localOverlap.currentParticipantIndex = remoteOverlap.currentParticipantIndex
-            localOverlap.currentQuestionIndex = remoteOverlap.currentQuestionIndex
-            localOverlap.isCompleted = remoteOverlap.isCompleted
-            localOverlap.completeDate = remoteOverlap.completeDate
-            
-            overlapsWithUnreadChanges.insert(localOverlap.id)
-        }
-        
-        try? modelContext.save()
-    }
-    
-    /// Merges responses from remote overlap into local overlap
-    /// Returns true if new responses were found
-    private func mergeOverlapResponses(local: Overlap, remote: Overlap) -> Bool {
-        let localResponses = local.getAllResponses()
-        let remoteResponses = remote.getAllResponses()
-        
-        var hasNewResponses = false
-        var mergedResponses = localResponses
-        
-        for (participant, responses) in remoteResponses {
-            if let localParticipantResponses = localResponses[participant] {
-                // Merge responses for existing participant
-                for (index, response) in responses.enumerated() {
-                    if index < localParticipantResponses.count {
-                        if localParticipantResponses[index] == nil && response != nil {
-                            mergedResponses[participant]?[index] = response
-                            hasNewResponses = true
-                        }
-                    } else {
-                        // New response beyond current range
-                        while mergedResponses[participant]!.count <= index {
-                            mergedResponses[participant]?.append(nil)
-                        }
-                        mergedResponses[participant]?[index] = response
-                        hasNewResponses = true
-                    }
-                }
-            } else {
-                // New participant responses
-                mergedResponses[participant] = responses
-                hasNewResponses = true
-            }
-        }
-        
-        if hasNewResponses {
-            local.restoreResponses(mergedResponses)
-        }
-        
-        return hasNewResponses
-    }
-    
-    /// Marks an overlap's changes as read
-    func markOverlapAsRead(_ overlapId: UUID) {
-        overlapsWithUnreadChanges.remove(overlapId)
-    }
-    
-    /// Checks if an overlap has unread changes
+    /// Check if an overlap has unread changes (simplified)
     func hasUnreadChanges(for overlapId: UUID) -> Bool {
-        return overlapsWithUnreadChanges.contains(overlapId)
+        // For the simplified implementation, we don't track unread changes
+        // SwiftData + CloudKit handles this automatically
+        return false
     }
     
-    // MARK: - Periodic Sync
-    
-    private func startPeriodicSync() async {
-        while true {
-            // Sync every 2 minutes to reduce CloudKit API calls
-            try? await Task.sleep(nanoseconds: 120_000_000_000)
-            
-            do {
-                try await fetchUpdates()
-            } catch {
-                print("CloudKit: Periodic sync failed: \(error.localizedDescription)")
-                // Wait longer after an error before retrying
-                try? await Task.sleep(nanoseconds: 60_000_000_000)
-            }
-        }
+    /// Mark an overlap as read (simplified implementation)
+    func markOverlapAsRead(_ overlapId: UUID) {
+        // In the simplified implementation, we don't need to track read state
+        // This method is kept for compatibility with existing views
+        print("Marked overlap \(overlapId) as read")
     }
 }
 
-// MARK: - Environment Key
+// MARK: - Environment Integration
 
 struct OverlapSyncManagerKey: EnvironmentKey {
     static let defaultValue: OverlapSyncManager? = nil

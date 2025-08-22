@@ -63,12 +63,35 @@ class Overlap {
     // MARK: - Collaboration Settings
     /// List of participant names in this overlap session
     var participants: [String] = []
-    /// Whether this is an online collaborative session or local only
-    var isOnline: Bool = false
+    /// Whether this overlap is intended to be online (stored property)
+    private var _isOnline: Bool = false
     /// CloudKit share information (if this overlap is shared)
     var shareRecordName: String?
     /// Whether this overlap was received via a CloudKit share (not owned by current user)
     var isSharedToMe: Bool = false
+    /// The original CloudKit record ID (used for shared overlaps)
+    var cloudKitRecordID: String?
+    /// The CloudKit zone ID for this overlap (used in zone-based sharing)
+    var cloudKitZoneID: String?
+    /// CloudKit participant user IDs for tracking completion status
+    var cloudKitParticipants: [String]?
+    
+    /// Whether this is an online collaborative session or local only
+    var isOnline: Bool {
+        get {
+            // An overlap is online if it's intended to be online OR if it has CloudKit data
+            return _isOnline || cloudKitRecordID != nil
+        }
+        set {
+            _isOnline = newValue
+        }
+    }
+    
+    /// Whether the current user is the owner (created the overlap)
+    var isOwner: Bool {
+        guard let cloudKitRecordID = cloudKitRecordID else { return true }
+        return id.uuidString == cloudKitRecordID
+    }
 
     // MARK: - Questionnaire Data
     /// The title for this overlap session
@@ -80,7 +103,7 @@ class Overlap {
     /// The questions for this session
     var questions: [String] = []
     /// Storage for all participant responses organized by participant name and question index
-    private var participantResponses: [String: [Answer?]] = [:]
+    var participantResponses: [String: [Answer?]] = [:]
     
     // MARK: - Visual Customization (copied from Questionnaire)
     /// Icon emoji for the overlap session
@@ -274,7 +297,7 @@ class Overlap {
         self.beginDate = beginDate
         self.completeDate = completeDate
         self.participants = participants
-        self.isOnline = isOnline
+        self._isOnline = isOnline
         
         // Copy questionnaire data to preserve immutability
         self.title = questionnaire.title
@@ -329,7 +352,7 @@ class Overlap {
         self.beginDate = beginDate
         self.completeDate = completeDate
         self.participants = participants
-        self.isOnline = isOnline
+        self._isOnline = isOnline
         self.title = title
         self.information = information
         self.instructions = instructions
@@ -354,8 +377,8 @@ class Overlap {
         }
     }
     
-    /// CloudKit-specific initializer for reconstructing overlaps from CKRecords
-    /// This initializer allows setting all properties directly without needing a Questionnaire object
+    /// Comprehensive initializer for reconstructing overlaps with all properties
+    /// Used when creating overlaps from external data sources
     init(
         id: UUID,
         beginDate: Date,
@@ -385,7 +408,7 @@ class Overlap {
         self.beginDate = beginDate
         self.completeDate = completeDate
         self.participants = participants
-        self.isOnline = isOnline
+        self._isOnline = isOnline
         self.title = title
         self.information = information
         self.instructions = instructions
@@ -412,7 +435,7 @@ class Overlap {
         
         // Debug logging for empty overlaps
         if participants.isEmpty || questions.isEmpty {
-            print("⚠️ Overlap: Created overlap with empty content (CloudKit init) - ID: \(id), participants: \(participants.count), questions: \(questions.count), title: '\(title)'")
+            print("⚠️ Overlap: Created overlap with empty content (full init) - ID: \(id), participants: \(participants.count), questions: \(questions.count), title: '\(title)'")
         }
     }
 
@@ -523,6 +546,14 @@ class Overlap {
 
         // Save the answer at the actual question index (this maintains consistent storage)
         participantResponses[participant]![actualQuestionIndex] = answer
+        
+        // Debug logging to verify the response was saved
+        print("🔍 saveResponse Debug:")
+        print("  - participant: \(participant)")
+        print("  - currentQuestionIndex: \(currentQuestionIndex)")
+        print("  - actualQuestionIndex: \(actualQuestionIndex)")
+        print("  - answer: \(answer.rawValue)")
+        print("  - responses after save: \(participantResponses[participant] ?? [])")
 
         // Advance to next question or participant
         advanceSession()
@@ -787,7 +818,7 @@ class Overlap {
     }
 }
 
-// MARK: - CloudKit Support Methods
+// MARK: - SwiftData CloudKit Support Methods
 extension Overlap {
     /// Returns all participant responses for CloudKit sync
     func getAllResponses() -> [String: [Answer?]] {
@@ -797,5 +828,29 @@ extension Overlap {
     /// Restores participant responses from CloudKit data
     func restoreResponses(_ responses: [String: [Answer?]]) {
         participantResponses = responses
+    }
+    
+    /// Sets responses for a specific participant (used for CloudKit sync)
+    /// - Parameters:
+    ///   - participant: Name of the participant
+    ///   - responses: Array of responses to set
+    func setResponsesForParticipant(_ participant: String, responses: [Answer?]) {
+        guard participants.contains(participant) else {
+            print("Warning: Participant '\(participant)' not found in participants list")
+            return
+        }
+        
+        // Ensure the participant exists in participantResponses
+        if participantResponses[participant] == nil {
+            initializeResponsesForParticipant(participant)
+        }
+        
+        // Update responses, ensuring we don't exceed the questions count
+        let maxResponses = min(responses.count, questions.count)
+        for i in 0..<maxResponses {
+            participantResponses[participant]![i] = responses[i]
+        }
+        
+        print("Updated responses for participant '\(participant)': \(responses.compactMap { $0 }.count)/\(questions.count) answered")
     }
 }

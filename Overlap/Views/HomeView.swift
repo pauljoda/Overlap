@@ -23,9 +23,9 @@ extension EnvironmentValues {
 struct HomeView: View {
     @State private var path = NavigationPath()
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.cloudKitService) private var cloudKitService
     @State private var syncManager: OverlapSyncManager?
     @StateObject private var userPreferences = UserPreferences.shared
-    @StateObject private var cloudKitService = CloudKitService()
     @State private var showingDisplayNameSetup = false
     
     var body: some View {
@@ -73,12 +73,8 @@ struct HomeView: View {
                     InProgressView()
                 case "completed":
                     CompletedView()
-                case "join":
-                    JoinOverlapView()
                 case "browse":
                     ComingSoonView(title: "Browse")
-                case "cloudkit-demo":
-                    CloudKitDemoView()
                 case let editPath where editPath.hasPrefix("edit-"):
                     // Extract questionnaire ID for editing
                     let questionnaireId = String(editPath.dropFirst(5)) // Remove "edit-" prefix
@@ -121,6 +117,11 @@ struct HomeView: View {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                         showingDisplayNameSetup = true
                     }
+                }
+                
+                // Validate shared overlaps to clear stale share info
+                if cloudKitService.isAvailable {
+                    await cloudKitService.validateSharedOverlaps(in: modelContext)
                 }
             }
         }

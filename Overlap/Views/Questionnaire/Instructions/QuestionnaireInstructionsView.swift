@@ -147,7 +147,14 @@ struct QuestionnaireInstructionsView: View {
         // Initialize responses for all current participants
         overlap.initializeResponses()
 
-        overlap.currentState = .nextParticipant
+        if overlap.isOnline {
+            // For online overlaps, go directly to answering state
+            // The user should use the ShareButton above to share with others
+            overlap.currentState = .answering
+        } else {
+            // For local overlaps, use the participant selection flow
+            overlap.currentState = .nextParticipant
+        }
         
         // Save the overlap to the model context when starting
         modelContext.insert(overlap)

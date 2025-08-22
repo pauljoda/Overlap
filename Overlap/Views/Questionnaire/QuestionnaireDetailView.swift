@@ -11,6 +11,7 @@ import SwiftUI
 struct QuestionnaireDetailView: View {
     let questionnaire: Questionnaire
     @Environment(\.navigationPath) private var navigationPath
+    @StateObject private var userPreferences = UserPreferences.shared
 
     var body: some View {
         ZStack {
@@ -77,7 +78,10 @@ struct QuestionnaireDetailView: View {
     
     private func startOnline() {
         // Create a new Overlap from the questionnaire for online collaboration
+        // Add the current user as the first participant
+        let currentUser = userPreferences.userDisplayName ?? "You"
         let overlap = Overlap(
+            participants: [currentUser],
             isOnline: true,
             questionnaire: questionnaire,
             randomizeQuestions: false

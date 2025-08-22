@@ -2,19 +2,18 @@
 //  OverlapApp.swift
 //  Overlap
 //
-//  Created by Paul Davis on 7/24/25.
+//  Main SwiftUI App with CloudKit share handling
 //
 
 import SwiftData
 import SwiftUI
 import CloudKit
+import Foundation
 
 @main
 struct OverlapApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    @StateObject private var cloudKitService = CloudKitService()
-    @State private var pendingShareURL: URL?
-    @State private var pendingShareMetadata: CKShare.Metadata?
+    private let cloudKitService = CloudKitService()
 
     let overlapModelContainer: ModelContainer = {
         do {
@@ -33,163 +32,90 @@ struct OverlapApp: App {
     var body: some Scene {
         WindowGroup {
             HomeView()
-                .onAppear {
-                    // Set up the app delegate callback for CloudKit shares
-                    AppDelegate.shared.onCloudKitShareAccepted = { metadata in
-                        pendingShareMetadata = metadata
-                    }
-                }
-                .onOpenURL { url in
-                    handleURL(url)
-                }
-                .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { userActivity in
-                    if let url = userActivity.webpageURL {
-                        handleURL(url)
-                    }
-                }
-                .sheet(item: Binding<ShareURLItem?>(
-                    get: { 
-                        if let metadata = pendingShareMetadata {
-                            return ShareURLItem(url: nil, metadata: metadata)
-                        } else if let url = pendingShareURL {
-                            return ShareURLItem(url: url, metadata: nil)
+                .environment(\.cloudKitService, cloudKitService)
+                .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("CloudKitShareReceived"))) { notification in
+                    print("🎉 OverlapApp: Received CloudKit share notification") // BREAKPOINT HERE
+                    if let metadata = notification.object as? CKShare.Metadata {
+                        print("🎉 OverlapApp: Processing metadata for share: \(metadata.share.recordID)")
+                        Task {
+                            await handleShareAcceptance(metadata)
                         }
-                        return nil
-                    },
-                    set: { _ in 
-                        pendingShareURL = nil
-                        pendingShareMetadata = nil
-                    }
-                )) { item in
-                    NavigationView {
-                        if let metadata = item.metadata {
-                            JoinOverlapView(shareMetadata: metadata)
-                        } else if let url = item.url {
-                            JoinOverlapView(shareURL: url)
-                        } else {
-                            JoinOverlapView()
-                        }
-                    }
-                }
-                .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("CloudKitShareAccepted"))) { notification in
-                    if let overlap = notification.object as? Overlap {
-                        handleAcceptedShare(overlap)
-                    }
-                }
-                .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("CloudKitShareAcceptError"))) { notification in
-                    if let error = notification.object as? Error {
-                        print("OverlapApp: CloudKit share accept error: \(error)")
-                        // Could show an alert here if needed
+                    } else {
+                        print("❌ OverlapApp: No metadata found in notification")
                     }
                 }
         }
         .modelContainer(overlapModelContainer)
     }
     
-    private func handleURL(_ url: URL) {
-        print("OverlapApp: Received URL: \(url)")
+    /// Automatically accepts a CloudKit share and navigates to the overlap
+    private func handleShareAcceptance(_ metadata: CKShare.Metadata) async {
+        print("🔄 OverlapApp: Processing CloudKit share acceptance...") // BREAKPOINT HERE
+        print("🔄 OverlapApp: Share Record ID: \(metadata.share.recordID)")
         
-        // Check if this is a CloudKit share URL
-        let urlString = url.absoluteString.lowercased()
-        if isCloudKitShareURL(urlString) {
-            print("OverlapApp: Detected CloudKit share URL, checking user ownership")
-            
-            // Check if current user is the owner of this share
-            Task {
-                await handleCloudKitShareURL(url)
-            }
-        } else {
-            print("OverlapApp: URL is not a CloudKit share URL: \(urlString)")
-        }
-    }
-    
-    private func handleCloudKitShareURL(_ url: URL) async {
         do {
-            // First check CloudKit availability
-            await cloudKitService.checkAccountStatus()
+            // Accept the share and create local tracking
+            let modelContext = overlapModelContainer.mainContext
+            try await cloudKitService.acceptShare(metadata, to: modelContext)
+            print("✅ OverlapApp: Successfully accepted CloudKit share")
             
-            guard cloudKitService.isAvailable else {
-                print("OverlapApp: CloudKit not available, showing join view for setup")
+            // Give SwiftData a moment to sync
+            try await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+            
+            // Find the newly created overlap
+            if let overlap = try findOverlapByShareRecord(metadata.share.recordID.recordName, in: modelContext) {
+                print("OverlapApp: Found overlap: \(overlap.title)")
                 await MainActor.run {
-                    pendingShareURL = url
-                }
-                return
-            }
-            
-            // Try to get the share metadata to extract the overlap ID
-            let metadata = try await cloudKitService.container.shareMetadata(for: url)
-            let overlapId = metadata.rootRecordID.recordName
-            
-            // Check if we already have this overlap locally
-            let context = overlapModelContainer.mainContext
-            let descriptor = FetchDescriptor<Overlap>(
-                predicate: #Predicate<Overlap> { overlap in
-                    overlap.id.uuidString == overlapId
-                }
-            )
-            
-            if let existingOverlap = try context.fetch(descriptor).first {
-                // We already have this overlap - navigate to it directly
-                print("OverlapApp: Found existing overlap locally, navigating to it")
-                await MainActor.run {
+                    // Navigate to the overlap
                     NotificationCenter.default.post(
                         name: NSNotification.Name("NavigateToOverlap"),
-                        object: existingOverlap
+                        object: overlap
                     )
                 }
+                print("OverlapApp: Posted navigation notification")
             } else {
-                // We don't have this overlap - treat as new user joining
-                print("OverlapApp: Overlap not found locally, treating as new join")
-                await handleNewUserJoining(url)
+                print("OverlapApp: Could not find overlap after accepting share")
+                // Try to find by zone ID as fallback
+                if let overlap = try findOverlapByZoneID(metadata.share.recordID.zoneID.zoneName, in: modelContext) {
+                    print("OverlapApp: Found overlap by zone ID: \(overlap.title)")
+                    await MainActor.run {
+                        NotificationCenter.default.post(
+                            name: NSNotification.Name("NavigateToOverlap"),
+                            object: overlap
+                        )
+                    }
+                }
             }
             
         } catch {
-            print("OverlapApp: Error processing CloudKit share URL: \(error)")
-            // Fall back to showing join view
-            await MainActor.run {
-                pendingShareURL = url
+            print("OverlapApp: Error accepting CloudKit share: \(error)")
+            if let ckError = error as? CKError {
+                print("OverlapApp: CKError code: \(ckError.code.rawValue)")
+                print("OverlapApp: CKError description: \(ckError.localizedDescription)")
             }
         }
     }
     
-    private func handleNewUserJoining(_ url: URL) async {
-        // Check if user needs display name setup
-        if cloudKitService.needsDisplayNameSetup {
-            print("OverlapApp: User needs display name setup before joining")
-        } else {
-            print("OverlapApp: User ready to join overlap")
-        }
+    /// Helper to find an overlap by its share record name
+    private func findOverlapByShareRecord(_ shareRecordName: String, in modelContext: ModelContext) throws -> Overlap? {
+        let descriptor = FetchDescriptor<Overlap>(
+            predicate: #Predicate<Overlap> { overlap in
+                overlap.shareRecordName == shareRecordName
+            }
+        )
         
-        // Always show join view for new users - it will handle display name setup if needed
-        await MainActor.run {
-            pendingShareURL = url
-        }
+        let overlaps = try modelContext.fetch(descriptor)
+        return overlaps.first
     }
     
-    private func isCloudKitShareURL(_ urlString: String) -> Bool {
-        return urlString.contains("icloud.com/share") || 
-               urlString.contains("www.icloud.com") ||
-               urlString.contains("share.icloud.com") ||
-               urlString.hasPrefix("overlap://")
-    }
-    
-    private func handleAcceptedShare(_ overlap: Overlap) {
-        // Add the overlap to SwiftData
-        let context = overlapModelContainer.mainContext
-        context.insert(overlap)
-        try? context.save()
-        print("OverlapApp: Added accepted share to SwiftData: \(overlap.title)")
-    }
-}
-
-// Helper struct for sheet presentation
-struct ShareURLItem: Identifiable {
-    let id = UUID()
-    let url: URL?
-    let metadata: CKShare.Metadata?
-    
-    init(url: URL?, metadata: CKShare.Metadata? = nil) {
-        self.url = url
-        self.metadata = metadata
+    private func findOverlapByZoneID(_ zoneID: String, in modelContext: ModelContext) throws -> Overlap? {
+        // Zone format is typically "iCloud.com.pauljoda.Overlap.{UUID}"
+        let uuidString = String(zoneID.suffix(36)) // Extract last 36 characters (UUID)
+        let descriptor = FetchDescriptor<Overlap>(
+            predicate: #Predicate<Overlap> { overlap in
+                overlap.id.uuidString == uuidString
+            }
+        )
+        return try modelContext.fetch(descriptor).first
     }
 }

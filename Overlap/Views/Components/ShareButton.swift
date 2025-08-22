@@ -1,63 +1,31 @@
-//
-//  ShareButton.swift
-//  Overlap
-//
-//  Button component for sharing overlap sessions via CloudKit
-//
-
 import SwiftUI
 import CloudKit
-import UIKit
 
 struct ShareButton: View {
+    @Environment(\.cloudKitService) private var cloudKitService
+    
     let overlap: Overlap
-    @StateObject private var cloudKitService = CloudKitService()
-    @StateObject private var userPreferences = UserPreferences.shared
+    
     @State private var showingShareSheet = false
-    @State private var shareItem: Any?
-    @State private var isSharing = false
-    @State private var shareError: Error?
-    @State private var showingError = false
-    @State private var showingDisplayNameSetup = false
+    @State private var shareToPresent: CKShare?
+    @State private var isLoading = false
+    @State private var errorMessage: String?
     
-    private var buttonText: String {
-        if isSharing {
-            return "Sharing..."
-        } else if !cloudKitService.isAvailable {
-            return "iCloud Unavailable"
-        } else if userPreferences.needsDisplayNameSetup {
-            return "Setup Sharing"
-        } else {
-            return "Share"
-        }
-    }
-    
-    private var buttonColor: Color {
-        if !cloudKitService.isAvailable {
-            return .gray
-        } else if userPreferences.needsDisplayNameSetup {
-            return .orange
-        } else {
-            return .blue
-        }
+    private var isDisabled: Bool {
+        !cloudKitService.isAvailable || isLoading
     }
     
     var body: some View {
-        Button(action: {
-            Task {
-                await shareOverlap()
-            }
-        }) {
+        Button(action: shareOverlap) {
             HStack(spacing: Tokens.Spacing.s) {
-                if isSharing {
+                if isLoading {
                     ProgressView()
                         .scaleEffect(0.8)
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
                 } else if !cloudKitService.isAvailable {
                     Image(systemName: "icloud.slash")
-                } else if userPreferences.needsDisplayNameSetup {
-                    Image(systemName: "person.crop.circle.badge.questionmark")
                 } else {
-                    Image(systemName: "square.and.arrow.up")
+                    Image(systemName: overlap.shareRecordName != nil ? "person.2.fill" : "square.and.arrow.up")
                 }
                 
                 Text(buttonText)
@@ -71,152 +39,125 @@ struct ShareButton: View {
                     .fill(buttonColor.gradient)
             )
         }
-        .disabled(isSharing)
-        .opacity(cloudKitService.isAvailable ? 1.0 : 0.6)
-        .sheet(isPresented: $showingDisplayNameSetup) {
-            NavigationView {
-                DisplayNameSetupView(cloudKitService: cloudKitService)
-            }
-        }
+        .disabled(isDisabled)
+        .opacity(isDisabled ? 0.6 : 1.0)
         .sheet(isPresented: $showingShareSheet) {
-            if let share = shareItem as? CKShare {
-                if let shareURL = share.url {
-                    // Use standard share sheet with URL if available
-                    ShareSheet(items: [shareURL])
-                        .presentationDetents([.medium, .large])
-                } else {
-                    // Fall back to CloudKit sharing controller
-                    CloudKitShareSheet(share: share, container: CKContainer(identifier: "iCloud.com.pauljoda.Overlap"))
-                        .presentationDetents([.medium, .large])
-                }
+            if let share = shareToPresent {
+                CloudKitSharingView(
+                    share: share,
+                    container: cloudKitService.container,
+                    overlap: overlap
+                )
             }
         }
-        .alert("Sharing Error", isPresented: $showingError) {
-            Button("OK") { }
+        .alert("Error", isPresented: .constant(errorMessage != nil)) {
+            Button("OK") { errorMessage = nil }
         } message: {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(shareError?.localizedDescription ?? "Failed to share overlap")
-                
-                if let cloudKitError = shareError as? CloudKitError,
-                   let suggestion = cloudKitError.recoverySuggestion {
-                    Text(suggestion)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
+            if let errorMessage = errorMessage {
+                Text(errorMessage)
             }
         }
     }
     
-    private func shareOverlap() async {
-        // Validate sharing readiness
-        if let validationError = cloudKitService.validateSharingReadiness() {
-            if validationError == .identityNotConfigured {
-                await MainActor.run {
-                    showingDisplayNameSetup = true
-                }
-                return
-            } else {
-                await MainActor.run {
-                    shareError = validationError
-                    showingError = true
-                }
-                return
-            }
+    private var buttonText: String {
+        if isLoading {
+            return "Loading..."
+        } else if !cloudKitService.isAvailable {
+            return "iCloud Unavailable"
+        } else if overlap.shareRecordName != nil {
+            return "Manage Share"
+        } else {
+            return "Share"
         }
-        
-        print("ShareButton: Starting share process for overlap: \(overlap.title)")
-        isSharing = true
-        
-        do {
-            // Update overlap to mark as online
-            overlap.isOnline = true
-            print("ShareButton: Marked overlap as online")
+    }
+    
+    private var buttonColor: Color {
+        cloudKitService.isAvailable ? .blue : .gray
+    }
+    
+    private func shareOverlap() {
+        Task {
+            // Prevent multiple simultaneous operations
+            guard !isLoading else { return }
             
-            // Create CloudKit share (this will handle zone creation and record saving)
-            print("ShareButton: Creating CloudKit share...")
-            let share = try await cloudKitService.shareOverlap(overlap)
-            print("ShareButton: Share created successfully")
+            isLoading = true
+            errorMessage = nil
             
-            // Wait a moment for CloudKit to process and generate the URL
-            try await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
-            
-            await MainActor.run {
-                shareItem = share
-                showingShareSheet = true
-                isSharing = false
+            do {
+                if overlap.shareRecordName != nil {
+                    // Already shared - validate and get existing share
+                    if let existingShare = try await cloudKitService.getShare(for: overlap) {
+                        await MainActor.run {
+                            shareToPresent = existingShare
+                            showingShareSheet = true
+                        }
+                    } else {
+                        // Share no longer exists, the getShare method already cleared the share info
+                        errorMessage = "Share no longer exists. You can create a new share."
+                    }
+                } else {
+                    // Not shared yet - create new share
+                    let result = try await cloudKitService.prepareOverlapForSharing(overlap)
+                    await MainActor.run {
+                        shareToPresent = result.share
+                        showingShareSheet = true
+                    }
+                }
+            } catch {
+                errorMessage = error.localizedDescription
             }
-        } catch {
-            print("ShareButton: Error during sharing: \(error)")
-            await MainActor.run {
-                shareError = error
-                showingError = true
-                isSharing = false
-            }
+            
+            isLoading = false
         }
     }
 }
 
-// MARK: - UIKit ShareSheet Bridge
-
-struct ShareSheet: UIViewControllerRepresentable {
-    let items: [Any]
-    
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: items, applicationActivities: nil)
-    }
-    
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
-}
-
-// MARK: - CloudKit ShareSheet Bridge
-
-struct CloudKitShareSheet: UIViewControllerRepresentable {
+// CloudKit Sharing View using UICloudSharingController
+struct CloudKitSharingView: UIViewControllerRepresentable {
     let share: CKShare
     let container: CKContainer
+    let overlap: Overlap
     
-    func makeUIViewController(context: Context) -> UIViewController {
+    func makeUIViewController(context: Context) -> UICloudSharingController {
         let controller = UICloudSharingController(share: share, container: container)
         controller.delegate = context.coordinator
-        controller.availablePermissions = [.allowReadWrite, .allowPrivate]
+        controller.availablePermissions = [.allowPublic, .allowReadOnly, .allowReadWrite]
         controller.modalPresentationStyle = .formSheet
-        
-        // Wrap in a navigation controller for better presentation
-        let nav = UINavigationController(rootViewController: controller)
-        nav.modalPresentationStyle = .formSheet
-        return nav
+        return controller
     }
     
-    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+    func updateUIViewController(_ uiViewController: UICloudSharingController, context: Context) {}
     
     func makeCoordinator() -> Coordinator {
-        Coordinator()
+        Coordinator(overlap: overlap)
     }
     
     class Coordinator: NSObject, UICloudSharingControllerDelegate {
+        let overlap: Overlap
+        
+        init(overlap: Overlap) {
+            self.overlap = overlap
+        }
+        
         func cloudSharingController(_ csc: UICloudSharingController, failedToSaveShareWithError error: Error) {
-            print("CloudKit sharing failed: \(error)")
+            print("Failed to save share: \(error)")
         }
         
         func cloudSharingControllerDidSaveShare(_ csc: UICloudSharingController) {
-            print("CloudKit share saved successfully")
+            print("Successfully saved share")
         }
         
         func cloudSharingControllerDidStopSharing(_ csc: UICloudSharingController) {
-            print("CloudKit sharing stopped")
-            // Dismiss the controller
-            csc.dismiss(animated: true)
+            print("Stopped sharing")
+            // Clear share information from overlap
+            overlap.shareRecordName = nil
+            overlap.cloudKitRecordID = nil
+            overlap.cloudKitZoneID = nil
+            overlap.cloudKitParticipants = nil
         }
         
         func itemTitle(for csc: UICloudSharingController) -> String? {
-            return csc.share?[CKShare.SystemFieldKey.title] as? String ?? "Overlap Session"
-        }
-        
-        func itemThumbnailData(for csc: UICloudSharingController) -> Data? {
-            return nil
-        }
-        
-        func itemType(for csc: UICloudSharingController) -> String? {
-            return "com.pauljoda.Overlap.overlap"
+            return overlap.title
         }
     }
 }
@@ -225,4 +166,5 @@ struct CloudKitShareSheet: UIViewControllerRepresentable {
 
 #Preview {
     ShareButton(overlap: SampleData.sampleOverlap)
+        .environment(\.cloudKitService, CloudKitService())
 }

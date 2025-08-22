@@ -11,6 +11,7 @@ import SwiftData
 struct CompletedView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.navigationPath) private var navigationPath
+    @Environment(\.overlapSyncManager) private var syncManager
     
     @Query(
         filter: #Predicate<Overlap> { overlap in
@@ -32,14 +33,27 @@ struct CompletedView: View {
                     onDelete: deleteOverlaps
                 ) { overlap in
                     CompletedOverlapListItem(overlap: overlap)
+                        .overlay(
+                            // Loading indicator for online overlaps
+                            syncManager?.isSyncing(overlap: overlap) == true ? 
+                            LoadingOverlay() : nil
+                        )
                 }
                 .scrollContentBackground(.hidden)
                 .background(Color.clear)
+                .refreshable {
+                    await refreshOnlineOverlaps()
+                }
             }
         }
         .navigationTitle("Completed")
         .navigationBarTitleDisplayMode(.inline)
         .contentMargins(0)
+        .onAppear {
+            Task {
+                await refreshOnlineOverlaps()
+            }
+        }
         .toolbar {
             if !completedOverlaps.isEmpty {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -54,7 +68,28 @@ struct CompletedView: View {
             offsets.map { completedOverlaps[$0] }.forEach(modelContext.delete)
         }
     }
+    
+    private func refreshOnlineOverlaps() async {
+        guard let syncManager = syncManager else { return }
+        
+        do {
+            // Fetch updates for all online overlaps
+            for overlap in completedOverlaps.filter({ $0.isOnline }) {
+                try await syncManager.fetchOverlapUpdates(overlap)
+            }
+        } catch {
+            print("Failed to refresh online overlaps: \(error)")
+        }
+    }
 }
+
+#Preview {
+    NavigationStack {
+        CompletedView()
+    }
+    .modelContainer(previewModelContainer)
+}
+
 
 #Preview {
     NavigationStack {

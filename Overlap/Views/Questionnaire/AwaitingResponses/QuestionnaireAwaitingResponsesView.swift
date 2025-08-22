@@ -12,6 +12,7 @@ struct QuestionnaireAwaitingResponsesView: View {
     let overlap: Overlap
     @Environment(\.overlapSyncManager) private var syncManager
     @State private var isAnimated = false
+    @State private var isRefreshing = false
     
     private var completedParticipants: [String] {
         overlap.participants.filter { overlap.isParticipantComplete($0) }
@@ -96,19 +97,30 @@ struct QuestionnaireAwaitingResponsesView: View {
         .onAppear {
             isAnimated = true
             
-            // Check for updates periodically
+            // Check for updates when view appears
             Task {
                 await checkForUpdates()
             }
         }
+        .refreshable {
+            await checkForUpdates()
+        }
+        .overlay(
+            // Show loading indicator for online overlaps
+            overlap.isOnline && (syncManager?.isSyncing(overlap: overlap) == true || isRefreshing) ?
+            LoadingOverlay() : nil,
+            alignment: .topTrailing
+        )
     }
     
     private func checkForUpdates() async {
-        // Sync with CloudKit to check for new responses
-        guard let syncManager = syncManager else { return }
+        guard let syncManager = syncManager, overlap.isOnline else { return }
+        
+        isRefreshing = true
+        defer { isRefreshing = false }
         
         do {
-            try await syncManager.fetchUpdates()
+            try await syncManager.fetchOverlapUpdates(overlap)
         } catch {
             print("Failed to sync overlap updates: \(error)")
         }

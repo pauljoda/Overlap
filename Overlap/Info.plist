@@ -6,24 +6,19 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
+	<key>CKSharingSupported</key>
+	<true/>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>CloudKit Share</string>
+			<string>CloudKit Share Debug</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>https</string>
 				<string>overlap</string>
+				<string>https</string>
 			</array>
 		</dict>
-	</array>
-	<key>CKSharingSupported</key>
-	<true/>
-	<key>com.apple.developer.associated-domains</key>
-	<array>
-		<string>applinks:www.icloud.com</string>
-		<string>applinks:share.icloud.com</string>
 	</array>
 </dict>
 </plist>
