@@ -9,8 +9,7 @@ import SwiftUI
 import SwiftData
 
 struct QuestionnaireAwaitingResponsesView: View {
-    let overlap: Overlap
-    @Environment(\.overlapSyncManager) private var syncManager
+    @Bindable var overlap: Overlap
     @State private var isAnimated = false
     @State private var isRefreshing = false
     
@@ -76,10 +75,7 @@ struct QuestionnaireAwaitingResponsesView: View {
                 
                 // Share button to invite more participants
                 VStack(spacing: Tokens.Spacing.m) {
-                    ShareButton(overlap: overlap)
-                        .opacity(isAnimated ? 1 : 0)
-                        .offset(y: isAnimated ? 0 : 20)
-                        .animation(.easeIn(duration: Tokens.Duration.medium).delay(Tokens.Delay.extraLong + 0.2), value: isAnimated)
+         
                     
                     Text("Invite more participants to get their responses")
                         .font(.caption)
@@ -107,23 +103,20 @@ struct QuestionnaireAwaitingResponsesView: View {
         }
         .overlay(
             // Show loading indicator for online overlaps
-            overlap.isOnline && (syncManager?.isSyncing(overlap: overlap) == true || isRefreshing) ?
+            overlap.isOnline && isRefreshing ?
             LoadingOverlay() : nil,
             alignment: .topTrailing
         )
     }
     
     private func checkForUpdates() async {
-        guard let syncManager = syncManager, overlap.isOnline else { return }
+        guard overlap.isOnline else { return }
         
         isRefreshing = true
         defer { isRefreshing = false }
         
-        do {
-            try await syncManager.fetchOverlapUpdates(overlap)
-        } catch {
-            print("Failed to sync overlap updates: \(error)")
-        }
+        // No sync available in local mode
+        print("No sync available in local mode")
     }
 }
 

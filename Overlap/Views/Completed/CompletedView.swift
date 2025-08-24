@@ -11,7 +11,6 @@ import SwiftData
 struct CompletedView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.navigationPath) private var navigationPath
-    @Environment(\.overlapSyncManager) private var syncManager
     
     @Query(
         filter: #Predicate<Overlap> { overlap in
@@ -33,11 +32,6 @@ struct CompletedView: View {
                     onDelete: deleteOverlaps
                 ) { overlap in
                     CompletedOverlapListItem(overlap: overlap)
-                        .overlay(
-                            // Loading indicator for online overlaps
-                            syncManager?.isSyncing(overlap: overlap) == true ? 
-                            LoadingOverlay() : nil
-                        )
                 }
                 .scrollContentBackground(.hidden)
                 .background(Color.clear)
@@ -70,16 +64,8 @@ struct CompletedView: View {
     }
     
     private func refreshOnlineOverlaps() async {
-        guard let syncManager = syncManager else { return }
-        
-        do {
-            // Fetch updates for all online overlaps
-            for overlap in completedOverlaps.filter({ $0.isOnline }) {
-                try await syncManager.fetchOverlapUpdates(overlap)
-            }
-        } catch {
-            print("Failed to refresh online overlaps: \(error)")
-        }
+        // No sync available in local mode
+        print("No online sync in local mode")
     }
 }
 

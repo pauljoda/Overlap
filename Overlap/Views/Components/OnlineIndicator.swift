@@ -12,8 +12,6 @@ struct OnlineIndicator: View {
     let overlapId: UUID?
     let style: Style
     
-    @Environment(\.overlapSyncManager) private var syncManager
-    
     enum Style {
         case compact
         case detailed
@@ -26,8 +24,7 @@ struct OnlineIndicator: View {
     }
     
     private var hasUnreadChanges: Bool {
-        guard let overlapId = overlapId, let syncManager = syncManager else { return false }
-        return syncManager.hasUnreadChanges(for: overlapId)
+        return false  // No unread changes in local mode
     }
     
     var body: some View {

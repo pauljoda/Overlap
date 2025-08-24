@@ -65,7 +65,7 @@ struct QuestionnaireInstructionsView: View {
                 // Share button for online overlaps
                 if overlap.isOnline && canBegin {
                     HStack {
-                        ShareButton(overlap: overlap)
+                       // ShareButton(overlap: overlap)
                         Spacer()
                     }
                     .padding(.horizontal, Tokens.Spacing.xl)

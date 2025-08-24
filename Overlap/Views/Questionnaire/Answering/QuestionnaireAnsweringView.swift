@@ -11,7 +11,6 @@ import SwiftData
 struct QuestionnaireAnsweringView: View {
     let overlap: Overlap
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.overlapSyncManager) private var syncManager
     
     @State private var blobEmphasis: BlobEmphasis = .none
     
@@ -44,12 +43,12 @@ struct QuestionnaireAnsweringView: View {
                                 print("🔍 QuestionnaireAnsweringView: ModelContext save failed: \(error)")
                             }
                             
-                            // Sync to CloudKit if this is an online overlap and participant completed their portion
+                            // Sync responses if this is an online overlap and participant completed their portion
                             if overlap.isOnline && !wasCompleted && 
                                (overlap.currentState == .nextParticipant || overlap.currentState == .complete) &&
                                previousState == .answering {
                                 Task {
-                                    print("🔍 QuestionnaireAnsweringView: Starting CloudKit sync...")
+                                    print("🔍 QuestionnaireAnsweringView: Starting sync...")
                                     await syncParticipantCompletion()
                                 }
                             }
@@ -103,19 +102,8 @@ struct QuestionnaireAnsweringView: View {
     // MARK: - Sync Functions
     
     private func syncParticipantCompletion() async {
-        guard let syncManager = syncManager else { 
-            print("🔍 QuestionnaireAnsweringView: syncManager is nil")
-            return 
-        }
-        
-        print("🔍 QuestionnaireAnsweringView: About to call syncOverlapCompletion")
-        
-        do {
-            try await syncManager.syncOverlapCompletion(overlap)
-            print("Successfully synced participant completion")
-        } catch {
-            print("Failed to sync participant completion: \(error)")
-        }
+        // No sync needed in local mode
+        print("Participant completion recorded locally")
     }
 }
 

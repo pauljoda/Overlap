@@ -10,7 +10,7 @@ import SwiftData
 import SwiftUI
 
 @Model
-class Questionnaire {
+class Questionnaire: ColorCustomizable {
     var id = UUID()
     var title: String = ""
     var information: String = ""
@@ -33,63 +33,11 @@ class Questionnaire {
     var endColorBlue: Double = 0.5
     var endColorAlpha: Double = 1.0
     
-    // Computed properties for easy Color access
-    var startColor: Color {
-        get {
-            Color(red: startColorRed, green: startColorGreen, blue: startColorBlue, opacity: startColorAlpha)
-        }
-        set {
-            // Extract RGBA components using UIColor/NSColor
-            #if os(iOS)
-            let uiColor = UIColor(newValue)
-            var red: CGFloat = 0
-            var green: CGFloat = 0
-            var blue: CGFloat = 0
-            var alpha: CGFloat = 0
-            uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-            startColorRed = Double(red)
-            startColorGreen = Double(green)
-            startColorBlue = Double(blue)
-            startColorAlpha = Double(alpha)
-            #else
-            // Fallback for other platforms
-            startColorRed = 0.0
-            startColorGreen = 0.0
-            startColorBlue = 1.0
-            startColorAlpha = 1.0
-            #endif
-        }
-    }
-    
-    var endColor: Color {
-        get {
-            Color(red: endColorRed, green: endColorGreen, blue: endColorBlue, opacity: endColorAlpha)
-        }
-        set {
-            // Extract RGBA components using UIColor/NSColor
-            #if os(iOS)
-            let uiColor = UIColor(newValue)
-            var red: CGFloat = 0
-            var green: CGFloat = 0
-            var blue: CGFloat = 0
-            var alpha: CGFloat = 0
-            uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-            endColorRed = Double(red)
-            endColorGreen = Double(green)
-            endColorBlue = Double(blue)
-            endColorAlpha = Double(alpha)
-            #else
-            // Fallback for other platforms
-            endColorRed = 0.5
-            endColorGreen = 0.0
-            endColorBlue = 0.5
-            endColorAlpha = 1.0
-            #endif
-        }
-    }
-    
     // Favorite status
     var isFavorite: Bool = false
+    
+    // CloudKit sync support
+    var lastKnownRecordData: Data?
 
     init(
         id: UUID = UUID(),
@@ -113,9 +61,5 @@ class Questionnaire {
         self.questions = questions
         self.iconEmoji = iconEmoji
         self.isFavorite = isFavorite
-        
-        // Set colors using the computed properties
-        self.startColor = startColor
-        self.endColor = endColor
     }
 }

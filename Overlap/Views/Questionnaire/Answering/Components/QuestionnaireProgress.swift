@@ -33,12 +33,6 @@ struct QuestionnaireProgress: View {
 #Preview {
     VStack(spacing: 16) {
         QuestionnaireProgress(overlap: SampleData.sampleOverlap)
-        
-//        QuestionnaireProgress(overlap: {
-//            let onlineOverlap = SampleData.sampleOverlap
-//            onlineOverlap.isOnline = true
-//            return onlineOverlap
-//        }())
     }
     .padding()
 }

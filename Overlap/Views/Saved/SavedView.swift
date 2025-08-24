@@ -71,7 +71,10 @@ struct SavedView: View {
     }
 
     private func handleEdit(_ questionnaire: Questionnaire) {
-        navigate(to: .edit(questionnaireId: questionnaire.id), using: navigationPath)
+        navigate(
+            to: .edit(questionnaireId: questionnaire.id),
+            using: navigationPath
+        )
     }
 
     private func deleteFavoriteQuestionnaires(at offsets: IndexSet) {
