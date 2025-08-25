@@ -13,7 +13,6 @@ enum OverlapState: String, Codable, CaseIterable {
     case instructions = "instructions"
     case answering = "answering"
     case nextParticipant = "nextParticipant"
-    case awaitingResponses = "awaitingResponses"
     case complete = "complete"
 }
 
@@ -26,7 +25,7 @@ enum OverlapState: String, Codable, CaseIterable {
 ///
 /// ## Key Features
 /// - **Session Management**: Tracks current participant and question progress
-/// - **Response Storage**: Maintains participant responses with CloudKit compatibility
+/// - **Response Storage**: Maintains participant responses
 /// - **Question Randomization**: Optional feature to randomize question order per participant
 /// - **Progress Tracking**: Monitors completion status and session flow
 /// - **Analysis Tools**: Methods for extracting and analyzing response data
@@ -63,8 +62,6 @@ class Overlap {
     // MARK: - Collaboration Settings
     /// List of participant names in this overlap session
     var participants: [String] = []
-    /// Whether this is an online collaborative session or local only
-    var isOnline: Bool = false
 
     // MARK: - Questionnaire Data
     /// The title for this overlap session
@@ -150,31 +147,9 @@ class Overlap {
         return currentParticipantIndex >= participants.count
     }
     
-    /// Whether the overlap should be marked as complete based on online/offline mode
-    /// 
-    /// For online overlaps: Requires at least 2 participants to have completed AND all participants finished
-    /// For offline overlaps: Uses the original sequential logic (all local participants done)
+    /// Whether the overlap should be marked as complete
     private var shouldBeComplete: Bool {
-        if isOnline {
-            // For online overlaps, require at least 2 participants to have completed
-            let completedParticipants = participants.filter { isParticipantComplete($0) }
-            return completedParticipants.count >= 2 && completedParticipants.count == participants.count
-        } else {
-            // For offline overlaps, use the original logic
-            return isComplete
-        }
-    }
-    
-    /// Whether the overlap should be in awaiting responses state
-    /// 
-    /// Only applies to online overlaps when at least one participant has completed
-    /// but not all participants have finished their responses
-    private var shouldAwaitResponses: Bool {
-        if isOnline {
-            let completedParticipants = participants.filter { isParticipantComplete($0) }
-            return completedParticipants.count >= 1 && completedParticipants.count < participants.count
-        }
-        return false
+        return isComplete
     }
 
     /// Total number of questions in the questionnaire
@@ -261,7 +236,6 @@ class Overlap {
         beginDate: Date = Date.now,
         completeDate: Date? = nil,
         participants: [String] = [],
-        isOnline: Bool = false,
         questionnaire: Questionnaire,
         randomizeQuestions: Bool = false,
         currentState: OverlapState = .instructions
@@ -270,7 +244,6 @@ class Overlap {
         self.beginDate = beginDate
         self.completeDate = completeDate
         self.participants = participants
-        self.isOnline = isOnline
         
         // Copy questionnaire data to preserve immutability
         self.title = questionnaire.title
@@ -305,7 +278,6 @@ class Overlap {
         beginDate: Date = Date.now,
         completeDate: Date? = nil,
         participants: [String] = [],
-        isOnline: Bool = false,
         title: String,
         information: String = "",
         instructions: String,
@@ -320,7 +292,6 @@ class Overlap {
         self.beginDate = beginDate
         self.completeDate = completeDate
         self.participants = participants
-        self.isOnline = isOnline
         self.title = title
         self.information = information
         self.instructions = instructions
@@ -333,63 +304,6 @@ class Overlap {
         // Set colors using the computed properties
         self.startColor = startColor
         self.endColor = endColor
-
-        initializeParticipantResponses()
-        if randomizeQuestions {
-            generateRandomizedQuestionOrders()
-        }
-    }
-    
-    /// CloudKit-specific initializer for reconstructing overlaps from CKRecords
-    /// This initializer allows setting all properties directly without needing a Questionnaire object
-    init(
-        id: UUID,
-        beginDate: Date,
-        completeDate: Date?,
-        participants: [String],
-        isOnline: Bool,
-        title: String,
-        information: String,
-        instructions: String,
-        questions: [String],
-        iconEmoji: String,
-        startColorRed: Double,
-        startColorGreen: Double,
-        startColorBlue: Double,
-        startColorAlpha: Double,
-        endColorRed: Double,
-        endColorGreen: Double,
-        endColorBlue: Double,
-        endColorAlpha: Double,
-        randomizeQuestions: Bool,
-        currentState: OverlapState,
-        currentParticipantIndex: Int,
-        currentQuestionIndex: Int,
-        isCompleted: Bool
-    ) {
-        self.id = id
-        self.beginDate = beginDate
-        self.completeDate = completeDate
-        self.participants = participants
-        self.isOnline = isOnline
-        self.title = title
-        self.information = information
-        self.instructions = instructions
-        self.questions = questions
-        self.iconEmoji = iconEmoji
-        self.startColorRed = startColorRed
-        self.startColorGreen = startColorGreen
-        self.startColorBlue = startColorBlue
-        self.startColorAlpha = startColorAlpha
-        self.endColorRed = endColorRed
-        self.endColorGreen = endColorGreen
-        self.endColorBlue = endColorBlue
-        self.endColorAlpha = endColorAlpha
-        self.isRandomized = randomizeQuestions
-        self.currentState = currentState
-        self.currentParticipantIndex = currentParticipantIndex
-        self.currentQuestionIndex = currentQuestionIndex
-        self.isCompleted = isCompleted
 
         initializeParticipantResponses()
         if randomizeQuestions {
@@ -511,11 +425,8 @@ class Overlap {
         // Determine appropriate state based on completion status
         if shouldBeComplete {
             markAsComplete()
-        } else if currentQuestionIndex == 0 && isOnline {
-            // For online mode, participant finished their questions - go to awaiting responses
-            currentState = .awaitingResponses
-        } else if currentQuestionIndex == 0 && !isOnline {
-            // We moved to the next participant (for offline mode only)
+        } else if currentQuestionIndex == 0 {
+            // We moved to the next participant
             currentState = .nextParticipant
         }
 
@@ -587,11 +498,8 @@ class Overlap {
             // Finished all questions for current participant
             currentQuestionIndex = 0
             
-            // For online overlaps, don't advance participant index - each participant answers on their own device
-            // For offline overlaps, advance to next participant for pass-and-play mode
-            if !isOnline {
-                currentParticipantIndex += 1
-            }
+            // Advance to next participant for pass-and-play mode
+            currentParticipantIndex += 1
         }
     }
 
@@ -765,18 +673,5 @@ class Overlap {
             return questionOrder[displayIndex]
         }
         return displayIndex
-    }
-}
-
-// MARK: - CloudKit Support Methods
-extension Overlap {
-    /// Returns all participant responses for CloudKit sync
-    func getAllResponses() -> [String: [Answer?]] {
-        return participantResponses
-    }
-    
-    /// Restores participant responses from CloudKit data
-    func restoreResponses(_ responses: [String: [Answer?]]) {
-        participantResponses = responses
     }
 }
