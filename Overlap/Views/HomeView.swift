@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import SharingGRDB
 
 // Environment key for NavigationPath
 struct NavigationPathKey: EnvironmentKey {
@@ -22,9 +23,6 @@ extension EnvironmentValues {
 
 struct HomeView: View {
     @State private var path = NavigationPath()
-    @Environment(\.modelContext) private var modelContext
-    @Environment(\.cloudKitService) private var cloudKitService
-    @State private var syncManager: OverlapSyncManager?
     @StateObject private var userPreferences = UserPreferences.shared
     @State private var showingDisplayNameSetup = false
     
@@ -87,7 +85,7 @@ struct HomeView: View {
                     Text("Unknown destination")
                 }
             }
-            .navigationDestination(for: Questionnaire.self) { questionnaire in
+            .navigationDestination(for: QuestionnaireTable.self) { questionnaire in
                 QuestionnaireDetailView(questionnaire: questionnaire)
             }
             .navigationDestination(for: Overlap.self) { overlap in
@@ -95,50 +93,28 @@ struct HomeView: View {
             }
         }
         .environment(\.navigationPath, $path)
-        .environment(\.overlapSyncManager, syncManager)
         .sheet(isPresented: $showingDisplayNameSetup) {
             NavigationView {
-                DisplayNameSetupView(cloudKitService: cloudKitService)
-            }
-        }
-        .onAppear {
-            // Initialize sync manager when we have model context
-            if syncManager == nil {
-                syncManager = OverlapSyncManager(modelContext: modelContext)
-            }
-            
-            // Check if we need to prompt for display name setup
-            // Only prompt if CloudKit is available and user hasn't set up their name
-            Task {
-                await cloudKitService.checkAccountStatus()
-                
-                if cloudKitService.isAvailable && userPreferences.needsDisplayNameSetup {
-                    // Delay showing the sheet to avoid SwiftUI conflicts with onAppear
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        showingDisplayNameSetup = true
-                    }
-                }
-                
-                // Validate shared overlaps to clear stale share info
-                if cloudKitService.isAvailable {
-                    await cloudKitService.validateSharedOverlaps(in: modelContext)
-                }
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("NavigateToOverlap"))) { notification in
-            if let overlap = notification.object as? Overlap {
-                // Navigate to the overlap when opened from a share link
-                navigate(to: overlap, using: $path)
+                DisplayNameSetupView()
             }
         }
     }
 }
 
 #Preview {
+    let _ = try! prepareDependencies {
+        $0.defaultDatabase = try appDatabase()
+    }
+    
     HomeView()
+        .modelContainer(previewModelContainer)
 }
 
 #Preview("With Model Data") {
+    let _ = try! prepareDependencies {
+        $0.defaultDatabase = try appDatabase()
+    }
+    
     HomeView()
         .modelContainer(previewModelContainer)
 }

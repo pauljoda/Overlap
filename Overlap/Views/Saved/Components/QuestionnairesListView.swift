@@ -9,12 +9,13 @@ import SwiftUI
 import SwiftData
 
 struct QuestionnairesListView: View {
-    let favoriteQuestionnaires: [Questionnaire]
-    let regularQuestionnaires: [Questionnaire]
-    let modelContext: ModelContext
-    let onEdit: (Questionnaire) -> Void
+    let favoriteQuestionnaires: [QuestionnaireTable]
+    let regularQuestionnaires: [QuestionnaireTable]
+
+    let onEdit: (QuestionnaireTable) -> Void
     let onDeleteFavorites: (IndexSet) -> Void
     let onDeleteRegular: (IndexSet) -> Void
+    let onDeleteQuestionnaire: (QuestionnaireTable) -> Void
     
     var body: some View {
     List {
@@ -23,9 +24,9 @@ struct QuestionnairesListView: View {
                 QuestionnaireSection(
                     title: "Favorites",
                     questionnaires: favoriteQuestionnaires,
-                    modelContext: modelContext,
                     onDelete: onDeleteFavorites,
-                    onEdit: onEdit
+                    onEdit: onEdit,
+                    onDeleteQuestionnaire: onDeleteQuestionnaire
                 )
             }
             
@@ -34,9 +35,9 @@ struct QuestionnairesListView: View {
                 QuestionnaireSection(
                     title: favoriteQuestionnaires.isEmpty ? "Questionnaires" : "Other Questionnaires",
                     questionnaires: regularQuestionnaires,
-                    modelContext: modelContext,
                     onDelete: onDeleteRegular,
-                    onEdit: onEdit
+                    onEdit: onEdit,
+                    onDeleteQuestionnaire: onDeleteQuestionnaire
                 )
             }
         }
@@ -51,10 +52,9 @@ struct QuestionnairesListView: View {
     QuestionnairesListView(
         favoriteQuestionnaires: [SampleData.sampleQuestionnaire],
         regularQuestionnaires: [SampleData.sampleQuestionnaire2],
-        modelContext: previewModelContainer.mainContext,
         onEdit: { _ in },
         onDeleteFavorites: { _ in },
-        onDeleteRegular: { _ in }
+        onDeleteRegular: { _ in },
+        onDeleteQuestionnaire: { _ in }
     )
-    .modelContainer(previewModelContainer)
 }

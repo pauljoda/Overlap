@@ -8,6 +8,7 @@
 import Foundation
 import SwiftData
 import SwiftUI
+import SharingGRDB
 
 extension SampleData {
     /// Sample online overlap for testing CloudKit features
@@ -48,22 +49,25 @@ extension SampleData {
 @MainActor
 let cloudKitPreviewContainer: ModelContainer = {
     do {
+        // Setup the SharingGRDB database for previews
+        let _ = try! prepareDependencies {
+            $0.defaultDatabase = try appDatabase()
+        }
+        
+        // Setup sample questionnaire data in the database
+        try SampleData.setupPreviewDatabase()
+        
         let configuration = ModelConfiguration("OverlapContainer", cloudKitDatabase: .private("iCloud.com.pauljoda.Overlap"))
         
         let container = try ModelContainer(
-            for: Questionnaire.self,
+            for:
             Overlap.self,
             configurations: configuration
         )
         
         // Clear existing data
-        try? container.mainContext.delete(model: Questionnaire.self)
         try? container.mainContext.delete(model: Overlap.self)
         
-        // Add questionnaires
-        container.mainContext.insert(SampleData.sampleQuestionnaire)
-        container.mainContext.insert(SampleData.sampleQuestionnaire2)
-        container.mainContext.insert(SampleData.sampleQuestionnaire3)
 
         // Add mixed local and online overlaps
         container.mainContext.insert(SampleData.sampleOverlap) // Local

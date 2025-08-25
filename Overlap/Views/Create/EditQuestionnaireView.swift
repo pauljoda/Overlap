@@ -5,32 +5,37 @@
 //  A wrapper view that loads an existing questionnaire for editing
 //
 
-import SwiftUI
+import SharingGRDB
 import SwiftData
+import SwiftUI
 
 struct EditQuestionnaireView: View {
     let questionnaireId: UUID
-    @Query private var questionnaires: [Questionnaire]
+    @State private var questionnaire: QuestionnaireTable?
+    @State private var isLoading = true
+
+    @Dependency(\.defaultDatabase) private var database
     @Environment(\.dismiss) private var dismiss
-    
+
     init(questionnaireId: UUID) {
         self.questionnaireId = questionnaireId
-        self._questionnaires = Query(
-            filter: #Predicate<Questionnaire> { questionnaire in
-                questionnaire.id == questionnaireId
-            }
-        )
     }
-    
+
     var body: some View {
         Group {
-            if let questionnaire = questionnaires.first {
+            if isLoading {
+                ProgressView("Loading...")
+                    .navigationTitle("Edit Questionnaire")
+                    .navigationBarTitleDisplayMode(.inline)
+            } else if let questionnaire = questionnaire {
                 CreateQuestionnaireView(editingQuestionnaire: questionnaire)
             } else {
                 ContentUnavailableView(
                     "Questionnaire Not Found",
                     systemImage: "questionmark.circle",
-                    description: Text("The questionnaire you're trying to edit could not be found.")
+                    description: Text(
+                        "The questionnaire you're trying to edit could not be found."
+                    )
                 )
                 .navigationTitle("Edit Questionnaire")
                 .navigationBarTitleDisplayMode(.inline)
@@ -43,40 +48,36 @@ struct EditQuestionnaireView: View {
                 }
             }
         }
+        .onAppear {
+            loadQuestionnaire()
+        }
+    }
+    
+    private func loadQuestionnaire() {
+        withErrorReporting {
+            try database.read { db in
+                questionnaire = try QuestionnaireTable.find(questionnaireId).fetchOne(db)
+                isLoading = false
+            }
+        }
     }
 }
 
-#Preview {
-    let container = try! ModelContainer(for: Questionnaire.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
-    let context = container.mainContext
-    
-    let sampleQuestionnaire = Questionnaire(
-        title: "Sample Questionnaire",
-        information: "A test questionnaire for preview",
-        instructions: "Answer all questions honestly",
-        author: "Test Author",
-        questions: ["Do you like pizza?", "Is the sky blue?", "Should we work from home?"]
-    )
-    
-    context.insert(sampleQuestionnaire)
-    try! context.save()
-    
-    return NavigationStack {
-        EditQuestionnaireView(questionnaireId: sampleQuestionnaire.id)
+#Preview("Current - Combined") {
+    let _ = try! prepareDependencies {
+        $0.defaultDatabase = try appDatabase()
     }
-    .modelContainer(container)
+    
+    NavigationStack {
+        EditQuestionnaireView(questionnaireId: SampleData.sampleQuestionnaire.id)
+    }
+    .modelContainer(previewModelContainer)
 }
 
-#Preview("Empty Questionnaire") {
-    let container = try! ModelContainer(for: Questionnaire.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
-    let context = container.mainContext
+#Preview("Future - GRDB Only") {
+    let _ = setupGRDBPreview()
     
-    let emptyQuestionnaire = Questionnaire()
-    context.insert(emptyQuestionnaire)
-    try! context.save()
-    
-    return NavigationStack {
-        EditQuestionnaireView(questionnaireId: emptyQuestionnaire.id)
+    NavigationStack {
+        EditQuestionnaireView(questionnaireId: SampleData.sampleQuestionnaire.id)
     }
-    .modelContainer(container)
 }

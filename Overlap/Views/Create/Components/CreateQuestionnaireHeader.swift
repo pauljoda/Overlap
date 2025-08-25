@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct CreateQuestionnaireHeader: View {
-    let questionnaire: Questionnaire
+    let questionnaire: QuestionnaireTable
     
     var body: some View {
         VStack(spacing: Tokens.Spacing.l) {
@@ -31,6 +31,6 @@ struct CreateQuestionnaireHeader: View {
 }
 
 #Preview {
-    CreateQuestionnaireHeader(questionnaire: Questionnaire())
+    CreateQuestionnaireHeader(questionnaire: QuestionnaireTable())
         .padding()
 }

@@ -11,7 +11,6 @@ import SwiftData
 struct QuestionnaireAnsweringView: View {
     let overlap: Overlap
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.overlapSyncManager) private var syncManager
     
     @State private var blobEmphasis: BlobEmphasis = .none
     
@@ -103,19 +102,7 @@ struct QuestionnaireAnsweringView: View {
     // MARK: - Sync Functions
     
     private func syncParticipantCompletion() async {
-        guard let syncManager = syncManager else { 
-            print("🔍 QuestionnaireAnsweringView: syncManager is nil")
-            return 
-        }
         
-        print("🔍 QuestionnaireAnsweringView: About to call syncOverlapCompletion")
-        
-        do {
-            try await syncManager.syncOverlapCompletion(overlap)
-            print("Successfully synced participant completion")
-        } catch {
-            print("Failed to sync participant completion: \(error)")
-        }
     }
 }
 

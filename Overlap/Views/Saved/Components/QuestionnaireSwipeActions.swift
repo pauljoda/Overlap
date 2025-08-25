@@ -7,18 +7,21 @@
 
 import SwiftUI
 import SwiftData
+import SharingGRDB
 
 struct QuestionnaireSwipeActions: ViewModifier {
-    let questionnaire: Questionnaire
-    let modelContext: ModelContext
-    let onEdit: (Questionnaire) -> Void
+    let questionnaire: QuestionnaireTable
+    let onEdit: (QuestionnaireTable) -> Void
+    let onDelete: (QuestionnaireTable) -> Void
+    
+    @Dependency(\.defaultDatabase) var database
     
     func body(content: Content) -> some View {
         content
             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                 Button(role: .destructive) {
                     withAnimation {
-                        modelContext.delete(questionnaire)
+                        onDelete(questionnaire)
                     }
                 } label: {
                     Image(systemName: "trash.fill")
@@ -34,7 +37,13 @@ struct QuestionnaireSwipeActions: ViewModifier {
             .swipeActions(edge: .leading) {
                 Button {
                     withAnimation {
-                        questionnaire.isFavorite.toggle()
+                        withErrorReporting {
+                            try database.write { db in
+                                var updatedQuestionnaire = questionnaire
+                                updatedQuestionnaire.isFavorite.toggle()
+                                try QuestionnaireTable.update(updatedQuestionnaire).execute(db)
+                            }
+                        }
                     }
                 } label: {
                     Image(systemName: questionnaire.isFavorite ? "star.slash.fill" : "star.fill")
@@ -46,16 +55,18 @@ struct QuestionnaireSwipeActions: ViewModifier {
 
 extension View {
     func questionnaireSwipeActions(
-        questionnaire: Questionnaire,
-        modelContext: ModelContext,
-        onEdit: @escaping (Questionnaire) -> Void = { questionnaire in
+        questionnaire: QuestionnaireTable,
+        onEdit: @escaping (QuestionnaireTable) -> Void = { questionnaire in
             print("Edit \(questionnaire.title)")
+        },
+        onDelete: @escaping (QuestionnaireTable) -> Void = { questionnaire in
+            print("Delete \(questionnaire.title)")
         }
     ) -> some View {
         modifier(QuestionnaireSwipeActions(
             questionnaire: questionnaire,
-            modelContext: modelContext,
-            onEdit: onEdit
+            onEdit: onEdit,
+            onDelete: onDelete
         ))
     }
 }

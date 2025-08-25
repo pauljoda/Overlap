@@ -11,7 +11,6 @@ import SwiftData
 struct QuestionnaireCompleteView: View {
     let overlap: Overlap
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.overlapSyncManager) private var syncManager
     @State private var isAnimated = false
     
     @Environment(\.navigationPath) private var navigationPath
@@ -33,18 +32,6 @@ struct QuestionnaireCompleteView: View {
         }
         .onAppear {
             isAnimated = true
-            
-            // Fetch latest results for online overlaps to show most up-to-date data
-            if overlap.isOnline {
-                Task {
-                    do {
-                        try await syncManager?.fetchOverlapUpdates(overlap)
-                        print("QuestionnaireCompleteView: Fetched latest results")
-                    } catch {
-                        print("QuestionnaireCompleteView: Failed to fetch latest results: \(error)")
-                    }
-                }
-            }
             
             // Set completion date if not already set
             if overlap.completeDate == nil {

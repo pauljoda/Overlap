@@ -223,62 +223,60 @@ class Overlap {
         return Double(status.completed) / Double(status.total)
     }
     
-    // MARK: - Visual Customization Computed Properties
+    // MARK: - Visual Customization Helper Functions
     
-    /// Computed property for easy Color access to start color
-    var startColor: Color {
-        get {
-            Color(red: startColorRed, green: startColorGreen, blue: startColorBlue, opacity: startColorAlpha)
-        }
-        set {
-            // Extract RGBA components using UIColor/NSColor
-            #if os(iOS)
-            let uiColor = UIColor(newValue)
-            var red: CGFloat = 0
-            var green: CGFloat = 0
-            var blue: CGFloat = 0
-            var alpha: CGFloat = 0
-            uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-            startColorRed = Double(red)
-            startColorGreen = Double(green)
-            startColorBlue = Double(blue)
-            startColorAlpha = Double(alpha)
-            #else
-            // Fallback for other platforms
-            startColorRed = 0.0
-            startColorGreen = 0.0
-            startColorBlue = 1.0
-            startColorAlpha = 1.0
-            #endif
-        }
+    /// Helper function for easy Color access to start color
+    func getStartColor() -> Color {
+        Color(red: startColorRed, green: startColorGreen, blue: startColorBlue, opacity: startColorAlpha)
     }
     
-    /// Computed property for easy Color access to end color
-    var endColor: Color {
-        get {
-            Color(red: endColorRed, green: endColorGreen, blue: endColorBlue, opacity: endColorAlpha)
-        }
-        set {
-            // Extract RGBA components using UIColor/NSColor
-            #if os(iOS)
-            let uiColor = UIColor(newValue)
-            var red: CGFloat = 0
-            var green: CGFloat = 0
-            var blue: CGFloat = 0
-            var alpha: CGFloat = 0
-            uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-            endColorRed = Double(red)
-            endColorGreen = Double(green)
-            endColorBlue = Double(blue)
-            endColorAlpha = Double(alpha)
-            #else
-            // Fallback for other platforms
-            endColorRed = 0.5
-            endColorGreen = 0.0
-            endColorBlue = 0.5
-            endColorAlpha = 1.0
-            #endif
-        }
+    func setStartColor(_ color: Color) {
+        // Extract RGBA components using UIColor/NSColor
+        #if os(iOS)
+        let uiColor = UIColor(color)
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        startColorRed = Double(red)
+        startColorGreen = Double(green)
+        startColorBlue = Double(blue)
+        startColorAlpha = Double(alpha)
+        #else
+        // Fallback for other platforms
+        startColorRed = 0.0
+        startColorGreen = 0.0
+        startColorBlue = 1.0
+        startColorAlpha = 1.0
+        #endif
+    }
+    
+    /// Helper function for easy Color access to end color
+    func getEndColor() -> Color {
+        Color(red: endColorRed, green: endColorGreen, blue: endColorBlue, opacity: endColorAlpha)
+    }
+    
+    func setEndColor(_ color: Color) {
+        // Extract RGBA components using UIColor/NSColor
+        #if os(iOS)
+        let uiColor = UIColor(color)
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        endColorRed = Double(red)
+        endColorGreen = Double(green)
+        endColorBlue = Double(blue)
+        endColorAlpha = Double(alpha)
+        #else
+        // Fallback for other platforms
+        endColorRed = 0.5
+        endColorGreen = 0.0
+        endColorBlue = 0.5
+        endColorAlpha = 1.0
+        #endif
     }
 
     // MARK: - Initialization
@@ -289,7 +287,7 @@ class Overlap {
         completeDate: Date? = nil,
         participants: [String] = [],
         isOnline: Bool = false,
-        questionnaire: Questionnaire,
+        questionnaire: QuestionnaireTable,
         randomizeQuestions: Bool = false,
         currentState: OverlapState = .instructions
     ) {
@@ -301,7 +299,7 @@ class Overlap {
         
         // Copy questionnaire data to preserve immutability
         self.title = questionnaire.title
-        self.information = questionnaire.information
+        self.information = questionnaire.description
         self.instructions = questionnaire.instructions
         self.questions = questionnaire.questions
         
@@ -362,9 +360,9 @@ class Overlap {
         self.currentState = currentState
         self.isCompleted = (currentState == .complete)
         
-        // Set colors using the computed properties
-        self.startColor = startColor
-        self.endColor = endColor
+        // Set colors using the helper functions
+        self.setStartColor(startColor)
+        self.setEndColor(endColor)
 
         initializeParticipantResponses()
         if randomizeQuestions {

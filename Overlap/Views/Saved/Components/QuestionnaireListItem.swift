@@ -9,7 +9,7 @@ import SwiftUI
 
 struct QuestionnaireListItem: View {
     
-    let questionnaire: Questionnaire
+    let questionnaire: QuestionnaireTable
     
     var body: some View {
         HStack(spacing: Tokens.Spacing.m) {
@@ -24,8 +24,8 @@ struct QuestionnaireListItem: View {
                     .foregroundColor(.primary)
                     .lineLimit(2)
                 
-                if !questionnaire.information.isEmpty {
-                    Text(questionnaire.information)
+                if !questionnaire.description.isEmpty {
+                    Text(questionnaire.description)
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                         .lineLimit(2)

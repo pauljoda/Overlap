@@ -10,7 +10,6 @@ import CloudKit
 
 struct DisplayNameSetupView: View {
     @Environment(\.dismiss) private var dismiss
-    @ObservedObject var cloudKitService: CloudKitService
     @StateObject private var userPreferences = UserPreferences.shared
     @State private var manualName = ""
     @State private var showingManualEntry = true
@@ -101,7 +100,8 @@ struct DisplayNameSetupView: View {
         let trimmedName = manualName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else { return }
         
-        cloudKitService.setManualDisplayName(trimmedName)
+        userPreferences.userDisplayName = trimmedName
+        
         dismiss()
     }
 }
@@ -110,6 +110,6 @@ struct DisplayNameSetupView: View {
 
 #Preview {
     NavigationView {
-        DisplayNameSetupView(cloudKitService: CloudKitService())
+        DisplayNameSetupView()
     }
 }

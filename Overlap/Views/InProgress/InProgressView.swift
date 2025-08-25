@@ -11,7 +11,6 @@ import SwiftData
 struct InProgressView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.navigationPath) private var navigationPath
-    @Environment(\.overlapSyncManager) private var syncManager
     
     @Query(
         filter: #Predicate<Overlap> { overlap in
@@ -47,11 +46,6 @@ struct InProgressView: View {
                     onDelete: deleteOverlaps
                 ) { overlap in
                     InProgressOverlapListItem(overlap: overlap)
-                        .overlay(
-                            // Loading indicator for online overlaps
-                            syncManager?.isSyncing(overlap: overlap) == true ? 
-                            LoadingOverlay() : nil
-                        )
                 }
                 .scrollContentBackground(.hidden)
                 .background(Color.clear)
@@ -85,47 +79,11 @@ struct InProgressView: View {
     }
     
     private func refreshOnlineOverlaps() async {
-        guard let syncManager = syncManager else { return }
-        
-        do {
-            // Fetch updates for all online overlaps
-            for overlap in inProgressOverlaps.filter({ $0.isOnline }) {
-                try await syncManager.fetchOverlapUpdates(overlap)
-            }
-        } catch {
-            print("Failed to refresh online overlaps: \(error)")
-        }
+       
     }
     
     private func cleanupEmptyOverlaps() {
-        // Find all overlaps and filter empty ones manually
-        let allOverlapsDescriptor = FetchDescriptor<Overlap>()
-        
-        do {
-            let allOverlaps = try modelContext.fetch(allOverlapsDescriptor)
-            let emptyOverlaps = allOverlaps.filter { overlap in
-                // Don't clean up shared overlaps - they might appear empty locally but have content in CloudKit
-                if overlap.isSharedToMe || overlap.shareRecordName != nil || overlap.cloudKitRecordID != nil {
-                    return false
-                }
-                // Only clean up truly local empty overlaps
-                return overlap.participants.isEmpty || overlap.questions.isEmpty
-            }
-            
-            if !emptyOverlaps.isEmpty {
-                print("🧹 InProgressView: Found \(emptyOverlaps.count) empty overlaps to clean up")
-                for emptyOverlap in emptyOverlaps {
-                    print("🗑️ Removing empty overlap: ID=\(emptyOverlap.id), participants=\(emptyOverlap.participants.count), questions=\(emptyOverlap.questions.count)")
-                    modelContext.delete(emptyOverlap)
-                }
-                try modelContext.save()
-                print("✅ InProgressView: Successfully cleaned up \(emptyOverlaps.count) empty overlaps")
-            } else {
-                print("✅ InProgressView: No empty overlaps found - database is clean")
-            }
-        } catch {
-            print("⚠️ Failed to cleanup empty overlaps: \(error)")
-        }
+       
     }
 }
 

@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct BasicInformationSection: View {
-    @Binding var questionnaire: Questionnaire
+    @Binding var questionnaire: QuestionnaireTable
     @FocusState.Binding var focusedField: CreateQuestionnaireView.FocusedField?
 
     var body: some View {
@@ -40,7 +40,7 @@ struct BasicInformationSection: View {
                     .onSubmit { focusedField = .information }
 
                 // Description
-                TextField("Description", text: $questionnaire.information, axis: .vertical)
+                TextField("Description", text: $questionnaire.description, axis: .vertical)
                     .textFieldStyle(.plain)
                     .lineLimit(3...6)
                     .textInputAutocapitalization(.sentences)
@@ -66,7 +66,7 @@ struct BasicInformationSection: View {
 }
 
 #Preview {
-    @State var questionnaire = Questionnaire()
+    @State var questionnaire = QuestionnaireTable()
     @FocusState var focusedField: CreateQuestionnaireView.FocusedField?
 
     BasicInformationSection(

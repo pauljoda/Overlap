@@ -8,8 +8,23 @@
 import SwiftUI
 
 struct VisualCustomizationSection: View {
-    @Binding var questionnaire: Questionnaire
+    @Binding var questionnaire: QuestionnaireTable
     @FocusState private var isEmojiFieldFocused: Bool
+    
+    // Custom bindings for color pickers
+    private var startColorBinding: Binding<Color> {
+        Binding(
+            get: { questionnaire.getStartColor() },
+            set: { questionnaire.setStartColor($0) }
+        )
+    }
+    
+    private var endColorBinding: Binding<Color> {
+        Binding(
+            get: { questionnaire.getEndColor() },
+            set: { questionnaire.setEndColor($0) }
+        )
+    }
     
     var body: some View {
         VStack(alignment: .leading, spacing: Tokens.Spacing.l) {
@@ -23,7 +38,7 @@ struct VisualCustomizationSection: View {
                         Text("Start")
                             .font(.caption)
                             .foregroundColor(.secondary)
-                        ColorPicker("Start", selection: $questionnaire.startColor, supportsOpacity: false)
+                        ColorPicker("Start", selection: startColorBinding, supportsOpacity: false)
                             .labelsHidden()
                             .scaleEffect(Tokens.Scale.colorPicker)
                     }
@@ -36,7 +51,7 @@ struct VisualCustomizationSection: View {
                             Circle()
                                 .fill(
                                     LinearGradient(
-                                        colors: [questionnaire.startColor, questionnaire.endColor],
+                                        colors: [questionnaire.getStartColor(), questionnaire.getEndColor()],
                                         startPoint: .leading,
                                         endPoint: .trailing
                                     )
@@ -62,7 +77,7 @@ struct VisualCustomizationSection: View {
                         Text("End")
                             .font(.caption)
                             .foregroundColor(.secondary)
-                        ColorPicker("End", selection: $questionnaire.endColor, supportsOpacity: false)
+                        ColorPicker("End", selection: endColorBinding, supportsOpacity: false)
                             .labelsHidden()
                             .scaleEffect(Tokens.Scale.colorPicker)
                     }
@@ -114,9 +129,10 @@ struct VisualCustomizationSection: View {
     }
 
     private func swapColors() {
-        let start = questionnaire.startColor
-        questionnaire.startColor = questionnaire.endColor
-        questionnaire.endColor = start
+        let start = questionnaire.getStartColor()
+        let end = questionnaire.getEndColor()
+        questionnaire.setStartColor(end)
+        questionnaire.setEndColor(start)
     }
 
     private func randomizeColors() {
@@ -127,13 +143,13 @@ struct VisualCustomizationSection: View {
         let endHue = fmod(hue + offset, 1.0)
         let start = Color(hue: startHue, saturation: 0.7, brightness: 0.95)
         let end = Color(hue: endHue, saturation: 0.7, brightness: 0.85)
-        questionnaire.startColor = start
-        questionnaire.endColor = end
+        questionnaire.setStartColor(start)
+        questionnaire.setEndColor(end)
     }
 }
 
 #Preview {
-    @State var questionnaire = Questionnaire()
+    @State var questionnaire = QuestionnaireTable()
     
     VisualCustomizationSection(
         questionnaire: $questionnaire

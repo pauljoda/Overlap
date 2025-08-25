@@ -7,25 +7,19 @@
 
 import SwiftData
 import SwiftUI
+import SharingGRDB
 
 struct SavedView: View {
-    @Environment(\.modelContext) private var modelContext
     @Environment(\.navigationPath) private var navigationPath
-    @Query(
-        filter: #Predicate<Questionnaire> { questionnaire in
-            questionnaire.isFavorite == true
-        },
-        sort: \Questionnaire.title,
-        order: .forward
-    ) private var favoriteQuestionnaires: [Questionnaire]
+    @Dependency(\.defaultDatabase) var database
+    
+    @FetchAll(
+        QuestionnaireTable.where { $0.isFavorite == true }.order { $0.creationDate.desc() }
+    ) private var favoriteQuestionnaires
 
-    @Query(
-        filter: #Predicate<Questionnaire> { questionnaire in
-            questionnaire.isFavorite == false
-        },
-        sort: \Questionnaire.title,
-        order: .forward
-    ) private var regularQuestionnaires: [Questionnaire]
+    @FetchAll(
+        QuestionnaireTable.where { $0.isFavorite == false }.order { $0.creationDate.desc() }
+    ) private var regularQuestionnaires
 
     var body: some View {
         GlassScreen(scrollable: false) {
@@ -37,10 +31,10 @@ struct SavedView: View {
                 QuestionnairesListView(
                     favoriteQuestionnaires: favoriteQuestionnaires,
                     regularQuestionnaires: regularQuestionnaires,
-                    modelContext: modelContext,
                     onEdit: handleEdit,
                     onDeleteFavorites: deleteFavoriteQuestionnaires,
-                    onDeleteRegular: deleteRegularQuestionnaires
+                    onDeleteRegular: deleteRegularQuestionnaires,
+                    onDeleteQuestionnaire: deleteQuestionnaire
                 )
                 .scrollContentBackground(.hidden)
                 .background(Color.clear)
@@ -70,30 +64,45 @@ struct SavedView: View {
         }
     }
 
-    private func handleEdit(_ questionnaire: Questionnaire) {
+    private func handleEdit(_ questionnaire: QuestionnaireTable) {
         navigate(to: .edit(questionnaireId: questionnaire.id), using: navigationPath)
     }
 
     private func deleteFavoriteQuestionnaires(at offsets: IndexSet) {
-        withAnimation {
-            offsets.map { favoriteQuestionnaires[$0] }.forEach(
-                modelContext.delete
-            )
+        withErrorReporting {
+            try database.write { db in
+                for index in offsets {
+                    let questionnaire = favoriteQuestionnaires[index]
+                    try QuestionnaireTable.delete(questionnaire).execute(db)
+                }
+            }
         }
     }
 
     private func deleteRegularQuestionnaires(at offsets: IndexSet) {
-        withAnimation {
-            offsets.map { regularQuestionnaires[$0] }.forEach(
-                modelContext.delete
-            )
+        withErrorReporting {
+            try database.write { db in
+                for index in offsets {
+                    let questionnaire = regularQuestionnaires[index]
+                    try QuestionnaireTable.delete(questionnaire).execute(db)
+                }
+            }
+        }
+    }
+    
+    private func deleteQuestionnaire(_ questionnaire: QuestionnaireTable) {
+        withErrorReporting {
+            try database.write { db in
+                try QuestionnaireTable.delete(questionnaire).execute(db)
+            }
         }
     }
 }
 
-#Preview {
+#Preview("GRDB Only") {
+    let _ = setupGRDBPreview()
+    
     NavigationStack {
         SavedView()
     }
-    .modelContainer(previewModelContainer)
 }

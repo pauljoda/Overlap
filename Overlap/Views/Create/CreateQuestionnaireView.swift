@@ -5,27 +5,28 @@
 //  Created by Paul Davis on 8/6/25.
 //
 
+import SharingGRDB
 import SwiftData
 import SwiftUI
 
 struct CreateQuestionnaireView: View {
-    @Environment(\.modelContext) private var modelContext
+    @Dependency(\.defaultDatabase) var database
     @Environment(\.dismiss) private var dismiss
     @Environment(\.navigationPath) private var navigationPath
 
     // Editing support
-    let editingQuestionnaire: Questionnaire?
+    let editingQuestionnaire: QuestionnaireTable?
     private var isEditing: Bool { editingQuestionnaire != nil }
 
-    @State private var questionnaire = Questionnaire()
+    @State private var questionnaire = QuestionnaireTable()
     @State private var questions: [String] = [""]
 
     // Create a binding that works with either the editing questionnaire or the local one
-    private var questionnaireBinding: Binding<Questionnaire> {
+    private var questionnaireBinding: Binding<QuestionnaireTable> {
         if isEditing {
             return Binding(
                 get: { editingQuestionnaire! },
-                set: { _ in }  // SwiftData will handle the changes automatically
+                set: { _ in }  // Read-only binding for editing mode
             )
         } else {
             return $questionnaire
@@ -40,10 +41,10 @@ struct CreateQuestionnaireView: View {
     // Track currently selected question card for auto-focus
     @State private var selectedQuestionIndex: Int = 0
 
-    init(editingQuestionnaire: Questionnaire? = nil) {
+    init(editingQuestionnaire: QuestionnaireTable? = nil) {
         self.editingQuestionnaire = editingQuestionnaire
     }
-    
+
     enum FocusedField: Hashable {
         case title
         case information
@@ -67,7 +68,7 @@ struct CreateQuestionnaireView: View {
         let hasTitle = !currentQuestionnaire.title.trimmingCharacters(
             in: .whitespacesAndNewlines
         ).isEmpty
-        let hasInformation = !currentQuestionnaire.information
+        let hasInformation = !currentQuestionnaire.description
             .trimmingCharacters(
                 in: .whitespacesAndNewlines
             ).isEmpty
@@ -118,7 +119,9 @@ struct CreateQuestionnaireView: View {
 
             // Simple spacer to allow scrolling above keyboard
             Spacer()
-                .frame(height: Tokens.Size.cardMaxHeight + Tokens.Spacing.quadXL)
+                .frame(
+                    height: Tokens.Size.cardMaxHeight + Tokens.Spacing.quadXL
+                )
         }
         .navigationTitle(
             isEditing ? "Edit Questionnaire" : "Create Questionnaire"
@@ -134,7 +137,9 @@ struct CreateQuestionnaireView: View {
         .onAppear {
             loadQuestionnaireForEditing()
             // Auto-focus the first field on load
-            DispatchQueue.main.asyncAfter(deadline: .now() + Tokens.Duration.medium) {
+            DispatchQueue.main.asyncAfter(
+                deadline: .now() + Tokens.Duration.medium
+            ) {
                 focusedField = .title
             }
         }
@@ -196,7 +201,7 @@ struct CreateQuestionnaireView: View {
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
 
-        let currentQuestionnaire = questionnaireBinding.wrappedValue
+        var currentQuestionnaire = questionnaireBinding.wrappedValue
 
         // Guard on validity with subtle haptic
         guard isValid else {
@@ -207,7 +212,7 @@ struct CreateQuestionnaireView: View {
                 in: .whitespacesAndNewlines
             ).isEmpty {
                 focusedField = .title
-            } else if currentQuestionnaire.information.trimmingCharacters(
+            } else if currentQuestionnaire.description.trimmingCharacters(
                 in: .whitespacesAndNewlines
             ).isEmpty {
                 focusedField = .information
@@ -234,7 +239,7 @@ struct CreateQuestionnaireView: View {
             .trimmingCharacters(
                 in: .whitespacesAndNewlines
             )
-        currentQuestionnaire.information = currentQuestionnaire.information
+        currentQuestionnaire.description = currentQuestionnaire.description
             .trimmingCharacters(in: .whitespacesAndNewlines)
         currentQuestionnaire.instructions = currentQuestionnaire.instructions
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -245,26 +250,34 @@ struct CreateQuestionnaireView: View {
         currentQuestionnaire.questions = cleanedQuestions
         currentQuestionnaire.creationDate = Date.now
 
-        // Save to SwiftData
-        if !isEditing {
-            modelContext.insert(currentQuestionnaire)
-        } 
-
-        do {
-            try modelContext.save()
+        // Save to database
+        withErrorReporting {
+            try database.write { db in
+                if !isEditing {
+                    try QuestionnaireTable.insert {
+                        currentQuestionnaire
+                    }
+                    .execute(db)
+                } else {
+                    try QuestionnaireTable.update(currentQuestionnaire).execute(db)
+                }
+            }
+            
             saveSucceeded = true
             saveFeedbackKey &+= 1
-
-            if isEditing {
-                // For editing, just dismiss back to detail view
-                dismiss()
-            } else {
+            
+            if !isEditing {
                 // For new questionnaires, navigate to detail and replace the create screen
-                navigate(to: currentQuestionnaire, using: navigationPath, replaceCurrent: true)
+                navigate(
+                    to: currentQuestionnaire,
+                    using: navigationPath,
+                    replaceCurrent: true
+                )
+            } else {
+                dismiss()
             }
-        } catch {
-            print("Failed to save questionnaire: \(error)")
         }
+
     }
 
     private func loadQuestionnaireForEditing() {
@@ -278,38 +291,21 @@ struct CreateQuestionnaireView: View {
 
 }
 
-#Preview {
+#Preview("Current - Combined") {
+    let _ = try! prepareDependencies {
+        $0.defaultDatabase = try appDatabase()
+    }
+    
     NavigationStack {
         CreateQuestionnaireView()
     }
-    .modelContainer(for: Questionnaire.self, inMemory: true)
+    .modelContainer(previewModelContainer)
 }
 
-#Preview("Editing Questionnaire") {
-    let container = try! ModelContainer(
-        for: Questionnaire.self,
-        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
-    )
-    let context = container.mainContext
-
-    let sampleQuestionnaire = Questionnaire(
-        title: "Work From Home Survey",
-        information: "A survey about remote work preferences and productivity",
-        instructions:
-            "Please answer all questions honestly based on your experience",
-        author: "HR Team",
-        questions: [
-            "Do you prefer working from home or in the office?",
-            "How productive are you when working remotely?",
-            "What tools help you stay connected with your team?",
-        ]
-    )
-
-    context.insert(sampleQuestionnaire)
-    try! context.save()
-
-    return NavigationStack {
-        CreateQuestionnaireView(editingQuestionnaire: sampleQuestionnaire)
+#Preview("Future - GRDB Only") {
+    let _ = setupGRDBPreview()
+    
+    NavigationStack {
+        CreateQuestionnaireView()
     }
-    .modelContainer(container)
 }

@@ -7,13 +7,14 @@
 
 import SwiftUI
 import SwiftData
+import SharingGRDB
 
 struct QuestionnaireSection: View {
     let title: String
-    let questionnaires: [Questionnaire]
-    let modelContext: ModelContext
+    let questionnaires: [QuestionnaireTable]
     let onDelete: (IndexSet) -> Void
-    let onEdit: (Questionnaire) -> Void
+    let onEdit: (QuestionnaireTable) -> Void
+    let onDeleteQuestionnaire: (QuestionnaireTable) -> Void
     @Environment(\.navigationPath) private var navigationPath
     
     var body: some View {
@@ -27,8 +28,8 @@ struct QuestionnaireSection: View {
                 .buttonStyle(PlainButtonStyle())
                 .questionnaireSwipeActions(
                     questionnaire: questionnaire,
-                    modelContext: modelContext,
-                    onEdit: onEdit
+                    onEdit: onEdit,
+                    onDelete: onDeleteQuestionnaire
                 )
             }
             .onDelete(perform: onDelete)
@@ -48,15 +49,33 @@ struct QuestionnaireSection: View {
     }
 }
 
-#Preview {
+#Preview("Current - Combined") {
+    let _ = try! prepareDependencies {
+        $0.defaultDatabase = try appDatabase()
+    }
+    
     List {
         QuestionnaireSection(
             title: "Favorites",
             questionnaires: [SampleData.sampleQuestionnaire],
-            modelContext: previewModelContainer.mainContext,
             onDelete: { _ in },
-            onEdit: { _ in }
+            onEdit: { _ in },
+            onDeleteQuestionnaire: { _ in }
         )
     }
     .modelContainer(previewModelContainer)
+}
+
+#Preview("Future - GRDB Only") {
+    let _ = setupGRDBPreview()
+    
+    List {
+        QuestionnaireSection(
+            title: "Favorites",
+            questionnaires: [SampleData.sampleQuestionnaire],
+            onDelete: { _ in },
+            onEdit: { _ in },
+            onDeleteQuestionnaire: { _ in }
+        )
+    }
 }

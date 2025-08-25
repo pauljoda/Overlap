@@ -9,7 +9,7 @@ import SwiftData
 import SwiftUI
 
 struct QuestionnaireDetailView: View {
-    let questionnaire: Questionnaire
+    let questionnaire: QuestionnaireTable
     @Environment(\.navigationPath) private var navigationPath
     @StateObject private var userPreferences = UserPreferences.shared
 
@@ -21,20 +21,23 @@ struct QuestionnaireDetailView: View {
                     DetailHeader(questionnaire: questionnaire)
                     DetailInfo(questionnaire: questionnaire)
                     DetailQuestions(questionnaire: questionnaire)
-                    
+
                     // Bottom spacing to account for floating button
                     Spacer()
-                        .frame(height: Tokens.Size.buttonLarge + Tokens.Spacing.xl * 2)
+                        .frame(
+                            height: Tokens.Size.buttonLarge + Tokens.Spacing.xl
+                                * 2
+                        )
                 }
                 .padding(.horizontal, Tokens.Spacing.xl)
                 .padding(.top, Tokens.Spacing.xl)
             }
             .ignoresSafeArea(.container, edges: .bottom)
-            
+
             // Floating bottom buttons
             VStack(spacing: Tokens.Spacing.m) {
                 Spacer()
-                
+
                 // Local overlap button
                 GlassActionButton(
                     title: Tokens.Strings.beginLocalOverlap,
@@ -43,7 +46,7 @@ struct QuestionnaireDetailView: View {
                     tintColor: .green,
                     action: startLocal
                 )
-                
+
                 // Online overlap button
                 GlassActionButton(
                     title: Tokens.Strings.startOnlineOverlap,
@@ -75,7 +78,7 @@ struct QuestionnaireDetailView: View {
         )
         navigate(to: overlap, using: navigationPath)
     }
-    
+
     private func startOnline() {
         // Create a new Overlap from the questionnaire for online collaboration
         // Add the current user as the first participant
@@ -100,7 +103,7 @@ struct QuestionnaireDetailView: View {
 
 // Centered header similar to CreateQuestionnaireHeader
 private struct DetailHeader: View {
-    let questionnaire: Questionnaire
+    let questionnaire: QuestionnaireTable
 
     var body: some View {
         VStack(spacing: Tokens.Spacing.l) {
@@ -114,7 +117,7 @@ private struct DetailHeader: View {
                     .foregroundColor(.primary)
                     .multilineTextAlignment(.center)
 
-                Text(questionnaire.information)
+                Text(questionnaire.description)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -126,7 +129,7 @@ private struct DetailHeader: View {
 
 // Information card with metadata
 private struct DetailInfo: View {
-    let questionnaire: Questionnaire
+    let questionnaire: QuestionnaireTable
 
     var body: some View {
         VStack(alignment: .leading, spacing: Tokens.Spacing.m) {
@@ -191,7 +194,7 @@ private struct DetailInfo: View {
 }
 
 private struct DetailQuestions: View {
-    let questionnaire: Questionnaire
+    let questionnaire: QuestionnaireTable
     var body: some View {
         VStack(alignment: .leading, spacing: Tokens.Spacing.m) {
             SectionHeader(title: "Questions", icon: "questionmark.bubble.fill")
@@ -218,15 +221,13 @@ private struct DetailQuestions: View {
 }
 
 #Preview {
-    let q = Questionnaire(
+    let q = QuestionnaireTable(
         title: "Weekend Plans",
-        information: "A quick pulse on preferences.",
+        description: "A quick pulse on preferences.",
         instructions: "Answer honestly with yes/no/maybe.",
         author: "Alex",
-        questions: ["Hike a trail?", "Try a new cafe?", "See a movie?"],
-        startColor: .blue,
-        endColor: .purple
+        questions: ["Hike a trail?", "Try a new cafe?", "See a movie?"]
     )
-    return NavigationStack { QuestionnaireDetailView(questionnaire: q) }
-        .modelContainer(for: Questionnaire.self, inMemory: true)
+
+    NavigationStack { QuestionnaireDetailView(questionnaire: q) }
 }

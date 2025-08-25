@@ -31,7 +31,7 @@ struct InProgressOverlapListItem: View {
             Circle()
                 .fill(
                     LinearGradient(
-                        colors: [overlap.startColor.opacity(0.8), overlap.endColor.opacity(0.6)],
+                        colors: [overlap.getStartColor().opacity(0.8), overlap.getEndColor().opacity(0.6)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -69,8 +69,6 @@ struct InProgressOverlapListItem: View {
                             .foregroundColor(stateInfo.1)
                     }
                     
-                    // Online indicator
-                    OnlineIndicator(isOnline: overlap.isOnline, overlapId: overlap.id, style: .compact)
                     
                     if overlap.currentState != .instructions {
                         // Separator

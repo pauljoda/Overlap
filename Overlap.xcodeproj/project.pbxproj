@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		FD1FBDD82E5AA1FD00D8FF2B /* SharingGRDB in Frameworks */ = {isa = PBXBuildFile; productRef = FD2F893E2E32FC990097AC8E /* SharingGRDB */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		FD2F892A2E32FC920097AC8E /* Overlap.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Overlap.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -36,6 +40,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FD1FBDD82E5AA1FD00D8FF2B /* SharingGRDB in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +83,7 @@
 			);
 			name = Overlap;
 			packageProductDependencies = (
+				FD2F893E2E32FC990097AC8E /* SharingGRDB */,
 			);
 			productName = Overlap;
 			productReference = FD2F892A2E32FC920097AC8E /* Overlap.app */;
@@ -107,6 +113,9 @@
 			);
 			mainGroup = FD2F89212E32FC920097AC8E;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				FD2F893D2E32FC990097AC8E /* XCRemoteSwiftPackageReference "sharing-grdb" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = FD2F892B2E32FC920097AC8E /* Products */;
 			projectDirPath = "";
@@ -374,6 +383,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		FD2F893D2E32FC990097AC8E /* XCRemoteSwiftPackageReference "sharing-grdb" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/sharing-grdb";
+			requirement = {
+				branch = cloudkit;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		FD2F893E2E32FC990097AC8E /* SharingGRDB */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FD2F893D2E32FC990097AC8E /* XCRemoteSwiftPackageReference "sharing-grdb" */;
+			productName = SharingGRDB;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = FD2F89222E32FC920097AC8E /* Project object */;
 }
