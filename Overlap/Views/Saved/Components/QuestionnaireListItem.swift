@@ -9,7 +9,7 @@ import SwiftUI
 
 struct QuestionnaireListItem: View {
     
-    let questionnaire: QuestionnaireTable
+    let questionnaire: Questionnaire
     
     var body: some View {
         HStack(spacing: Tokens.Spacing.m) {

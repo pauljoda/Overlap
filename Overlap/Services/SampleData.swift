@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import SwiftData
 import SwiftUI
 import SharingGRDB
 
@@ -19,7 +18,7 @@ class SampleData {
         "Do you prefer tea over coffee?",
     ]
 
-    static let sampleQuestionnaire = QuestionnaireTable(
+    static let sampleQuestionnaire = Questionnaire(
         title: "Sample Questionnaire",
         description:
             "A fun sample questionnaire to test the Overlap app. This questionnaire is designed to be lighthearted and entertaining. It includes a variety of questions that cover different topics, from food preferences to travel experiences.",
@@ -37,7 +36,7 @@ class SampleData {
         "Have you ever run a marathon?",
     ]
 
-    static let sampleQuestionnaire2 = QuestionnaireTable(
+    static let sampleQuestionnaire2 = Questionnaire(
         title: "Adventure & Experience Quiz",
         description: "A short quiz about adventure and personal experiences.",
         instructions:
@@ -54,7 +53,7 @@ class SampleData {
         "Do you visit the library regularly?",
     ]
 
-    static let sampleQuestionnaire3 = QuestionnaireTable(
+    static let sampleQuestionnaire3 = Questionnaire(
         title: "Reading & Hobbies Survey",
         description: "A lighthearted survey about reading habits and hobbies.",
         instructions:
@@ -85,7 +84,7 @@ class SampleData {
     )
 
     static let sampleCompletedOverlap: Overlap = {
-        let overlap = Overlap(
+        var overlap = Overlap(
             participants: ["David", "Emma", "Frank"],
             questionnaire: SampleData.sampleQuestionnaire3,
             currentState: .complete
@@ -103,24 +102,24 @@ class SampleData {
         // Insert sample questionnaires into the database
         try database.write { db in
             // Clear existing data first
-            try db.execute(sql: "DELETE FROM questionnaireTables")
+            try db.execute(sql: "DELETE FROM questionnaires")
             
             // Insert sample questionnaires
-            try QuestionnaireTable.insert {
+            try Questionnaire.insert {
                 sampleQuestionnaire
             }.execute(db)
             
-            try QuestionnaireTable.insert {
+            try Questionnaire.insert {
                 sampleQuestionnaire2
             }.execute(db)
             
-            try QuestionnaireTable.insert {
+            try Questionnaire.insert {
                 sampleQuestionnaire3
             }.execute(db)
         }
     }
     
-    /// Standalone SharingGRDB preview setup - independent of SwiftData
+    /// SharingGRDB preview setup
     @MainActor
     static func setupGRDBPreview() {
         do {
@@ -133,55 +132,3 @@ class SampleData {
         }
     }
 }
-
-// MARK: - SwiftData Preview Containers (Legacy - will be removed)
-
-/// Legacy SwiftData-only preview container (no GRDB setup)
-@MainActor
-let swiftDataOnlyPreviewContainer: ModelContainer = {
-    do {
-        let container = try ModelContainer(
-            for: Overlap.self
-        )
-
-        // Clear existing overlaps
-        try? container.mainContext.delete(model: Overlap.self)
-
-        // Insert sample overlaps (Overlap still uses SwiftData)
-        container.mainContext.insert(SampleData.sampleOverlap)
-        container.mainContext.insert(SampleData.sampleInProgressOverlap)
-        container.mainContext.insert(SampleData.sampleCompletedOverlap)
-        return container
-    } catch {
-        fatalError("Failed to create SwiftData-only ModelContainer for previews: \(error)")
-    }
-}()
-
-/// Combined preview container with both GRDB and SwiftData (transitional)
-@MainActor
-let previewModelContainer: ModelContainer = {
-    do {
-        // Setup the SharingGRDB database for previews
-        let _ = try! prepareDependencies {
-            $0.defaultDatabase = try appDatabase()
-        }
-        
-        // Setup sample questionnaire data in the database
-        try SampleData.setupPreviewDatabase()
-        
-        let container = try ModelContainer(
-            for: Overlap.self
-        )
-
-        // Clear existing overlaps
-        try? container.mainContext.delete(model: Overlap.self)
-
-        // Insert sample overlaps (Overlap still uses SwiftData)
-        container.mainContext.insert(SampleData.sampleOverlap)
-        container.mainContext.insert(SampleData.sampleInProgressOverlap)
-        container.mainContext.insert(SampleData.sampleCompletedOverlap)
-        return container
-    } catch {
-        fatalError("Failed to create ModelContainer for previews: \(error)")
-    }
-}()

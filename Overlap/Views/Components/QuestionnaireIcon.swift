@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct QuestionnaireIcon: View {
-    let questionnaire: QuestionnaireTable
+    let questionnaire: Questionnaire
     let size: IconSize
     
     enum IconSize {
@@ -44,7 +44,7 @@ struct QuestionnaireIcon: View {
                 RoundedRectangle(cornerRadius: size.cornerRadius)
                     .fill(
                         LinearGradient(
-                            colors: [questionnaire.getStartColor().opacity(0.8), questionnaire.getEndColor().opacity(0.6)],
+                            colors: [questionnaire.startColor.opacity(0.8), questionnaire.endColor.opacity(0.6)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -54,7 +54,7 @@ struct QuestionnaireIcon: View {
                 Circle()
                     .fill(
                         LinearGradient(
-                            colors: [questionnaire.getStartColor(), questionnaire.getEndColor()],
+                            colors: [questionnaire.startColor, questionnaire.endColor],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )

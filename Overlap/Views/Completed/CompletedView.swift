@@ -5,21 +5,17 @@
 //  View showing completed overlap sessions
 //
 
+import SharingGRDB
 import SwiftUI
-import SwiftData
 
 struct CompletedView: View {
-    @Environment(\.modelContext) private var modelContext
+    @Dependency(\.defaultDatabase) var database
+
     @Environment(\.navigationPath) private var navigationPath
-    
-    @Query(
-        filter: #Predicate<Overlap> { overlap in
-            overlap.isCompleted == true
-        },
-        sort: \Overlap.completeDate,
-        order: .reverse
-    ) private var completedOverlaps: [Overlap]
-    
+
+    @FetchAll(Overlap.where(\.isCompleted))
+    private var completedOverlaps: [Overlap]
+
     var body: some View {
         GlassScreen(scrollable: false) {
             if completedOverlaps.isEmpty {
@@ -56,15 +52,22 @@ struct CompletedView: View {
             }
         }
     }
-    
+
     private func deleteOverlaps(at offsets: IndexSet) {
         withAnimation {
-            offsets.map { completedOverlaps[$0] }.forEach(modelContext.delete)
+            withErrorReporting {
+                try database.write { db in
+                    for index in offsets {
+                        let overlap = completedOverlaps[index]
+                        try Overlap.delete(overlap).execute(db)
+                    }
+                }
+            }
         }
     }
-    
+
     private func refreshOnlineOverlaps() async {
-     
+
     }
 }
 
@@ -72,13 +75,10 @@ struct CompletedView: View {
     NavigationStack {
         CompletedView()
     }
-    .modelContainer(previewModelContainer)
 }
-
 
 #Preview {
     NavigationStack {
         CompletedView()
     }
-    .modelContainer(previewModelContainer)
 }

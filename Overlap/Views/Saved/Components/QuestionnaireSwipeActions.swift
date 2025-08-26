@@ -6,13 +6,12 @@
 //
 
 import SwiftUI
-import SwiftData
 import SharingGRDB
 
 struct QuestionnaireSwipeActions: ViewModifier {
-    let questionnaire: QuestionnaireTable
-    let onEdit: (QuestionnaireTable) -> Void
-    let onDelete: (QuestionnaireTable) -> Void
+    let questionnaire: Questionnaire
+    let onEdit: (Questionnaire) -> Void
+    let onDelete: (Questionnaire) -> Void
     
     @Dependency(\.defaultDatabase) var database
     
@@ -41,7 +40,7 @@ struct QuestionnaireSwipeActions: ViewModifier {
                             try database.write { db in
                                 var updatedQuestionnaire = questionnaire
                                 updatedQuestionnaire.isFavorite.toggle()
-                                try QuestionnaireTable.update(updatedQuestionnaire).execute(db)
+                                try Questionnaire.update(updatedQuestionnaire).execute(db)
                             }
                         }
                     }
@@ -55,11 +54,11 @@ struct QuestionnaireSwipeActions: ViewModifier {
 
 extension View {
     func questionnaireSwipeActions(
-        questionnaire: QuestionnaireTable,
-        onEdit: @escaping (QuestionnaireTable) -> Void = { questionnaire in
+        questionnaire: Questionnaire,
+        onEdit: @escaping (Questionnaire) -> Void = { questionnaire in
             print("Edit \(questionnaire.title)")
         },
-        onDelete: @escaping (QuestionnaireTable) -> Void = { questionnaire in
+        onDelete: @escaping (Questionnaire) -> Void = { questionnaire in
             print("Delete \(questionnaire.title)")
         }
     ) -> some View {

@@ -31,7 +31,7 @@ struct InProgressOverlapListItem: View {
             Circle()
                 .fill(
                     LinearGradient(
-                        colors: [overlap.getStartColor().opacity(0.8), overlap.getEndColor().opacity(0.6)],
+                        colors: [overlap.startColor.opacity(0.8), overlap.endColor.opacity(0.6)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )

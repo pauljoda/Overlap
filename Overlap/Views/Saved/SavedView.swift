@@ -5,7 +5,6 @@
 //  Created by Paul Davis on 8/6/25.
 //
 
-import SwiftData
 import SwiftUI
 import SharingGRDB
 
@@ -14,11 +13,11 @@ struct SavedView: View {
     @Dependency(\.defaultDatabase) var database
     
     @FetchAll(
-        QuestionnaireTable.where { $0.isFavorite == true }.order { $0.creationDate.desc() }
+        Questionnaire.where { $0.isFavorite == true }.order { $0.creationDate.desc() }
     ) private var favoriteQuestionnaires
 
     @FetchAll(
-        QuestionnaireTable.where { $0.isFavorite == false }.order { $0.creationDate.desc() }
+        Questionnaire.where { $0.isFavorite == false }.order { $0.creationDate.desc() }
     ) private var regularQuestionnaires
 
     var body: some View {
@@ -64,7 +63,7 @@ struct SavedView: View {
         }
     }
 
-    private func handleEdit(_ questionnaire: QuestionnaireTable) {
+    private func handleEdit(_ questionnaire: Questionnaire) {
         navigate(to: .edit(questionnaireId: questionnaire.id), using: navigationPath)
     }
 
@@ -73,7 +72,7 @@ struct SavedView: View {
             try database.write { db in
                 for index in offsets {
                     let questionnaire = favoriteQuestionnaires[index]
-                    try QuestionnaireTable.delete(questionnaire).execute(db)
+                    try Questionnaire.delete(questionnaire).execute(db)
                 }
             }
         }
@@ -84,16 +83,16 @@ struct SavedView: View {
             try database.write { db in
                 for index in offsets {
                     let questionnaire = regularQuestionnaires[index]
-                    try QuestionnaireTable.delete(questionnaire).execute(db)
+                    try Questionnaire.delete(questionnaire).execute(db)
                 }
             }
         }
     }
     
-    private func deleteQuestionnaire(_ questionnaire: QuestionnaireTable) {
+    private func deleteQuestionnaire(_ questionnaire: Questionnaire) {
         withErrorReporting {
             try database.write { db in
-                try QuestionnaireTable.delete(questionnaire).execute(db)
+                try Questionnaire.delete(questionnaire).execute(db)
             }
         }
     }

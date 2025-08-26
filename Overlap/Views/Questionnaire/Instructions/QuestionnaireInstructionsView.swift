@@ -6,11 +6,9 @@
 //
 
 import SwiftUI
-import SwiftData
 
 struct QuestionnaireInstructionsView: View {
-    let overlap: Overlap
-    @Environment(\.modelContext) private var modelContext
+    @Binding var overlap: Overlap
     @State private var newParticipantName = ""
     @FocusState private var isTextFieldFocused: Bool
     @State private var animatingParticipants: Set<Int> = []
@@ -155,9 +153,7 @@ struct QuestionnaireInstructionsView: View {
             overlap.currentState = .nextParticipant
         }
         
-        // Save the overlap to the model context when starting
-        modelContext.insert(overlap)
-        try? modelContext.save()        
+        // Note: Overlap persistence is handled by parent view        
     }
 }
 
@@ -213,5 +209,5 @@ struct OnlineParticipantsSection: View {
 }
 
 #Preview {
-    QuestionnaireInstructionsView(overlap: SampleData.sampleOverlap)
+    QuestionnaireInstructionsView(overlap: .constant(SampleData.sampleOverlap))
 }

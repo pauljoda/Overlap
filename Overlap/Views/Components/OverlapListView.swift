@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import SwiftData
 
 struct OverlapListView: View {
     let overlaps: [Overlap]
@@ -55,5 +54,4 @@ struct OverlapListView: View {
             }
         )
     }
-    .modelContainer(previewModelContainer)
 }

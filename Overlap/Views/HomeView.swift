@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import SwiftData
 import SharingGRDB
 
 // Environment key for NavigationPath
@@ -85,7 +84,7 @@ struct HomeView: View {
                     Text("Unknown destination")
                 }
             }
-            .navigationDestination(for: QuestionnaireTable.self) { questionnaire in
+            .navigationDestination(for: Questionnaire.self) { questionnaire in
                 QuestionnaireDetailView(questionnaire: questionnaire)
             }
             .navigationDestination(for: Overlap.self) { overlap in
@@ -107,7 +106,6 @@ struct HomeView: View {
     }
     
     HomeView()
-        .modelContainer(previewModelContainer)
 }
 
 #Preview("With Model Data") {
@@ -116,5 +114,4 @@ struct HomeView: View {
     }
     
     HomeView()
-        .modelContainer(previewModelContainer)
 }

@@ -6,7 +6,6 @@
 //
 
 import SharingGRDB
-import SwiftData
 import SwiftUI
 
 struct CreateQuestionnaireView: View {
@@ -15,14 +14,14 @@ struct CreateQuestionnaireView: View {
     @Environment(\.navigationPath) private var navigationPath
 
     // Editing support
-    let editingQuestionnaire: QuestionnaireTable?
+    let editingQuestionnaire: Questionnaire?
     private var isEditing: Bool { editingQuestionnaire != nil }
 
-    @State private var questionnaire = QuestionnaireTable()
+    @State private var questionnaire = Questionnaire()
     @State private var questions: [String] = [""]
 
     // Create a binding that works with either the editing questionnaire or the local one
-    private var questionnaireBinding: Binding<QuestionnaireTable> {
+    private var questionnaireBinding: Binding<Questionnaire> {
         if isEditing {
             return Binding(
                 get: { editingQuestionnaire! },
@@ -41,7 +40,7 @@ struct CreateQuestionnaireView: View {
     // Track currently selected question card for auto-focus
     @State private var selectedQuestionIndex: Int = 0
 
-    init(editingQuestionnaire: QuestionnaireTable? = nil) {
+    init(editingQuestionnaire: Questionnaire? = nil) {
         self.editingQuestionnaire = editingQuestionnaire
     }
 
@@ -254,12 +253,12 @@ struct CreateQuestionnaireView: View {
         withErrorReporting {
             try database.write { db in
                 if !isEditing {
-                    try QuestionnaireTable.insert {
+                    try Questionnaire.insert {
                         currentQuestionnaire
                     }
                     .execute(db)
                 } else {
-                    try QuestionnaireTable.update(currentQuestionnaire).execute(db)
+                    try Questionnaire.update(currentQuestionnaire).execute(db)
                 }
             }
             
@@ -299,7 +298,6 @@ struct CreateQuestionnaireView: View {
     NavigationStack {
         CreateQuestionnaireView()
     }
-    .modelContainer(previewModelContainer)
 }
 
 #Preview("Future - GRDB Only") {

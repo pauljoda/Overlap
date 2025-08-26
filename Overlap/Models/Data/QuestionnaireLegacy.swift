@@ -6,10 +6,8 @@
 //
 
 import Foundation
-import SwiftData
 import SwiftUI
 
-@Model
 class QuestionnaireLegacy {
     var id = UUID()
     var title: String = ""
@@ -18,74 +16,86 @@ class QuestionnaireLegacy {
     var author: String = ""
     var creationDate: Date = Date.now
     var questions: [String] = []
-    
+
     // Visual customization properties
     var iconEmoji: String = "📝"
-    
+
     // Simple color storage using RGBA components
     var startColorRed: Double = 0.0
     var startColorGreen: Double = 0.0
     var startColorBlue: Double = 1.0
     var startColorAlpha: Double = 1.0
-    
+
     var endColorRed: Double = 0.5
     var endColorGreen: Double = 0.0
     var endColorBlue: Double = 0.5
     var endColorAlpha: Double = 1.0
-    
-    // Helper functions for Color access
-    func getStartColor() -> Color {
-        Color(red: startColorRed, green: startColorGreen, blue: startColorBlue, opacity: startColorAlpha)
+
+    // Computed properties for easy Color access
+    var startColor: Color {
+        get {
+            Color(
+                red: startColorRed,
+                green: startColorGreen,
+                blue: startColorBlue,
+                opacity: startColorAlpha
+            )
+        }
+        set {
+            // Extract RGBA components using UIColor/NSColor
+            #if os(iOS)
+                let uiColor = UIColor(newValue)
+                var red: CGFloat = 0
+                var green: CGFloat = 0
+                var blue: CGFloat = 0
+                var alpha: CGFloat = 0
+                uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+                startColorRed = Double(red)
+                startColorGreen = Double(green)
+                startColorBlue = Double(blue)
+                startColorAlpha = Double(alpha)
+            #else
+                // Fallback for other platforms
+                startColorRed = 0.0
+                startColorGreen = 0.0
+                startColorBlue = 1.0
+                startColorAlpha = 1.0
+            #endif
+        }
     }
-    
-    func setStartColor(_ color: Color) {
-        // Extract RGBA components using UIColor/NSColor
-        #if os(iOS)
-        let uiColor = UIColor(color)
-        var red: CGFloat = 0
-        var green: CGFloat = 0
-        var blue: CGFloat = 0
-        var alpha: CGFloat = 0
-        uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-        startColorRed = Double(red)
-        startColorGreen = Double(green)
-        startColorBlue = Double(blue)
-        startColorAlpha = Double(alpha)
-        #else
-        // Fallback for other platforms
-        startColorRed = 0.0
-        startColorGreen = 0.0
-        startColorBlue = 1.0
-        startColorAlpha = 1.0
-        #endif
+
+    var endColor: Color {
+        get {
+            Color(
+                red: endColorRed,
+                green: endColorGreen,
+                blue: endColorBlue,
+                opacity: endColorAlpha
+            )
+        }
+        set {
+            // Extract RGBA components using UIColor/NSColor
+            #if os(iOS)
+                let uiColor = UIColor(newValue)
+                var red: CGFloat = 0
+                var green: CGFloat = 0
+                var blue: CGFloat = 0
+                var alpha: CGFloat = 0
+                uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+                endColorRed = Double(red)
+                endColorGreen = Double(green)
+                endColorBlue = Double(blue)
+                endColorAlpha = Double(alpha)
+            #else
+                // Fallback for other platforms
+                endColorRed = 0.5
+                endColorGreen = 0.0
+                endColorBlue = 0.5
+                endColorAlpha = 1.0
+            #endif
+        }
     }
-    
-    func getEndColor() -> Color {
-        Color(red: endColorRed, green: endColorGreen, blue: endColorBlue, opacity: endColorAlpha)
-    }
-    
-    func setEndColor(_ color: Color) {
-        // Extract RGBA components using UIColor/NSColor
-        #if os(iOS)
-        let uiColor = UIColor(color)
-        var red: CGFloat = 0
-        var green: CGFloat = 0
-        var blue: CGFloat = 0
-        var alpha: CGFloat = 0
-        uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-        endColorRed = Double(red)
-        endColorGreen = Double(green)
-        endColorBlue = Double(blue)
-        endColorAlpha = Double(alpha)
-        #else
-        // Fallback for other platforms
-        endColorRed = 0.5
-        endColorGreen = 0.0
-        endColorBlue = 0.5
-        endColorAlpha = 1.0
-        #endif
-    }
-    
+
     // Favorite status
     var isFavorite: Bool = false
 
@@ -111,9 +121,9 @@ class QuestionnaireLegacy {
         self.questions = questions
         self.iconEmoji = iconEmoji
         self.isFavorite = isFavorite
-        
+
         // Set colors using the helper functions
-        self.setStartColor(startColor)
-        self.setEndColor(endColor)
+        self.startColor = startColor
+        self.endColor = endColor
     }
 }

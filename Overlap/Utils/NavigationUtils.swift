@@ -35,7 +35,7 @@ func navigate(to destination: NavigationDestination, using navigationPath: Bindi
 }
 
 func navigate(
-    to questionnaire: QuestionnaireTable,
+    to questionnaire: Questionnaire,
     using navigationPath: Binding<NavigationPath>,
     replaceCurrent: Bool = false
 ) {

@@ -2,11 +2,10 @@
 //  DisplayNameSetupView.swift
 //  Overlap
 //
-//  User display name setup for CloudKit sharing
+//  User display name setup
 //
 
 import SwiftUI
-import CloudKit
 
 struct DisplayNameSetupView: View {
     @Environment(\.dismiss) private var dismiss

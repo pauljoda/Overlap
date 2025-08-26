@@ -6,11 +6,9 @@
 //
 
 import SwiftUI
-import SwiftData
 
 struct QuestionnaireNextParticipantView: View {
-    let overlap: Overlap
-    @Environment(\.modelContext) private var modelContext
+    @Binding var overlap: Overlap
     @State private var isAnimated = false
 
     var body: some View {
@@ -90,13 +88,10 @@ struct QuestionnaireNextParticipantView: View {
     private func beginAnswering() {
         overlap.currentState = .answering
         
-        // Save state change to model context
-        try? modelContext.save()
-        
         // The session automatically handles question index management
     }
 }
 
 #Preview {
-    QuestionnaireNextParticipantView(overlap: SampleData.sampleOverlap)
+    QuestionnaireNextParticipantView(overlap: .constant(SampleData.sampleOverlap))
 }

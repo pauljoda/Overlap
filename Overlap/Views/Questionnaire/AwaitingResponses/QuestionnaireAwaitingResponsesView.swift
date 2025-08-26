@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import SwiftData
 
 struct QuestionnaireAwaitingResponsesView: View {
     let overlap: Overlap

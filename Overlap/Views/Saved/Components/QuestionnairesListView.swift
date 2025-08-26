@@ -6,16 +6,15 @@
 //
 
 import SwiftUI
-import SwiftData
 
 struct QuestionnairesListView: View {
-    let favoriteQuestionnaires: [QuestionnaireTable]
-    let regularQuestionnaires: [QuestionnaireTable]
+    let favoriteQuestionnaires: [Questionnaire]
+    let regularQuestionnaires: [Questionnaire]
 
-    let onEdit: (QuestionnaireTable) -> Void
+    let onEdit: (Questionnaire) -> Void
     let onDeleteFavorites: (IndexSet) -> Void
     let onDeleteRegular: (IndexSet) -> Void
-    let onDeleteQuestionnaire: (QuestionnaireTable) -> Void
+    let onDeleteQuestionnaire: (Questionnaire) -> Void
     
     var body: some View {
     List {

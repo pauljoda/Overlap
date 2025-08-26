@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import SwiftData
 import SwiftUI
 import SharingGRDB
 
@@ -27,7 +26,7 @@ enum OverlapState: String, Codable, CaseIterable {
 ///
 /// ## Key Features
 /// - **Session Management**: Tracks current participant and question progress
-/// - **Response Storage**: Maintains participant responses with CloudKit compatibility
+/// - **Response Storage**: Maintains participant responses
 /// - **Question Randomization**: Optional feature to randomize question order per participant
 /// - **Progress Tracking**: Monitors completion status and session flow
 /// - **Analysis Tools**: Methods for extracting and analyzing response data
@@ -52,7 +51,7 @@ enum OverlapState: String, Codable, CaseIterable {
 /// // so analysis works correctly across all participants
 /// ```
 @Table
-struct Overlap {
+struct Overlap: Identifiable, Hashable {
     // MARK: - Session Information
     /// The unique identifier for this overlap session
     let id: UUID
@@ -79,6 +78,7 @@ struct Overlap {
     @Column(as: [String].JSONRepresentation.self)
     var questions: [String] = []
     /// Storage for all participant responses organized by participant name and question index
+    @Column(as: [String: [Answer?]].JSONRepresentation.self)
     private var participantResponses: [String: [Answer?]] = [:]
     
     // MARK: - Visual Customization (copied from Questionnaire)
@@ -101,6 +101,7 @@ struct Overlap {
     /// Whether question randomization is enabled for this session
     var isRandomized: Bool = false
     /// Question order mappings for each participant (used when randomization is enabled)
+    @Column(as: [String: [Int]].JSONRepresentation.self)
     private var participantQuestionOrders: [String: [Int]] = [:]
 
     // MARK: - Session State
@@ -108,9 +109,9 @@ struct Overlap {
     var currentParticipantIndex: Int = 0
     /// Current question index for the active participant
     var currentQuestionIndex: Int = 0
-    /// Overall session state for UI navigation (stored as String for SwiftData compatibility)
+    /// Overall session state for UI navigation
     private var currentStateRaw: String = OverlapState.instructions.rawValue
-    /// Whether the overlap session has been completed (stored property for SwiftData queries)
+    /// Whether the overlap session has been completed
     var isCompleted: Bool = false
     
     /// Public interface for currentState with safe conversion
@@ -336,63 +337,6 @@ struct Overlap {
         // Set colors using the computed properties
         self.startColor = startColor
         self.endColor = endColor
-
-        initializeParticipantResponses()
-        if randomizeQuestions {
-            generateRandomizedQuestionOrders()
-        }
-    }
-    
-    /// CloudKit-specific initializer for reconstructing overlaps from CKRecords
-    /// This initializer allows setting all properties directly without needing a Questionnaire object
-    init(
-        id: UUID,
-        beginDate: Date,
-        completeDate: Date?,
-        participants: [String],
-        isOnline: Bool,
-        title: String,
-        information: String,
-        instructions: String,
-        questions: [String],
-        iconEmoji: String,
-        startColorRed: Double,
-        startColorGreen: Double,
-        startColorBlue: Double,
-        startColorAlpha: Double,
-        endColorRed: Double,
-        endColorGreen: Double,
-        endColorBlue: Double,
-        endColorAlpha: Double,
-        randomizeQuestions: Bool,
-        currentState: OverlapState,
-        currentParticipantIndex: Int,
-        currentQuestionIndex: Int,
-        isCompleted: Bool
-    ) {
-        self.id = id
-        self.beginDate = beginDate
-        self.completeDate = completeDate
-        self.participants = participants
-        self.isOnline = isOnline
-        self.title = title
-        self.information = information
-        self.instructions = instructions
-        self.questions = questions
-        self.iconEmoji = iconEmoji
-        self.startColorRed = startColorRed
-        self.startColorGreen = startColorGreen
-        self.startColorBlue = startColorBlue
-        self.startColorAlpha = startColorAlpha
-        self.endColorRed = endColorRed
-        self.endColorGreen = endColorGreen
-        self.endColorBlue = endColorBlue
-        self.endColorAlpha = endColorAlpha
-        self.isRandomized = randomizeQuestions
-        self.currentState = currentState
-        self.currentParticipantIndex = currentParticipantIndex
-        self.currentQuestionIndex = currentQuestionIndex
-        self.isCompleted = isCompleted
 
         initializeParticipantResponses()
         if randomizeQuestions {
@@ -768,18 +712,5 @@ struct Overlap {
             return questionOrder[displayIndex]
         }
         return displayIndex
-    }
-}
-
-// MARK: - CloudKit Support Methods
-extension Overlap {
-    /// Returns all participant responses for CloudKit sync
-    func getAllResponses() -> [String: [Answer?]] {
-        return participantResponses
-    }
-    
-    /// Restores participant responses from CloudKit data
-    mutating func restoreResponses(_ responses: [String: [Answer?]]) {
-        participantResponses = responses
     }
 }

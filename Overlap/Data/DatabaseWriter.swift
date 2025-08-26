@@ -58,8 +58,10 @@ func appDatabase() throws -> any DatabaseWriter {
     
     // Setup Migrations
     migrator.registerMigration("Create tables") { db in
+
+    // Questionnaires
         try #sql("""
-            CREATE TABLE "questionnaireTables" (
+            CREATE TABLE "questionnaires" (
                 "id" TEXT PRIMARY KEY NOT NULL ON CONFLICT REPLACE DEFAULT (uuid()),
                 "title" TEXT NOT NULL DEFAULT '',
                 "description" TEXT NOT NULL DEFAULT '',
@@ -77,6 +79,38 @@ func appDatabase() throws -> any DatabaseWriter {
                 "endColorBlue" REAL NOT NULL DEFAULT 0.5,
                 "endColorAlpha" REAL NOT NULL DEFAULT 1.0,
                 "isFavorite" INTEGER NOT NULL DEFAULT 0
+            )
+        """)
+        .execute(db)
+
+        // Overlaps
+        try #sql("""
+            CREATE TABLE "overlaps" (
+                "id" TEXT PRIMARY KEY NOT NULL ON CONFLICT REPLACE DEFAULT (uuid()),
+                "beginDate" REAL NOT NULL DEFAULT (julianday('now')),
+                "completeDate" REAL,
+                "participants" TEXT NOT NULL DEFAULT '[]',
+                "isOnline" INTEGER NOT NULL DEFAULT 0,
+                "title" TEXT NOT NULL DEFAULT '',
+                "information" TEXT NOT NULL DEFAULT '',
+                "instructions" TEXT NOT NULL DEFAULT '',
+                "questions" TEXT NOT NULL DEFAULT '[]',
+                "participantResponses" TEXT NOT NULL DEFAULT '{}',
+                "iconEmoji" TEXT NOT NULL DEFAULT '📝',
+                "startColorRed" REAL NOT NULL DEFAULT 0.0,
+                "startColorGreen" REAL NOT NULL DEFAULT 0.0,
+                "startColorBlue" REAL NOT NULL DEFAULT 1.0,
+                "startColorAlpha" REAL NOT NULL DEFAULT 1.0,
+                "endColorRed" REAL NOT NULL DEFAULT 0.5,
+                "endColorGreen" REAL NOT NULL DEFAULT 0.0,
+                "endColorBlue" REAL NOT NULL DEFAULT 0.5,
+                "endColorAlpha" REAL NOT NULL DEFAULT 1.0,
+                "isRandomized" INTEGER NOT NULL DEFAULT 0,
+                "participantQuestionOrders" TEXT NOT NULL DEFAULT '{}',
+                "currentParticipantIndex" INTEGER NOT NULL DEFAULT 0,
+                "currentQuestionIndex" INTEGER NOT NULL DEFAULT 0,
+                "currentStateRaw" TEXT NOT NULL DEFAULT 'instructions',
+                "isCompleted" INTEGER NOT NULL DEFAULT 0
             )
         """)
         .execute(db)

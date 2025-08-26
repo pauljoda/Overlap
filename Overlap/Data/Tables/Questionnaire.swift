@@ -10,7 +10,7 @@ import Foundation
 import SwiftUI
 
 @Table
-struct QuestionnaireTable: Hashable, Identifiable {
+struct Questionnaire: Hashable, Identifiable {
     let id: UUID
     var title: String = ""
     var description: String = ""
@@ -77,56 +77,68 @@ struct QuestionnaireTable: Hashable, Identifiable {
         self.isFavorite = isFavorite
     }
     
-    // Helper functions for Color access to avoid SQL schema interference
-    func getStartColor() -> Color {
-        Color(red: startColorRed, green: startColorGreen, blue: startColorBlue, opacity: startColorAlpha)
+    // Computed properties for easy Color access
+    var startColor: Color {
+        get {
+            Color(
+                red: startColorRed,
+                green: startColorGreen,
+                blue: startColorBlue,
+                opacity: startColorAlpha
+            )
+        }
+        set {
+            // Extract RGBA components using UIColor/NSColor
+            #if os(iOS)
+                let uiColor = UIColor(newValue)
+                var red: CGFloat = 0
+                var green: CGFloat = 0
+                var blue: CGFloat = 0
+                var alpha: CGFloat = 0
+                uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+                startColorRed = Double(red)
+                startColorGreen = Double(green)
+                startColorBlue = Double(blue)
+                startColorAlpha = Double(alpha)
+            #else
+                // Fallback for other platforms
+                startColorRed = 0.0
+                startColorGreen = 0.0
+                startColorBlue = 1.0
+                startColorAlpha = 1.0
+            #endif
+        }
     }
-    
-    mutating func setStartColor(_ color: Color) {
-        // Extract RGBA components using UIColor/NSColor
-        #if os(iOS)
-        let uiColor = UIColor(color)
-        var red: CGFloat = 0
-        var green: CGFloat = 0
-        var blue: CGFloat = 0
-        var alpha: CGFloat = 0
-        uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-        startColorRed = Double(red)
-        startColorGreen = Double(green)
-        startColorBlue = Double(blue)
-        startColorAlpha = Double(alpha)
-        #else
-        // Fallback for other platforms
-        startColorRed = 0.0
-        startColorGreen = 0.0
-        startColorBlue = 1.0
-        startColorAlpha = 1.0
-        #endif
-    }
-    
-    func getEndColor() -> Color {
-        Color(red: endColorRed, green: endColorGreen, blue: endColorBlue, opacity: endColorAlpha)
-    }
-    
-    mutating func setEndColor(_ color: Color) {
-        // Extract RGBA components using UIColor/NSColor
-        #if os(iOS)
-        let uiColor = UIColor(color)
-        var red: CGFloat = 0
-        var green: CGFloat = 0
-        var blue: CGFloat = 0
-        var alpha: CGFloat = 0
-        uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-        endColorRed = Double(red)
-        endColorGreen = Double(green)
-        endColorBlue = Double(blue)
-        endColorAlpha = Double(alpha)
-        #else
-        // Fallback for other platforms
-        endColorRed = 0.5
-        endColorGreen = 0.0
-        endColorBlue = 0.5
-        endColorAlpha = 1.0
-        #endif
+
+    var endColor: Color {
+        get {
+            Color(
+                red: endColorRed,
+                green: endColorGreen,
+                blue: endColorBlue,
+                opacity: endColorAlpha
+            )
+        }
+        set {
+            // Extract RGBA components using UIColor/NSColor
+            #if os(iOS)
+                let uiColor = UIColor(newValue)
+                var red: CGFloat = 0
+                var green: CGFloat = 0
+                var blue: CGFloat = 0
+                var alpha: CGFloat = 0
+                uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+                endColorRed = Double(red)
+                endColorGreen = Double(green)
+                endColorBlue = Double(blue)
+                endColorAlpha = Double(alpha)
+            #else
+                // Fallback for other platforms
+                endColorRed = 0.5
+                endColorGreen = 0.0
+                endColorBlue = 0.5
+                endColorAlpha = 1.0
+            #endif
+        }
     }
 }

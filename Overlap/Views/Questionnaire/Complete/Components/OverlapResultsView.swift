@@ -81,7 +81,7 @@ struct OverlapResultsView: View {
 #Preview {
     // Create a sample overlap with completed responses for visualization
     let sampleOverlapWithResponses: Overlap = {
-        let overlap = Overlap(
+        var overlap = Overlap(
             participants: ["Alice", "Bob", "Charlie", "Diana"],
             questionnaire: SampleData.sampleQuestionnaire,
             currentState: .complete

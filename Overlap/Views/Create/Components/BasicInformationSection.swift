@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct BasicInformationSection: View {
-    @Binding var questionnaire: QuestionnaireTable
+    @Binding var questionnaire: Questionnaire
     @FocusState.Binding var focusedField: CreateQuestionnaireView.FocusedField?
 
     var body: some View {
@@ -66,7 +66,7 @@ struct BasicInformationSection: View {
 }
 
 #Preview {
-    @State var questionnaire = QuestionnaireTable()
+    @State var questionnaire = Questionnaire()
     @FocusState var focusedField: CreateQuestionnaireView.FocusedField?
 
     BasicInformationSection(

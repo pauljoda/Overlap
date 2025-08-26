@@ -8,22 +8,26 @@
 import SwiftUI
 
 struct QuestionnaireView: View {
-    let overlap: Overlap
+    @State private var overlap: Overlap
+    
+    init(overlap: Overlap) {
+        self._overlap = State(initialValue: overlap)
+    }
 
     var body: some View {
         ZStack {
             // Show Different Views based on current state
             switch overlap.currentState {
             case .instructions:
-                QuestionnaireInstructionsView(overlap: overlap)
+                QuestionnaireInstructionsView(overlap: $overlap)
             case .nextParticipant:
-                QuestionnaireNextParticipantView(overlap: overlap)
+                QuestionnaireNextParticipantView(overlap: $overlap)
             case .answering:
-                QuestionnaireAnsweringView(overlap: overlap)
+                QuestionnaireAnsweringView(overlap: $overlap)
             case .awaitingResponses:
                 QuestionnaireAwaitingResponsesView(overlap: overlap)
             case .complete:
-                QuestionnaireCompleteView(overlap: overlap)
+                QuestionnaireCompleteView(overlap: $overlap)
             }
 
         }

@@ -6,12 +6,11 @@
 //
 
 import SharingGRDB
-import SwiftData
 import SwiftUI
 
 struct EditQuestionnaireView: View {
     let questionnaireId: UUID
-    @State private var questionnaire: QuestionnaireTable?
+    @State private var questionnaire: Questionnaire?
     @State private var isLoading = true
 
     @Dependency(\.defaultDatabase) private var database
@@ -56,7 +55,7 @@ struct EditQuestionnaireView: View {
     private func loadQuestionnaire() {
         withErrorReporting {
             try database.read { db in
-                questionnaire = try QuestionnaireTable.find(questionnaireId).fetchOne(db)
+                questionnaire = try Questionnaire.find(questionnaireId).fetchOne(db)
                 isLoading = false
             }
         }
@@ -71,7 +70,6 @@ struct EditQuestionnaireView: View {
     NavigationStack {
         EditQuestionnaireView(questionnaireId: SampleData.sampleQuestionnaire.id)
     }
-    .modelContainer(previewModelContainer)
 }
 
 #Preview("Future - GRDB Only") {

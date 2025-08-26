@@ -6,11 +6,9 @@
 //
 
 import SwiftUI
-import SwiftData
 
 struct QuestionnaireCompleteView: View {
-    let overlap: Overlap
-    @Environment(\.modelContext) private var modelContext
+    @Binding var overlap: Overlap
     @State private var isAnimated = false
     
     @Environment(\.navigationPath) private var navigationPath
@@ -36,7 +34,6 @@ struct QuestionnaireCompleteView: View {
             // Set completion date if not already set
             if overlap.completeDate == nil {
                 overlap.completeDate = Date.now
-                try? modelContext.save()
             }
         }
     }
@@ -48,8 +45,8 @@ struct QuestionnaireCompleteView: View {
 
 #Preview {
     // Create a sample overlap with completed responses for visualization
-    let sampleOverlapWithResponses: Overlap = {
-        let overlap = Overlap(
+    var sampleOverlapWithResponses: Overlap = {
+        var overlap = Overlap(
             participants: ["Alice", "Bob", "Charlie"],
             questionnaire: SampleData.sampleQuestionnaire,
             currentState: .complete
@@ -79,5 +76,5 @@ struct QuestionnaireCompleteView: View {
         return overlap
     }()
     
-    QuestionnaireCompleteView(overlap: sampleOverlapWithResponses)
+    QuestionnaireCompleteView(overlap: .constant(sampleOverlapWithResponses))
 }

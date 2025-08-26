@@ -6,15 +6,14 @@
 //
 
 import SwiftUI
-import SwiftData
 import SharingGRDB
 
 struct QuestionnaireSection: View {
     let title: String
-    let questionnaires: [QuestionnaireTable]
+    let questionnaires: [Questionnaire]
     let onDelete: (IndexSet) -> Void
-    let onEdit: (QuestionnaireTable) -> Void
-    let onDeleteQuestionnaire: (QuestionnaireTable) -> Void
+    let onEdit: (Questionnaire) -> Void
+    let onDeleteQuestionnaire: (Questionnaire) -> Void
     @Environment(\.navigationPath) private var navigationPath
     
     var body: some View {
@@ -63,7 +62,6 @@ struct QuestionnaireSection: View {
             onDeleteQuestionnaire: { _ in }
         )
     }
-    .modelContainer(previewModelContainer)
 }
 
 #Preview("Future - GRDB Only") {

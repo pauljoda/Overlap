@@ -5,11 +5,10 @@
 //  Shows a saved questionnaire's details with a clean, modular layout.
 //
 
-import SwiftData
 import SwiftUI
 
 struct QuestionnaireDetailView: View {
-    let questionnaire: QuestionnaireTable
+    let questionnaire: Questionnaire
     @Environment(\.navigationPath) private var navigationPath
     @StateObject private var userPreferences = UserPreferences.shared
 
@@ -103,7 +102,7 @@ struct QuestionnaireDetailView: View {
 
 // Centered header similar to CreateQuestionnaireHeader
 private struct DetailHeader: View {
-    let questionnaire: QuestionnaireTable
+    let questionnaire: Questionnaire
 
     var body: some View {
         VStack(spacing: Tokens.Spacing.l) {
@@ -129,7 +128,7 @@ private struct DetailHeader: View {
 
 // Information card with metadata
 private struct DetailInfo: View {
-    let questionnaire: QuestionnaireTable
+    let questionnaire: Questionnaire
 
     var body: some View {
         VStack(alignment: .leading, spacing: Tokens.Spacing.m) {
@@ -194,7 +193,7 @@ private struct DetailInfo: View {
 }
 
 private struct DetailQuestions: View {
-    let questionnaire: QuestionnaireTable
+    let questionnaire: Questionnaire
     var body: some View {
         VStack(alignment: .leading, spacing: Tokens.Spacing.m) {
             SectionHeader(title: "Questions", icon: "questionmark.bubble.fill")
@@ -221,7 +220,7 @@ private struct DetailQuestions: View {
 }
 
 #Preview {
-    let q = QuestionnaireTable(
+    let q = Questionnaire(
         title: "Weekend Plans",
         description: "A quick pulse on preferences.",
         instructions: "Answer honestly with yes/no/maybe.",

@@ -2,20 +2,16 @@
 //  GRDBPreviewData.swift
 //  Overlap
 //
-//  Standalone SharingGRDB preview setup - independent of SwiftData
+//  SharingGRDB preview setup
 //
-//  MIGRATION PATH:
-//  1. Current: Use `previewModelContainer` for views that need both GRDB and SwiftData
-//  2. Transition: Use dual previews to test both patterns side by side
-//  3. Future: Use `setupGRDBPreview()` for GRDB-only previews (no ModelContainer)
-//  4. Final: Remove all SwiftData dependencies and ModelContainer usage
+//  Provides preview data setup for SharingGRDB-based views.
 //
 
 import Foundation
 import SwiftUI
 import SharingGRDB
 
-/// Standalone preview setup for SharingGRDB - no SwiftData dependencies
+/// Preview setup for SharingGRDB
 struct GRDBPreviewData {
     
     /// Sets up SharingGRDB for previews with sample data
@@ -38,18 +34,18 @@ struct GRDBPreviewData {
         
         try database.write { db in
             // Clear existing data first
-            try db.execute(sql: "DELETE FROM questionnaireTables")
+            try db.execute(sql: "DELETE FROM questionnaires")
             
             // Insert sample questionnaires
-            try QuestionnaireTable.insert {
+            try Questionnaire.insert {
                 SampleData.sampleQuestionnaire
             }.execute(db)
             
-            try QuestionnaireTable.insert {
+            try Questionnaire.insert {
                 SampleData.sampleQuestionnaire2
             }.execute(db)
             
-            try QuestionnaireTable.insert {
+            try Questionnaire.insert {
                 SampleData.sampleQuestionnaire3
             }.execute(db)
         }

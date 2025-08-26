@@ -6,33 +6,16 @@
 //
 
 import SwiftUI
-import SwiftData
+import SharingGRDB
 
 struct InProgressView: View {
-    @Environment(\.modelContext) private var modelContext
+    @Dependency(\.defaultDatabase) var database
     @Environment(\.navigationPath) private var navigationPath
     
-    @Query(
-        filter: #Predicate<Overlap> { overlap in
-            overlap.isCompleted == false
-        },
-        sort: \Overlap.beginDate,
-        order: .reverse
-    ) private var allInProgressOverlaps: [Overlap]
+    @FetchAll(Overlap.where { $0.isCompleted == false }.order { $0.beginDate.desc() })
+    private var inProgressOverlaps: [Overlap]
     
     @State private var isRefreshing = false
-    
-    // Filter out empty overlaps manually since SwiftData doesn't support .count in predicates
-    private var inProgressOverlaps: [Overlap] {
-        allInProgressOverlaps.filter { overlap in
-            // Always include shared overlaps, even if they appear empty locally
-            if overlap.isSharedToMe || overlap.shareRecordName != nil || overlap.cloudKitRecordID != nil {
-                return true
-            }
-            // For local overlaps, ensure they have participants and questions
-            return !overlap.participants.isEmpty && !overlap.questions.isEmpty
-        }
-    }
     
     var body: some View {
         GlassScreen(scrollable: false) {
@@ -74,7 +57,14 @@ struct InProgressView: View {
     
     private func deleteOverlaps(at offsets: IndexSet) {
         withAnimation {
-            offsets.map { inProgressOverlaps[$0] }.forEach(modelContext.delete)
+            withErrorReporting {
+                try database.write { db in
+                    for index in offsets {
+                        let overlap = inProgressOverlaps[index]
+                        try Overlap.delete(overlap).execute(db)
+                    }
+                }
+            }
         }
     }
     
@@ -91,5 +81,4 @@ struct InProgressView: View {
     NavigationStack {
         InProgressView()
     }
-    .modelContainer(previewModelContainer)
 }

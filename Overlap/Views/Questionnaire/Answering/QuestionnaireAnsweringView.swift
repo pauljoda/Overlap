@@ -6,11 +6,9 @@
 //
 
 import SwiftUI
-import SwiftData
 
 struct QuestionnaireAnsweringView: View {
-    let overlap: Overlap
-    @Environment(\.modelContext) private var modelContext
+    @Binding var overlap: Overlap
     
     @State private var blobEmphasis: BlobEmphasis = .none
     
@@ -28,30 +26,12 @@ struct QuestionnaireAnsweringView: View {
                         onSwipe: { answer in
                             print("Selected answer: \(answer)")
 
-                            // Save answer first (this changes the question index)
+                            // Save answer (this changes the question index)
                             let wasCompleted = overlap.isCompleted
                             let previousState = overlap.currentState
                             let saveSuccessful = overlap.saveResponse(answer: answer)
                             
                             print("🔍 QuestionnaireAnsweringView: saveResponse result: \(saveSuccessful)")
-                            
-                            // Save changes to model context
-                            do {
-                                try modelContext.save()
-                                print("🔍 QuestionnaireAnsweringView: ModelContext saved successfully")
-                            } catch {
-                                print("🔍 QuestionnaireAnsweringView: ModelContext save failed: \(error)")
-                            }
-                            
-                            // Sync to CloudKit if this is an online overlap and participant completed their portion
-                            if overlap.isOnline && !wasCompleted && 
-                               (overlap.currentState == .nextParticipant || overlap.currentState == .complete) &&
-                               previousState == .answering {
-                                Task {
-                                    print("🔍 QuestionnaireAnsweringView: Starting CloudKit sync...")
-                                    await syncParticipantCompletion()
-                                }
-                            }
                             
                             // Reset blob emphasis
                             blobEmphasis = .none
@@ -98,18 +78,12 @@ struct QuestionnaireAnsweringView: View {
             .padding(.horizontal, Tokens.Spacing.xl)
         }
     }
-    
-    // MARK: - Sync Functions
-    
-    private func syncParticipantCompletion() async {
-        
-    }
 }
 
 
 #Preview {
     ZStack {
         BlobBackgroundView()
-        QuestionnaireAnsweringView(overlap: SampleData.sampleOverlap)
+        QuestionnaireAnsweringView(overlap: .constant(SampleData.sampleOverlap))
     }
 }
