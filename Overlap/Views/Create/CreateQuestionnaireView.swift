@@ -134,6 +134,10 @@ struct CreateQuestionnaireView: View {
             trigger: saveFeedbackKey
         )
         .onAppear {
+            if UserPreferences.shared.isDisplayNameSetup {
+                questionnaire.author = UserPreferences.shared.userDisplayName ?? ""
+            }
+            
             loadQuestionnaireForEditing()
             // Auto-focus the first field on load
             DispatchQueue.main.asyncAfter(

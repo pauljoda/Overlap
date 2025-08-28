@@ -77,7 +77,8 @@ struct CompletedView: View {
     }
 }
 
-#Preview {
+#Preview("With Data") {
+    let _ = setupGRDBPreview()
     NavigationStack {
         CompletedView()
     }

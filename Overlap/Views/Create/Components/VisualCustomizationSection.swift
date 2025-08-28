@@ -148,6 +148,19 @@ struct VisualCustomizationSection: View {
         let end = Color(hue: endHue, saturation: 0.7, brightness: 0.85)
         questionnaire.startColor = start
         questionnaire.endColor = end
+        
+        // Also randomize the emoji
+        let commonEmojis = [
+            "📝", "❓", "💭", "🎯", "🎪", "🎨", "🎭", "🎪", "🎲", "🎳",
+            "⭐", "🌟", "✨", "🌈", "🎊", "🎉", "🎈", "🎁", "💡", "🔥",
+            "💫", "🌞", "🌙", "☀️", "⚡", "🌊", "🎵", "🎶", "🎼", "🎤",
+            "💎", "🔮", "🎭", "🎨", "🎪", "🎡", "🎢", "🎠", "🎫", "🎬",
+            "📊", "📈", "📉", "💹", "🔍", "🎯", "🚀", "💻", "📱", "⌚"
+        ]
+        
+        if let randomEmoji = commonEmojis.randomElement() {
+            questionnaire.iconEmoji = randomEmoji
+        }
     }
 }
 

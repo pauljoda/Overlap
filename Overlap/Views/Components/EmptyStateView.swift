@@ -54,11 +54,7 @@ struct EmptyStateView: View {
             }
             
             if let buttonTitle = buttonTitle, let action = action {
-                Button(buttonTitle) {
-                    action()
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
+                GlassActionButton(title: buttonTitle, action: action)
             }
         }
         .padding(.horizontal, Tokens.Spacing.quadXL)

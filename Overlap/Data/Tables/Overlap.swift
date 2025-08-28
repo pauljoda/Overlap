@@ -85,17 +85,11 @@ struct Overlap: Identifiable, Hashable {
     /// Icon emoji for the overlap session
     var iconEmoji: String = "📝"
     
-    // Simple color storage using RGBA components for start color
-    var startColorRed: Double = 0.0
-    var startColorGreen: Double = 0.0
-    var startColorBlue: Double = 1.0
-    var startColorAlpha: Double = 1.0
+    @Column(as: Color.HexRepresentation.self)
+    var startColor: Color = .blue
     
-    // Simple color storage using RGBA components for end color
-    var endColorRed: Double = 0.5
-    var endColorGreen: Double = 0.0
-    var endColorBlue: Double = 0.5
-    var endColorAlpha: Double = 1.0
+    @Column(as: Color.HexRepresentation.self)
+    var endColor: Color = .purple
 
     // MARK: - Randomization Settings
     /// Whether question randomization is enabled for this session
@@ -190,64 +184,6 @@ struct Overlap: Identifiable, Hashable {
         return Double(status.completed) / Double(status.total)
     }
     
-    // MARK: - Visual Customization Computed Properties
-    
-    /// Computed property for easy Color access to start color
-    var startColor: Color {
-        get {
-            Color(red: startColorRed, green: startColorGreen, blue: startColorBlue, opacity: startColorAlpha)
-        }
-        set {
-            // Extract RGBA components using UIColor/NSColor
-            #if os(iOS)
-            let uiColor = UIColor(newValue)
-            var red: CGFloat = 0
-            var green: CGFloat = 0
-            var blue: CGFloat = 0
-            var alpha: CGFloat = 0
-            uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-            startColorRed = Double(red)
-            startColorGreen = Double(green)
-            startColorBlue = Double(blue)
-            startColorAlpha = Double(alpha)
-            #else
-            // Fallback for other platforms
-            startColorRed = 0.0
-            startColorGreen = 0.0
-            startColorBlue = 1.0
-            startColorAlpha = 1.0
-            #endif
-        }
-    }
-    
-    /// Computed property for easy Color access to end color
-    var endColor: Color {
-        get {
-            Color(red: endColorRed, green: endColorGreen, blue: endColorBlue, opacity: endColorAlpha)
-        }
-        set {
-            // Extract RGBA components using UIColor/NSColor
-            #if os(iOS)
-            let uiColor = UIColor(newValue)
-            var red: CGFloat = 0
-            var green: CGFloat = 0
-            var blue: CGFloat = 0
-            var alpha: CGFloat = 0
-            uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-            endColorRed = Double(red)
-            endColorGreen = Double(green)
-            endColorBlue = Double(blue)
-            endColorAlpha = Double(alpha)
-            #else
-            // Fallback for other platforms
-            endColorRed = 0.5
-            endColorGreen = 0.0
-            endColorBlue = 0.5
-            endColorAlpha = 1.0
-            #endif
-        }
-    }
-
     // MARK: - Initialization
 
     init(
@@ -274,14 +210,6 @@ struct Overlap: Identifiable, Hashable {
         
         // Copy visual customization properties
         self.iconEmoji = questionnaire.iconEmoji
-        self.startColorRed = questionnaire.startColorRed
-        self.startColorGreen = questionnaire.startColorGreen
-        self.startColorBlue = questionnaire.startColorBlue
-        self.startColorAlpha = questionnaire.startColorAlpha
-        self.endColorRed = questionnaire.endColorRed
-        self.endColorGreen = questionnaire.endColorGreen
-        self.endColorBlue = questionnaire.endColorBlue
-        self.endColorAlpha = questionnaire.endColorAlpha
         
         self.isRandomized = randomizeQuestions
         self.currentState = currentState
