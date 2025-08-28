@@ -9,7 +9,7 @@ import SwiftUI
 
 struct QuestionnaireView: View {
     @State private var overlap: Overlap
-    
+
     init(overlap: Overlap) {
         self._overlap = State(initialValue: overlap)
     }
@@ -33,7 +33,7 @@ struct QuestionnaireView: View {
         }
         .navigationTitle(
             overlap.currentState == .answering
-            ? overlap.title : ""
+                ? overlap.title : ""
         )
         .navigationBarTitleDisplayMode(.inline)
     }

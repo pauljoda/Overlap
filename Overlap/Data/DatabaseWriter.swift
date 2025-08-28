@@ -109,7 +109,7 @@ func appDatabase() throws -> any DatabaseWriter {
                 "participantQuestionOrders" TEXT NOT NULL DEFAULT '{}',
                 "currentParticipantIndex" INTEGER NOT NULL DEFAULT 0,
                 "currentQuestionIndex" INTEGER NOT NULL DEFAULT 0,
-                "currentStateRaw" TEXT NOT NULL DEFAULT 'instructions',
+                "currentState" TEXT NOT NULL DEFAULT \(raw: OverlapState.instructions.rawValue),
                 "isCompleted" INTEGER NOT NULL DEFAULT 0
             )
         """)

@@ -6,8 +6,11 @@
 //
 
 import SwiftUI
+import SharingGRDB
 
 struct QuestionnaireAnsweringView: View {
+    @Dependency(\.defaultDatabase) var database
+
     @Binding var overlap: Overlap
     
     @State private var blobEmphasis: BlobEmphasis = .none
@@ -27,11 +30,17 @@ struct QuestionnaireAnsweringView: View {
                             print("Selected answer: \(answer)")
 
                             // Save answer (this changes the question index)
-                            let wasCompleted = overlap.isCompleted
-                            let previousState = overlap.currentState
                             let saveSuccessful = overlap.saveResponse(answer: answer)
+                            if(saveSuccessful) {
+                                withErrorReporting {
+                                    try database.write { db in
+                                        try Overlap.update(overlap).execute(db)
+                                        print("🔍 QuestionnaireAnsweringView: saveResponse result: \(saveSuccessful)")
+                                    }
+                                }
+                            }
                             
-                            print("🔍 QuestionnaireAnsweringView: saveResponse result: \(saveSuccessful)")
+
                             
                             // Reset blob emphasis
                             blobEmphasis = .none
@@ -82,6 +91,8 @@ struct QuestionnaireAnsweringView: View {
 
 
 #Preview {
+    let _ = setupGRDBPreview()
+
     ZStack {
         BlobBackgroundView()
         QuestionnaireAnsweringView(overlap: .constant(SampleData.sampleOverlap))

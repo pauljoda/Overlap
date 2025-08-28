@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 import SharingGRDB
 
-enum OverlapState: String, Codable, CaseIterable {
+enum OverlapState: String, Codable, CaseIterable, QueryBindable {
     case instructions = "instructions"
     case answering = "answering"
     case nextParticipant = "nextParticipant"
@@ -110,19 +110,9 @@ struct Overlap: Identifiable, Hashable {
     /// Current question index for the active participant
     var currentQuestionIndex: Int = 0
     /// Overall session state for UI navigation
-    private var currentStateRaw: String = OverlapState.instructions.rawValue
+    var currentState: OverlapState = OverlapState.instructions
     /// Whether the overlap session has been completed
     var isCompleted: Bool = false
-    
-    /// Public interface for currentState with safe conversion
-    var currentState: OverlapState {
-        get {
-            return OverlapState(rawValue: currentStateRaw) ?? .instructions
-        }
-        set {
-            currentStateRaw = newValue.rawValue
-        }
-    }
 
     // MARK: - Computed Properties
 

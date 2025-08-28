@@ -6,8 +6,11 @@
 //
 
 import SwiftUI
+import SharingGRDB
 
 struct QuestionnaireInstructionsView: View {
+    @Dependency(\.defaultDatabase) var database
+
     @Binding var overlap: Overlap
     @State private var newParticipantName = ""
     @FocusState private var isTextFieldFocused: Bool
@@ -140,20 +143,22 @@ struct QuestionnaireInstructionsView: View {
 
     private func beginQuestionnaire() {
         guard canBegin else { return }
-
+        
         // Initialize responses for all current participants
         overlap.initializeResponses()
 
-        if overlap.isOnline {
-            // For online overlaps, go directly to answering state
-            // The user should use the ShareButton above to share with others
-            overlap.currentState = .answering
-        } else {
-            // For local overlaps, use the participant selection flow
-            overlap.currentState = .nextParticipant
-        }
+        // Determine the new state
+        let newState: OverlapState = overlap.isOnline ? .answering : .nextParticipant
         
-        // Note: Overlap persistence is handled by parent view        
+        // Update state - ensure the binding is updated
+        overlap.currentState = newState
+        
+        // Save changes to model immediately after state update
+        withErrorReporting {
+            try database.write { db in
+                try Overlap.insert{ overlap }.execute(db)
+            }
+        }
     }
 }
 
@@ -209,5 +214,7 @@ struct OnlineParticipantsSection: View {
 }
 
 #Preview {
+    let _ = setupGRDBPreview()
+    
     QuestionnaireInstructionsView(overlap: .constant(SampleData.sampleOverlap))
 }
