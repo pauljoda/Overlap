@@ -1,0 +1,66 @@
+//
+//  Overlap+Randomization.swift
+//  Overlap
+//
+//  Question randomization controls and helpers
+//
+
+import Foundation
+
+extension Overlap {
+    /// Enables question randomization for all participants.
+    mutating func enableRandomization() {
+        isRandomized = true
+        generateRandomizedQuestionOrders()
+    }
+
+    /// Disables question randomization, reverting to original question order.
+    mutating func disableRandomization() {
+        isRandomized = false
+        participantQuestionOrders.removeAll()
+    }
+
+    /// Checks if question randomization is currently enabled.
+    var isRandomizationEnabled: Bool { isRandomized }
+
+    /// Generates randomized question orders for all participants
+    mutating func generateRandomizedQuestionOrders() {
+        participantQuestionOrders.removeAll()
+        for participant in participants { generateRandomizedQuestionOrderForParticipant(participant) }
+    }
+
+    /// Generates a randomized question order for a specific participant
+    mutating func generateRandomizedQuestionOrderForParticipant(_ participant: String) {
+        let questionIndices = Array(0..<questions.count)
+        participantQuestionOrders[participant] = questionIndices.shuffled()
+    }
+
+    /// Gets the actual question index considering randomization
+    func getActualQuestionIndex(for participant: String, displayIndex: Int) -> Int {
+        if isRandomized,
+           let questionOrder = participantQuestionOrders[participant],
+           displayIndex < questionOrder.count {
+            return questionOrder[displayIndex]
+        }
+        return displayIndex
+    }
+
+    /// Gets the question order for a specific participant
+    func getQuestionOrder(for participant: String) -> [String]? {
+        if isRandomized, let questionOrder = participantQuestionOrders[participant] {
+            return questionOrder.map { questions[$0] }
+        }
+        return questions
+    }
+
+    /// Gets the original question index for a participant's display index
+    func getOriginalQuestionIndex(for participant: String, displayIndex: Int) -> Int? {
+        if isRandomized,
+           let questionOrder = participantQuestionOrders[participant],
+           displayIndex < questionOrder.count {
+            return questionOrder[displayIndex]
+        }
+        return displayIndex < questions.count ? displayIndex : nil
+    }
+}
+

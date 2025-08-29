@@ -1,5 +1,5 @@
 //
-//  VisualCus        VStack(alignment: .leading, spacing: Tokens.Spacing.l) {
+//  VisualCustomizationSection.swift
 //  Overlap
 //
 //  Created by Paul Davis on 8/6/25.

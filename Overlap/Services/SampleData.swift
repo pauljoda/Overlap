@@ -266,41 +266,45 @@ class SampleData {
     static let sampleInProgressOverlap = midProgressOverlap
     static let sampleCompletedOverlap = recentlyCompletedOverlap
     
-    /// Sets up preview database with sample questionnaires
+    /// Sets up preview database with comprehensive sample questionnaires and overlaps
     @MainActor
-    static func setupPreviewDatabase() throws {
+    static func setupComprehensivePreviewDatabase() throws {
         @Dependency(\.defaultDatabase) var database
-        
-        // Insert sample questionnaires into the database
         try database.write { db in
             // Clear existing data first
             try db.execute(sql: "DELETE FROM questionnaires")
             try db.execute(sql: "DELETE FROM overlaps")
-            
+
             // Insert all sample questionnaires
-            try Questionnaire.insert {
-                foodPreferencesQuestionnaire
-            }.execute(db)
-            
-            try Questionnaire.insert {
-                techInterestsQuestionnaire
-            }.execute(db)
-            
-            try Questionnaire.insert {
-                lifestyleQuestionnaire
-            }.execute(db)
-            
-            try Questionnaire.insert {
-                adventureQuestionnaire
-            }.execute(db)
-            
-            try Questionnaire.insert {
-                hobbiesQuestionnaire
-            }.execute(db)
-            
-            try Questionnaire.insert {
-                creativityQuestionnaire
-            }.execute(db)
+            for questionnaire in allQuestionnaires {
+                try Questionnaire.insert { questionnaire }.execute(db)
+            }
+
+            // Insert overlaps in various states for comprehensive testing
+            for overlap in allOverlaps {
+                try Overlap.insert { overlap }.execute(db)
+            }
+        }
+    }
+
+    /// Sets up preview database with minimal sample data (legacy-compatible)
+    @MainActor
+    static func setupMinimalPreviewDatabase() throws {
+        @Dependency(\.defaultDatabase) var database
+        try database.write { db in
+            // Clear existing data first
+            try db.execute(sql: "DELETE FROM questionnaires")
+            try db.execute(sql: "DELETE FROM overlaps")
+
+            // Insert just the legacy sample questionnaires for backwards compatibility
+            try Questionnaire.insert { sampleQuestionnaire }.execute(db)
+            try Questionnaire.insert { sampleQuestionnaire2 }.execute(db)
+            try Questionnaire.insert { sampleQuestionnaire3 }.execute(db)
+
+            // Insert a few basic overlaps
+            try Overlap.insert { sampleOverlap }.execute(db)
+            try Overlap.insert { sampleInProgressOverlap }.execute(db)
+            try Overlap.insert { sampleCompletedOverlap }.execute(db)
         }
     }
     
@@ -311,7 +315,7 @@ class SampleData {
             let _ = try prepareDependencies {
                 $0.defaultDatabase = try appDatabase()
             }
-            try setupPreviewDatabase()
+            try setupComprehensivePreviewDatabase()
         } catch {
             print("Failed to setup GRDB preview: \(error)")
         }
