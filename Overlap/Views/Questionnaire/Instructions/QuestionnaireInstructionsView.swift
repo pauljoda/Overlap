@@ -213,8 +213,17 @@ struct OnlineParticipantsSection: View {
     }
 }
 
-#Preview {
+#Preview("Offline") {
     let _ = setupGRDBPreview()
-    
     QuestionnaireInstructionsView(overlap: .constant(SampleData.sampleOverlap))
+}
+
+#Preview("Online") {
+    let _ = setupGRDBPreview()
+    QuestionnaireInstructionsView(overlap: .constant(Overlap(
+        participants: SampleData.teamMembers,
+        isOnline: true,
+        questionnaire: SampleData.foodPreferencesQuestionnaire,
+        currentState: .instructions
+    )))
 }

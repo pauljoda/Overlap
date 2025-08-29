@@ -90,11 +90,18 @@ struct QuestionnaireAnsweringView: View {
 }
 
 
-#Preview {
+#Preview("Offline") {
     let _ = setupGRDBPreview()
-
     ZStack {
         BlobBackgroundView()
-        QuestionnaireAnsweringView(overlap: .constant(SampleData.sampleOverlap))
+        QuestionnaireAnsweringView(overlap: .constant(SampleData.midProgressOverlap))
+    }
+}
+
+#Preview("Online") {
+    let _ = setupGRDBPreview()
+    ZStack {
+        BlobBackgroundView()
+        QuestionnaireAnsweringView(overlap: .constant(SampleData.onlineCollaborativeOverlap))
     }
 }

@@ -153,12 +153,10 @@ struct ParticipantStatusSection: View {
     }
 }
 
-#Preview {
-    let sampleOverlap = Overlap(
-        participants: ["Alice", "Bob", "Charlie"],
-        questionnaire: SampleData.sampleQuestionnaire,
-        currentState: .awaitingResponses
-    )
-    
-    QuestionnaireAwaitingResponsesView(overlap: sampleOverlap)
+#Preview("All Pending") {
+    QuestionnaireAwaitingResponsesView(overlap: SampleData.awaitingResponsesOverlap)
+}
+
+#Preview("Some Completed") {
+    QuestionnaireAwaitingResponsesView(overlap: SampleData.awaitingResponsesPartialOverlap)
 }

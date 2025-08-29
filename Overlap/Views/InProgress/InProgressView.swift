@@ -82,3 +82,10 @@ struct InProgressView: View {
         InProgressView()
     }
 }
+
+#Preview("With Data") {
+    let _ = setupGRDBPreview()
+    NavigationStack {
+        InProgressView()
+    }
+}

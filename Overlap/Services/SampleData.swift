@@ -197,6 +197,25 @@ class SampleData {
         return overlap
     }()
     
+    // Awaiting Responses (Online) with some participants completed
+    static let awaitingResponsesPartialOverlap: Overlap = {
+        var overlap = Overlap(
+            participants: ["Alex", "Jordan", "Taylor", "Casey"],
+            isOnline: true,
+            questionnaire: hobbiesQuestionnaire,
+            randomizeQuestions: true,
+            currentState: .awaitingResponses
+        )
+        // Simulate two completed participants
+        let allYes = Array(repeating: Answer.yes as Answer?, count: overlap.questions.count)
+        overlap.participantResponses["Alex"] = allYes
+        overlap.participantResponses["Jordan"] = allYes
+        // Others pending (default nils)
+        overlap.participantResponses["Taylor"] = Array(repeating: nil, count: overlap.questions.count)
+        overlap.participantResponses["Casey"] = Array(repeating: nil, count: overlap.questions.count)
+        return overlap
+    }()
+    
     // Recently Completed State
     static let recentlyCompletedOverlap: Overlap = {
         var overlap = Overlap(
@@ -228,6 +247,25 @@ class SampleData {
         randomizeQuestions: true,
         currentState: .instructions
     )
+    
+    // Completed (Randomized) Overlap for results testing
+    static let completedRandomizedOverlap: Overlap = {
+        var overlap = Overlap(
+            participants: ["Ava", "Liam", "Noah"],
+            questionnaire: techInterestsQuestionnaire,
+            randomizeQuestions: true,
+            currentState: .complete
+        )
+        let answersA = Array(repeating: Answer.yes as Answer?, count: overlap.questions.count)
+        let answersB = Array(repeating: Answer.no as Answer?, count: overlap.questions.count)
+        let answersC = Array(repeating: Answer.maybe as Answer?, count: overlap.questions.count)
+        overlap.participantResponses["Ava"] = answersA
+        overlap.participantResponses["Liam"] = answersB
+        overlap.participantResponses["Noah"] = answersC
+        overlap.completeDate = Date.now.addingTimeInterval(-7200)
+        overlap.isCompleted = true
+        return overlap
+    }()
     
     // Large Group Overlap
     static let largeGroupOverlap: Overlap = {
@@ -340,9 +378,11 @@ class SampleData {
         midProgressOverlap,
         nextParticipantOverlap,
         awaitingResponsesOverlap,
+        awaitingResponsesPartialOverlap,
         recentlyCompletedOverlap,
         olderCompletedOverlap,
         randomizedOverlap,
+        completedRandomizedOverlap,
         largeGroupOverlap,
         onlineCollaborativeOverlap
     ]
@@ -352,8 +392,8 @@ class SampleData {
         .instructions: [instructionsOverlap, randomizedOverlap],
         .answering: [earlyAnsweringOverlap, midProgressOverlap, largeGroupOverlap, onlineCollaborativeOverlap],
         .nextParticipant: [nextParticipantOverlap],
-        .awaitingResponses: [awaitingResponsesOverlap],
-        .complete: [recentlyCompletedOverlap, olderCompletedOverlap]
+        .awaitingResponses: [awaitingResponsesOverlap, awaitingResponsesPartialOverlap],
+        .complete: [recentlyCompletedOverlap, olderCompletedOverlap, completedRandomizedOverlap]
     ]
     
     /// Get a random questionnaire for testing

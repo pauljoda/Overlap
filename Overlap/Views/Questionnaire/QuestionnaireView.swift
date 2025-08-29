@@ -39,6 +39,34 @@ struct QuestionnaireView: View {
     }
 }
 
-#Preview {
-    QuestionnaireView(overlap: SampleData.sampleRandomizedOverlap)
+#Preview("Instructions") {
+    QuestionnaireView(overlap: SampleData.instructionsOverlap)
+}
+
+#Preview("Answering - Offline") {
+    QuestionnaireView(overlap: SampleData.midProgressOverlap)
+}
+
+#Preview("Answering - Online") {
+    QuestionnaireView(overlap: SampleData.onlineCollaborativeOverlap)
+}
+
+#Preview("Next Participant") {
+    QuestionnaireView(overlap: SampleData.nextParticipantOverlap)
+}
+
+#Preview("Awaiting Responses") {
+    QuestionnaireView(overlap: SampleData.awaitingResponsesOverlap)
+}
+
+#Preview("Awaiting Responses (Partial)") {
+    QuestionnaireView(overlap: SampleData.awaitingResponsesPartialOverlap)
+}
+
+#Preview("Complete") {
+    QuestionnaireView(overlap: SampleData.recentlyCompletedOverlap)
+}
+
+#Preview("Complete - Randomized") {
+    QuestionnaireView(overlap: SampleData.completedRandomizedOverlap)
 }
