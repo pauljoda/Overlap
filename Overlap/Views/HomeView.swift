@@ -72,6 +72,8 @@ struct HomeView: View {
                     CompletedView()
                 case "browse":
                     ComingSoonView(title: "Browse")
+                case "settings":
+                    SettingsView()
                 case let editPath where editPath.hasPrefix("edit-"):
                     // Extract questionnaire ID for editing
                     let questionnaireId = String(editPath.dropFirst(5)) // Remove "edit-" prefix

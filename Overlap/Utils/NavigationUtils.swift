@@ -14,6 +14,7 @@ enum NavigationDestination {
     case inProgress
     case completed
     case browse
+    case settings
     case edit(questionnaireId: UUID)
 }
 
@@ -29,6 +30,8 @@ func navigate(to destination: NavigationDestination, using navigationPath: Bindi
         navigationPath.wrappedValue.append("completed")
     case .browse:
         navigationPath.wrappedValue.append("browse")
+    case .settings:
+        navigationPath.wrappedValue.append("settings")
     case .edit(let questionnaireId):
         navigationPath.wrappedValue.append("edit-\(questionnaireId.uuidString)")
     }
