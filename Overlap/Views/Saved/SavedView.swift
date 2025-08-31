@@ -13,11 +13,11 @@ struct SavedView: View {
     @Dependency(\.defaultDatabase) var database
     
     @FetchAll(
-        Questionnaire.where { $0.isFavorite == true }.order { $0.creationDate.desc() }
+        Questionnaire.where { $0.isFavorite == true }.order { $0.dateCreated.desc() }
     ) private var favoriteQuestionnaires
 
     @FetchAll(
-        Questionnaire.where { $0.isFavorite == false }.order { $0.creationDate.desc() }
+        Questionnaire.where { $0.isFavorite == false }.order { $0.dateCreated.desc() }
     ) private var regularQuestionnaires
 
     var body: some View {

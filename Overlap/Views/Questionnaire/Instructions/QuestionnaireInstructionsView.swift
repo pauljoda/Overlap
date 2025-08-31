@@ -7,14 +7,17 @@
 
 import SwiftUI
 import SharingGRDB
+import CloudKit
 
 struct QuestionnaireInstructionsView: View {
     @Dependency(\.defaultDatabase) var database
+    @Dependency(\.defaultSyncEngine) var syncEngine
 
     @Binding var overlap: Overlap
     @State private var newParticipantName = ""
     @FocusState private var isTextFieldFocused: Bool
     @State private var animatingParticipants: Set<Int> = []
+    @State private var sharedRecord: SharedRecord?
 
     private var canBegin: Bool {
         if overlap.isOnline {
@@ -87,6 +90,14 @@ struct QuestionnaireInstructionsView: View {
         .onTapGesture {
             isTextFieldFocused = false
         }
+        // Present CloudKit sharing sheet when set
+        .sheet(item: $sharedRecord, onDismiss: {
+            // After the share sheet closes, move to next state for online sessions
+            guard overlap.isOnline else { return }
+            Task { await refreshParticipantsFromShareAndAdvance() }
+        }) { sharedRecord in
+            CloudSharingView(sharedRecord: sharedRecord)
+        }
     }
 
     private func addParticipant() {
@@ -147,16 +158,80 @@ struct QuestionnaireInstructionsView: View {
         // Initialize responses for all current participants
         overlap.initializeResponses()
 
-        // Determine the new state
-        let newState: OverlapState = overlap.isOnline ? .answering : .nextParticipant
-        
-        // Update state - ensure the binding is updated
-        overlap.currentState = newState
-        
-        // Save changes to model immediately after state update
-        withErrorReporting {
-            try database.write { db in
-                try Overlap.insert{ overlap }.execute(db)
+        if overlap.isOnline {
+            // For online: insert first (still in instructions), then present share sheet.
+            withErrorReporting {
+                try database.write { db in
+                    try Overlap.insert { overlap }.execute(db)
+                }
+            }
+
+            Task {
+                await withErrorReporting {
+                    // Configure the share title to invite others
+                    sharedRecord = try await syncEngine.share(record: overlap) { share in
+                        share[CKShare.SystemFieldKey.title] = ("Join '\(overlap.title)'!" as NSString)
+                    }
+                }
+            }
+        } else {
+            // Offline: go straight to next participant
+            overlap.currentState = .nextParticipant
+            withErrorReporting {
+                try database.write { db in
+                    try Overlap.insert { overlap }.execute(db)
+                }
+            }
+        }
+    }
+
+    private func refreshParticipantsFromShareAndAdvance() async {
+        await withErrorReporting {
+            print("[Overlap] refreshParticipantsFromShareAndAdvance: begin for id=\(overlap.id)")
+            // Try to refresh participants from the CKShare metadata (with brief retry)
+            var shareRef: CKShare??
+            for attempt in 0..<5 {
+                shareRef = try await database.read { db in
+                    try Overlap
+                        .metadata(for: overlap.id)
+                        .select(\.share)
+                        .fetchOne(db)
+                }
+                if shareRef != nil { break }
+                print("[Overlap] No CKShare metadata yet (attempt \(attempt+1)), retrying...")
+                try? await Task.sleep(nanoseconds: 300_000_000)
+            }
+
+            if let shareRef {
+                print("[Overlap] Found CKShare metadata. recordID=\(shareRef!.recordID)")
+                let container = CKContainer(identifier: "iCloud.com.pauljoda.Overlap")
+                if let record = try? await container.sharedCloudDatabase.record(for: shareRef!.recordID),
+                   let ckShare = record as? CKShare {
+                    print("[Overlap] Loaded CKShare. participants=\(ckShare.participants.count)")
+                    let formatter = PersonNameComponentsFormatter()
+                    let names: [String] = ckShare.participants.compactMap { participant in
+                        if let components = participant.userIdentity.nameComponents {
+                            let name = formatter.string(from: components)
+                            return name.isEmpty ? nil : name
+                        }
+                        if let email = participant.userIdentity.lookupInfo?.emailAddress { return email }
+                        if let phone = participant.userIdentity.lookupInfo?.phoneNumber { return phone }
+                        return nil
+                    }
+                    let unique = Array(Set(names)).sorted()
+                    print("[Overlap] Extracted participant names: \(unique)")
+                    if !unique.isEmpty { overlap.participants = unique }
+                } else {
+                    print("[Overlap] Failed to load CKShare from shared database")
+                }
+            } else {
+                print("[Overlap] CKShare metadata not found after retries; continuing")
+            }
+
+            // Move to answering and persist the change
+            overlap.currentState = .answering
+            try await database.write { db in
+                try Overlap.update(overlap).execute(db)
             }
         }
     }

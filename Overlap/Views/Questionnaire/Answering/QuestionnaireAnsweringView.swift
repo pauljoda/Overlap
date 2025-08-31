@@ -5,16 +5,16 @@
 //  Created by Paul Davis on 7/30/25.
 //
 
-import SwiftUI
 import SharingGRDB
+import SwiftUI
 
 struct QuestionnaireAnsweringView: View {
     @Dependency(\.defaultDatabase) var database
 
     @Binding var overlap: Overlap
-    
+
     @State private var blobEmphasis: BlobEmphasis = .none
-    
+
     /// The scale of the card for animation
     @State private var cardScale: CGFloat = 0.8
     /// The opacity of the card for animation
@@ -30,18 +30,10 @@ struct QuestionnaireAnsweringView: View {
                             print("Selected answer: \(answer)")
 
                             // Save answer (this changes the question index)
-                            let saveSuccessful = overlap.saveResponse(answer: answer)
-                            if(saveSuccessful) {
-                                withErrorReporting {
-                                    try database.write { db in
-                                        try Overlap.update(overlap).execute(db)
-                                        print("🔍 QuestionnaireAnsweringView: saveResponse result: \(saveSuccessful)")
-                                    }
-                                }
-                            }
-                            
+                            let saveSuccessful = overlap.saveResponse(
+                                answer: answer
+                            )
 
-                            
                             // Reset blob emphasis
                             blobEmphasis = .none
 
@@ -50,9 +42,14 @@ struct QuestionnaireAnsweringView: View {
                             cardOpacity = 0.0
 
                             // Animate in the next card with a slight delay to ensure state is updated
-                            DispatchQueue.main.asyncAfter(deadline: .now() + Tokens.Delay.short) {
+                            DispatchQueue.main.asyncAfter(
+                                deadline: .now() + Tokens.Delay.short
+                            ) {
                                 withAnimation(
-                                    .spring(response: Tokens.Spring.response, dampingFraction: Tokens.Spring.damping)
+                                    .spring(
+                                        response: Tokens.Spring.response,
+                                        dampingFraction: Tokens.Spring.damping
+                                    )
                                 ) {
                                     cardScale = 1.0
                                     cardOpacity = 1.0
@@ -68,7 +65,12 @@ struct QuestionnaireAnsweringView: View {
                     .id(currentQuestion)  // Force SwiftUI to recreate the view
                     .onAppear {
                         // Animate in the first card
-                        withAnimation(.spring(response: Tokens.Spring.response, dampingFraction: Tokens.Spring.damping)) {
+                        withAnimation(
+                            .spring(
+                                response: Tokens.Spring.response,
+                                dampingFraction: Tokens.Spring.damping
+                            )
+                        ) {
                             cardScale = 1.0
                             cardOpacity = 1.0
                         }
@@ -78,7 +80,7 @@ struct QuestionnaireAnsweringView: View {
                         .font(.title2)
                         .foregroundColor(.secondary)
                 }
-                
+
                 // Progress
                 QuestionnaireProgress(overlap: overlap)
                     .padding(.top, Tokens.Spacing.m)
@@ -89,12 +91,13 @@ struct QuestionnaireAnsweringView: View {
     }
 }
 
-
 #Preview("Offline") {
     let _ = setupGRDBPreview()
     ZStack {
         BlobBackgroundView()
-        QuestionnaireAnsweringView(overlap: .constant(SampleData.midProgressOverlap))
+        QuestionnaireAnsweringView(
+            overlap: .constant(SampleData.midProgressOverlap)
+        )
     }
 }
 
@@ -102,6 +105,8 @@ struct QuestionnaireAnsweringView: View {
     let _ = setupGRDBPreview()
     ZStack {
         BlobBackgroundView()
-        QuestionnaireAnsweringView(overlap: .constant(SampleData.onlineCollaborativeOverlap))
+        QuestionnaireAnsweringView(
+            overlap: .constant(SampleData.onlineCollaborativeOverlap)
+        )
     }
 }

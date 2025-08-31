@@ -13,10 +13,10 @@ import SwiftUI
 struct Questionnaire: Hashable, Identifiable {
     let id: UUID
     var title: String = ""
-    var description: String = ""
+    var descriptionOfQuestionnaire: String = ""
     var instructions: String = ""
     var author: String = "Anonymous"
-    var creationDate: Date = Date.now
+    var dateCreated: Date = Date.now
     
     @Column(as: [String].JSONRepresentation.self)
     var questions: [String] = []
@@ -47,10 +47,10 @@ struct Questionnaire: Hashable, Identifiable {
     ) {
         self.id = id
         self.title = title
-        self.description = description
+        self.descriptionOfQuestionnaire = description
         self.instructions = instructions
         self.author = author
-        self.creationDate = creationDate
+        self.dateCreated = creationDate
         self.questions = questions
         self.iconEmoji = iconEmoji
         self.isFavorite = isFavorite

@@ -15,11 +15,14 @@ func appDatabase() throws -> any DatabaseWriter {
     // Determine the current app context (live, test, or preview)
     @Dependency(\.context) var context
     var configuration = Configuration()
+
     configuration.foreignKeysEnabled = true
-    
-    
-    #if DEBUG
-        configuration.prepareDatabase { db in
+
+    configuration.prepareDatabase { db in
+        try db.attachMetadatabase(
+            containerIdentifier: "iCloud.com.pauljoda.Overlap"
+        )
+        #if DEBUG
             db.trace(options: .profile) {
                 if context == .preview {
                     print("\($0.expandedDescription)")
@@ -27,83 +30,88 @@ func appDatabase() throws -> any DatabaseWriter {
                     logger.debug("\($0.expandedDescription)")
                 }
             }
-        }
-    #endif
-    
+        #endif
+
+    }
+
     // Build the file
     let database: any DatabaseWriter
-    
+
     // On live, use a persistent file in the documents directory
     if context == .live {
         let path = URL.documentsDirectory.appending(component: "db.sqlite")
             .path()
         logger.info("open \(path)")
         database = try DatabasePool(path: path, configuration: configuration)
-    } else if context == .test { // In testing env
+    } else if context == .test {  // In testing env
         let path = URL.temporaryDirectory.appending(
             component: "\(UUID().uuidString)-db.sqlite"
         ).path()
         database = try DatabasePool(path: path, configuration: configuration)
-    } else { // In preview env, use an in-memory database
+    } else {  // In preview env, use an in-memory database
         database = try DatabaseQueue(configuration: configuration)
     }
-    
+
     // Setup Migrations
     var migrator = DatabaseMigrator()
-    
+
     // Always rebuild in development and preview
     #if DEBUG
         migrator.eraseDatabaseOnSchemaChange = true
     #endif
-    
+
     // Setup Migrations
     migrator.registerMigration("Create tables") { db in
 
-    // Questionnaires
-        try #sql("""
-            CREATE TABLE "questionnaires" (
-                "id" TEXT PRIMARY KEY NOT NULL ON CONFLICT REPLACE DEFAULT (uuid()),
-                "title" TEXT NOT NULL DEFAULT '',
-                "description" TEXT NOT NULL DEFAULT '',
-                "instructions" TEXT NOT NULL DEFAULT '',
-                "author" TEXT NOT NULL DEFAULT 'Anonymous',
-                "creationDate" REAL NOT NULL DEFAULT (julianday('now')),
-                "questions" TEXT NOT NULL DEFAULT '[]',
-                "iconEmoji" TEXT NOT NULL DEFAULT '📝',
-                "startColor" INTEGER NOT NULL DEFAULT 0xFF0000FF,
-                "endColor" INTEGER NOT NULL DEFAULT 0x800080FF,
-                "isFavorite" INTEGER NOT NULL DEFAULT 0
-            )
-        """)
+        // Questionnaires
+        try #sql(
+            """
+                CREATE TABLE "questionnaires" (
+                    "id" TEXT PRIMARY KEY NOT NULL ON CONFLICT REPLACE DEFAULT (uuid()),
+                    "title" TEXT NOT NULL DEFAULT '',
+                    "descriptionOfQuestionnaire" TEXT NOT NULL DEFAULT '',
+                    "instructions" TEXT NOT NULL DEFAULT '',
+                    "author" TEXT NOT NULL DEFAULT 'Anonymous',
+                    "dateCreated" REAL NOT NULL DEFAULT (julianday('now')),
+                    "questions" TEXT NOT NULL DEFAULT '[]',
+                    "iconEmoji" TEXT NOT NULL DEFAULT '📝',
+                    "startColor" INTEGER NOT NULL DEFAULT 0xFF0000FF,
+                    "endColor" INTEGER NOT NULL DEFAULT 0x800080FF,
+                    "isFavorite" INTEGER NOT NULL DEFAULT 0
+                )
+            """
+        )
         .execute(db)
 
         // Overlaps
-        try #sql("""
-            CREATE TABLE "overlaps" (
-                "id" TEXT PRIMARY KEY NOT NULL ON CONFLICT REPLACE DEFAULT (uuid()),
-                "beginDate" REAL NOT NULL DEFAULT (julianday('now')),
-                "completeDate" REAL,
-                "participants" TEXT NOT NULL DEFAULT '[]',
-                "isOnline" INTEGER NOT NULL DEFAULT 0,
-                "title" TEXT NOT NULL DEFAULT '',
-                "information" TEXT NOT NULL DEFAULT '',
-                "instructions" TEXT NOT NULL DEFAULT '',
-                "questions" TEXT NOT NULL DEFAULT '[]',
-                "participantResponses" TEXT NOT NULL DEFAULT '{}',
-                "iconEmoji" TEXT NOT NULL DEFAULT '📝',
-                "startColor" INTEGER NOT NULL DEFAULT 0xFF0000FF,
-                "endColor" INTEGER NOT NULL DEFAULT 0x800080FF,
-                "isRandomized" INTEGER NOT NULL DEFAULT 0,
-                "participantQuestionOrders" TEXT NOT NULL DEFAULT '{}',
-                "currentParticipantIndex" INTEGER NOT NULL DEFAULT 0,
-                "currentQuestionIndex" INTEGER NOT NULL DEFAULT 0,
-                "currentState" TEXT NOT NULL DEFAULT \(raw: OverlapState.instructions.rawValue),
-                "isCompleted" INTEGER NOT NULL DEFAULT 0
-            )
-        """)
+        try #sql(
+            """
+                CREATE TABLE "overlaps" (
+                    "id" TEXT PRIMARY KEY NOT NULL ON CONFLICT REPLACE DEFAULT (uuid()),
+                    "beginDate" REAL NOT NULL DEFAULT (julianday('now')),
+                    "completeDate" REAL,
+                    "participants" TEXT NOT NULL DEFAULT '[]',
+                    "isOnline" INTEGER NOT NULL DEFAULT 0,
+                    "title" TEXT NOT NULL DEFAULT '',
+                    "descriptionOfQuestionnaire" TEXT NOT NULL DEFAULT '',
+                    "instructions" TEXT NOT NULL DEFAULT '',
+                    "questions" TEXT NOT NULL DEFAULT '[]',
+                    "participantResponses" TEXT NOT NULL DEFAULT '{}',
+                    "iconEmoji" TEXT NOT NULL DEFAULT '📝',
+                    "startColor" INTEGER NOT NULL DEFAULT 0xFF0000FF,
+                    "endColor" INTEGER NOT NULL DEFAULT 0x800080FF,
+                    "isRandomized" INTEGER NOT NULL DEFAULT 0,
+                    "participantQuestionOrders" TEXT NOT NULL DEFAULT '{}',
+                    "currentParticipantIndex" INTEGER NOT NULL DEFAULT 0,
+                    "currentQuestionIndex" INTEGER NOT NULL DEFAULT 0,
+                    "currentState" TEXT NOT NULL DEFAULT \(raw: OverlapState.instructions.rawValue),
+                    "isCompleted" INTEGER NOT NULL DEFAULT 0
+                )
+            """
+        )
         .execute(db)
     }
     try migrator.migrate(database)
-    
+
     return database
 }

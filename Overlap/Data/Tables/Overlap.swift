@@ -71,7 +71,7 @@ struct Overlap: Identifiable, Hashable {
     /// The title for this overlap session
     var title: String = ""
     /// The information for this overlap session
-    var information: String = ""
+    var descriptionOfQuestionnaire: String = ""
     /// The instructions for this overlap session
     var instructions: String = ""
     /// The questions for this session
@@ -132,7 +132,7 @@ struct Overlap: Identifiable, Hashable {
         
         // Copy questionnaire data to preserve immutability
         self.title = questionnaire.title
-        self.information = questionnaire.description
+        self.descriptionOfQuestionnaire = questionnaire.descriptionOfQuestionnaire
         self.instructions = questionnaire.instructions
         self.questions = questionnaire.questions
         
@@ -172,7 +172,7 @@ struct Overlap: Identifiable, Hashable {
         self.participants = participants
         self.isOnline = isOnline
         self.title = title
-        self.information = information
+        self.descriptionOfQuestionnaire = information
         self.instructions = instructions
         self.questions = questions
         self.iconEmoji = iconEmoji

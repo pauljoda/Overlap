@@ -29,7 +29,7 @@ struct QuestionnaireHeader: View {
                 .foregroundColor(.primary)
                 .multilineTextAlignment(.center)
 
-            Text(overlap.information)
+            Text(overlap.descriptionOfQuestionnaire)
                 .font(.body)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)

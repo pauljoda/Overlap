@@ -116,7 +116,7 @@ private struct DetailHeader: View {
                     .foregroundColor(.primary)
                     .multilineTextAlignment(.center)
 
-                Text(questionnaire.description)
+                Text(questionnaire.descriptionOfQuestionnaire)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -174,7 +174,7 @@ private struct DetailInfo: View {
                             .font(.caption2)
                             .foregroundColor(.secondary)
                         Text(
-                            questionnaire.creationDate.formatted(
+                            questionnaire.dateCreated.formatted(
                                 date: .abbreviated,
                                 time: .omitted
                             )

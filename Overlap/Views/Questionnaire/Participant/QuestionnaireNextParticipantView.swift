@@ -6,9 +6,11 @@
 //
 
 import SwiftUI
+import SharingGRDB
 
 struct QuestionnaireNextParticipantView: View {
     @Binding var overlap: Overlap
+    @Dependency(\.defaultDatabase) var database
     @State private var isAnimated = false
 
     var body: some View {
@@ -87,8 +89,12 @@ struct QuestionnaireNextParticipantView: View {
 
     private func beginAnswering() {
         overlap.currentState = .answering
-        
-        // The session automatically handles question index management
+        // Persist state change so in-progress view stays in sync
+        withErrorReporting {
+            try database.write { db in
+                try Overlap.update(overlap).execute(db)
+            }
+        }
     }
 }
 

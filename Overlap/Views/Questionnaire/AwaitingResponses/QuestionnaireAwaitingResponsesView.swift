@@ -6,11 +6,17 @@
 //
 
 import SwiftUI
+import SharingGRDB
+import CloudKit
 
 struct QuestionnaireAwaitingResponsesView: View {
-    let overlap: Overlap
+    @Binding var overlap: Overlap
+    @Dependency(\.defaultDatabase) var database
+    @Dependency(\.defaultSyncEngine) var syncEngine
     @State private var isAnimated = false
     @State private var isRefreshing = false
+    @State private var sharedRecord: SharedRecord?
+    @State private var currentParticipant: String = "Loading"
     
     private var completedParticipants: [String] {
         overlap.participants.filter { overlap.isParticipantComplete($0) }
@@ -46,7 +52,7 @@ struct QuestionnaireAwaitingResponsesView: View {
                         .opacity(isAnimated ? 1 : 0)
                         .animation(.easeIn(duration: Tokens.Duration.medium).delay(0.4), value: isAnimated)
                 }
-                
+                                
                 // Participants Status
                 VStack(spacing: Tokens.Spacing.l) {
                     if !completedParticipants.isEmpty {
@@ -63,7 +69,7 @@ struct QuestionnaireAwaitingResponsesView: View {
                     if !pendingParticipants.isEmpty {
                         ParticipantStatusSection(
                             title: Tokens.Strings.pendingResponses,
-                            icon: "clock.circle.fill", 
+                            icon: "clock.circle.fill",
                             participants: pendingParticipants,
                             color: .orange,
                             isAnimated: isAnimated,
@@ -74,8 +80,19 @@ struct QuestionnaireAwaitingResponsesView: View {
                 
                 // Share button to invite more participants
                 VStack(spacing: Tokens.Spacing.m) {
-                 
-                    
+                    Button {
+                        Task {
+                            await shareOverlap()
+                        }
+                    } label: {
+                        HStack {
+                            Image(systemName: "square.and.arrow.up")
+                            Text("Share")
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+
                     Text("Invite more participants to get their responses")
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -95,15 +112,81 @@ struct QuestionnaireAwaitingResponsesView: View {
             // Check for updates when view appears
             Task {
                 await checkForUpdates()
+                currentParticipant = await overlap.getCurrentUserDisplayName(database: database)
             }
         }
         .refreshable {
             await checkForUpdates()
         }
+        .sheet(item: $sharedRecord) { sharedRecord in
+            CloudSharingView(sharedRecord: sharedRecord)
+        }
     }
     
     private func checkForUpdates() async {
-       
+        await withErrorReporting {
+            try await refreshParticipantsFromShare()
+        }
+    }
+
+    private func shareOverlap() async {
+        await withErrorReporting {
+            sharedRecord = try await syncEngine.share(record: overlap) { share in
+                share[CKShare.SystemFieldKey.title] = ("Join '\(overlap.title)'!" as NSString)
+            }
+        }
+    }
+
+    private func refreshParticipantsFromShare() async throws {
+        print("[Overlap] AwaitingResponses: refreshParticipantsFromShare begin id=\(overlap.id)")
+        // Fetch share metadata for this overlap (retry briefly)
+        var shareRef: CKShare??
+        for attempt in 0..<5 {
+            shareRef = try await database.read { db in
+                try Overlap
+                    .metadata(for: overlap.id)
+                    .select(\.share)
+                    .fetchOne(db)
+            }
+            if shareRef != nil { break }
+            print("[Overlap] AwaitingResponses: no CKShare metadata (attempt \(attempt+1)), retrying...")
+            try await Task.sleep(nanoseconds: 300_000_000)
+        }
+        guard let shareRef else {
+            print("[Overlap] AwaitingResponses: CKShare metadata not found")
+            return
+        }
+
+        // Always use the shared DB for CKShare details
+        let container = CKContainer(identifier: "iCloud.com.pauljoda.Overlap")
+        let record = try await container.sharedCloudDatabase.record(for: shareRef!.recordID)
+        guard let ckShare = record as? CKShare else {
+            print("[Overlap] AwaitingResponses: fetched record is not CKShare")
+            return
+        }
+        let formatter = PersonNameComponentsFormatter()
+        let names: [String] = ckShare.participants.compactMap { participant in
+            if let components = participant.userIdentity.nameComponents {
+                let name = formatter.string(from: components)
+                return name.isEmpty ? nil : name
+            }
+            if let email = participant.userIdentity.lookupInfo?.emailAddress {
+                return email
+            }
+            if let phone = participant.userIdentity.lookupInfo?.phoneNumber {
+                return phone
+            }
+            return nil
+        }
+        let unique = Array(Set(names)).sorted()
+        print("[Overlap] AwaitingResponses: extracted names \(unique)")
+
+        // Update overlap participants if changed
+        if Set(unique) != Set(overlap.participants) {
+            print("[Overlap] AwaitingResponses: updating participants")
+            overlap.participants = unique
+            
+        }
     }
 }
 
@@ -154,9 +237,9 @@ struct ParticipantStatusSection: View {
 }
 
 #Preview("All Pending") {
-    QuestionnaireAwaitingResponsesView(overlap: SampleData.awaitingResponsesOverlap)
+    QuestionnaireAwaitingResponsesView(overlap: .constant(SampleData.awaitingResponsesOverlap))
 }
 
 #Preview("Some Completed") {
-    QuestionnaireAwaitingResponsesView(overlap: SampleData.awaitingResponsesPartialOverlap)
+    QuestionnaireAwaitingResponsesView(overlap: .constant(SampleData.awaitingResponsesPartialOverlap))
 }

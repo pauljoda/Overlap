@@ -6,9 +6,11 @@
 //
 
 import SwiftUI
+import SharingGRDB
 
 struct QuestionnaireCompleteView: View {
     @Binding var overlap: Overlap
+    @Dependency(\.defaultDatabase) var database
     @State private var isAnimated = false
     
     @Environment(\.navigationPath) private var navigationPath
@@ -18,6 +20,7 @@ struct QuestionnaireCompleteView: View {
             VStack(spacing: Tokens.Spacing.tripleXL) {
                     // Header Section
                     CompletionHeader(isAnimated: isAnimated, overlap: overlap)
+            
                     
                     // Results Section
                     OverlapResultsView(overlap: overlap, isAnimated: isAnimated)
@@ -31,9 +34,14 @@ struct QuestionnaireCompleteView: View {
         .onAppear {
             isAnimated = true
             
-            // Set completion date if not already set
+            // Set and persist completion date if not already set
             if overlap.completeDate == nil {
                 overlap.completeDate = Date.now
+                withErrorReporting {
+                    try database.write { db in
+                        try Overlap.update(overlap).execute(db)
+                    }
+                }
             }
         }
     }

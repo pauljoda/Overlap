@@ -17,20 +17,12 @@ struct CreateQuestionnaireView: View {
     let editingQuestionnaire: Questionnaire?
     private var isEditing: Bool { editingQuestionnaire != nil }
 
-    @State private var questionnaire = Questionnaire()
-    @State private var questions: [String] = [""]
+    // Always edit against local mutable state; initialize from editingQuestionnaire if provided
+    @State private var questionnaire: Questionnaire
+    @State private var questions: [String]
 
-    // Create a binding that works with either the editing questionnaire or the local one
-    private var questionnaireBinding: Binding<Questionnaire> {
-        if isEditing {
-            return Binding(
-                get: { editingQuestionnaire! },
-                set: { _ in }  // Read-only binding for editing mode
-            )
-        } else {
-            return $questionnaire
-        }
-    }
+    // Single source of truth for bindings
+    private var questionnaireBinding: Binding<Questionnaire> { $questionnaire }
 
     @FocusState private var focusedField: FocusedField?
 
@@ -42,6 +34,14 @@ struct CreateQuestionnaireView: View {
 
     init(editingQuestionnaire: Questionnaire? = nil) {
         self.editingQuestionnaire = editingQuestionnaire
+        // Initialize @State with provided questionnaire or a new one
+        if let q = editingQuestionnaire {
+            self._questionnaire = State(initialValue: q)
+            self._questions = State(initialValue: q.questions.isEmpty ? [""] : q.questions)
+        } else {
+            self._questionnaire = State(initialValue: Questionnaire())
+            self._questions = State(initialValue: [""])
+        }
     }
 
     enum FocusedField: Hashable {
@@ -67,7 +67,7 @@ struct CreateQuestionnaireView: View {
         let hasTitle = !currentQuestionnaire.title.trimmingCharacters(
             in: .whitespacesAndNewlines
         ).isEmpty
-        let hasInformation = !currentQuestionnaire.description
+        let hasInformation = !currentQuestionnaire.descriptionOfQuestionnaire
             .trimmingCharacters(
                 in: .whitespacesAndNewlines
             ).isEmpty
@@ -215,7 +215,7 @@ struct CreateQuestionnaireView: View {
                 in: .whitespacesAndNewlines
             ).isEmpty {
                 focusedField = .title
-            } else if currentQuestionnaire.description.trimmingCharacters(
+            } else if currentQuestionnaire.descriptionOfQuestionnaire.trimmingCharacters(
                 in: .whitespacesAndNewlines
             ).isEmpty {
                 focusedField = .information
@@ -242,7 +242,7 @@ struct CreateQuestionnaireView: View {
             .trimmingCharacters(
                 in: .whitespacesAndNewlines
             )
-        currentQuestionnaire.description = currentQuestionnaire.description
+        currentQuestionnaire.descriptionOfQuestionnaire = currentQuestionnaire.descriptionOfQuestionnaire
             .trimmingCharacters(in: .whitespacesAndNewlines)
         currentQuestionnaire.instructions = currentQuestionnaire.instructions
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -251,7 +251,7 @@ struct CreateQuestionnaireView: View {
                 in: .whitespacesAndNewlines
             )
         currentQuestionnaire.questions = cleanedQuestions
-        currentQuestionnaire.creationDate = Date.now
+        currentQuestionnaire.dateCreated = Date.now
 
         // Save to database
         withErrorReporting {
@@ -285,11 +285,9 @@ struct CreateQuestionnaireView: View {
 
     private func loadQuestionnaireForEditing() {
         guard let editingQuestionnaire = editingQuestionnaire else { return }
-
-        // Load the questions from the existing questionnaire
-        questions =
-            editingQuestionnaire.questions.isEmpty
-            ? [""] : editingQuestionnaire.questions
+        // Keep local state in sync if needed when the view appears (defensive)
+        questionnaire = editingQuestionnaire
+        questions = editingQuestionnaire.questions.isEmpty ? [""] : editingQuestionnaire.questions
     }
 
 }

@@ -24,8 +24,8 @@ struct QuestionnaireListItem: View {
                     .foregroundColor(.primary)
                     .lineLimit(2)
                 
-                if !questionnaire.description.isEmpty {
-                    Text(questionnaire.description)
+                if !questionnaire.descriptionOfQuestionnaire.isEmpty {
+                    Text(questionnaire.descriptionOfQuestionnaire)
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                         .lineLimit(2)
@@ -65,7 +65,7 @@ struct QuestionnaireListItem: View {
                             Image(systemName: "calendar")
                                 .font(.caption2)
                                 .foregroundColor(.secondary)
-                            Text(questionnaire.creationDate, style: .date)
+                            Text(questionnaire.dateCreated, style: .date)
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
