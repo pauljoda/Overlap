@@ -9,7 +9,6 @@ import SwiftUI
 
 struct QuestionnaireView: View {
     let overlap: Overlap
-    @Environment(\.overlapSyncManager) private var syncManager
 
     var body: some View {
         ZStack {
@@ -33,22 +32,6 @@ struct QuestionnaireView: View {
             ? overlap.title : ""
         )
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear {
-            // Mark this overlap as read when user views it
-            syncManager?.markOverlapAsRead(overlap.id)
-            
-            // Fetch latest updates for online overlaps when opening
-            if overlap.isOnline {
-                Task {
-                    do {
-                        try await syncManager?.fetchOverlapUpdates(overlap)
-                        print("QuestionnaireView: Fetched latest updates for overlap")
-                    } catch {
-                        print("QuestionnaireView: Failed to fetch updates: \(error)")
-                    }
-                }
-            }
-        }
     }
 }
 

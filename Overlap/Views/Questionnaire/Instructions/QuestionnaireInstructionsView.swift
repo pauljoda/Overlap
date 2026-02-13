@@ -61,16 +61,7 @@ struct QuestionnaireInstructionsView: View {
             // Floating action buttons - overlayed at bottom
             VStack(spacing: Tokens.Spacing.m) {
                 Spacer()
-                
-                // Share button for online overlaps
-                if overlap.isOnline && canBegin {
-                    HStack {
-                        ShareButton(overlap: overlap)
-                        Spacer()
-                    }
-                    .padding(.horizontal, Tokens.Spacing.xl)
-                }
-                
+
                 GlassActionButton(
                     title: overlap.isOnline ? Tokens.Strings.beginOnlineOverlap : Tokens.Strings.beginOverlap,
                     icon: overlap.isOnline ? "icloud.fill" : "play.fill",
@@ -149,7 +140,7 @@ struct QuestionnaireInstructionsView: View {
 
         if overlap.isOnline {
             // For online overlaps, go directly to answering state
-            // The user should use the ShareButton above to share with others
+            // Invite management happens in the host setup flow.
             overlap.currentState = .answering
         } else {
             // For local overlaps, use the participant selection flow

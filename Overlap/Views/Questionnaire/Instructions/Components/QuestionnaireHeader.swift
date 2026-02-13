@@ -20,7 +20,7 @@ struct QuestionnaireHeader: View {
         VStack(spacing: 16) {
             HStack {
                 Spacer()
-                OnlineIndicator(isOnline: overlap.isOnline, overlapId: overlap.id, style: .detailed)
+                OnlineIndicator(isOnline: overlap.isOnline, style: .detailed)
             }
             
             Text(overlap.title)

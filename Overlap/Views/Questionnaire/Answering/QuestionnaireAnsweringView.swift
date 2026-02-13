@@ -11,7 +11,6 @@ import SwiftData
 struct QuestionnaireAnsweringView: View {
     let overlap: Overlap
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.overlapSyncManager) private var syncManager
     
     @State private var blobEmphasis: BlobEmphasis = .none
     
@@ -27,33 +26,16 @@ struct QuestionnaireAnsweringView: View {
                     CardView(
                         question: currentQuestion,
                         onSwipe: { answer in
-                            print("Selected answer: \(answer)")
-
-                            // Save answer first (this changes the question index)
-                            let wasCompleted = overlap.isCompleted
-                            let previousState = overlap.currentState
-                            let saveSuccessful = overlap.saveResponse(answer: answer)
-                            
-                            print("🔍 QuestionnaireAnsweringView: saveResponse result: \(saveSuccessful)")
+                            // Save answer first (this changes the question index).
+                            _ = overlap.saveResponse(answer: answer)
                             
                             // Save changes to model context
                             do {
                                 try modelContext.save()
-                                print("🔍 QuestionnaireAnsweringView: ModelContext saved successfully")
                             } catch {
-                                print("🔍 QuestionnaireAnsweringView: ModelContext save failed: \(error)")
+                                print("QuestionnaireAnsweringView: ModelContext save failed: \(error)")
                             }
-                            
-                            // Sync to CloudKit if this is an online overlap and participant completed their portion
-                            if overlap.isOnline && !wasCompleted && 
-                               (overlap.currentState == .nextParticipant || overlap.currentState == .complete) &&
-                               previousState == .answering {
-                                Task {
-                                    print("🔍 QuestionnaireAnsweringView: Starting CloudKit sync...")
-                                    await syncParticipantCompletion()
-                                }
-                            }
-                            
+
                             // Reset blob emphasis
                             blobEmphasis = .none
 
@@ -97,24 +79,6 @@ struct QuestionnaireAnsweringView: View {
                     .padding(.bottom, Tokens.Spacing.xl)
             }
             .padding(.horizontal, Tokens.Spacing.xl)
-        }
-    }
-    
-    // MARK: - Sync Functions
-    
-    private func syncParticipantCompletion() async {
-        guard let syncManager = syncManager else { 
-            print("🔍 QuestionnaireAnsweringView: syncManager is nil")
-            return 
-        }
-        
-        print("🔍 QuestionnaireAnsweringView: About to call syncOverlapCompletion")
-        
-        do {
-            try await syncManager.syncOverlapCompletion(overlap)
-            print("Successfully synced participant completion")
-        } catch {
-            print("Failed to sync participant completion: \(error)")
         }
     }
 }

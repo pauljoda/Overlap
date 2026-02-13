@@ -24,7 +24,6 @@ struct HomeView: View {
     @State private var path = NavigationPath()
     @Environment(\.modelContext) private var modelContext
     @Environment(\.onlineSessionService) private var onlineSessionService
-    @State private var syncManager: OverlapSyncManager?
     @StateObject private var userPreferences = UserPreferences.shared
     @State private var showingDisplayNameSetup = false
     
@@ -114,18 +113,12 @@ struct HomeView: View {
             }
         }
         .environment(\.navigationPath, $path)
-        .environment(\.overlapSyncManager, syncManager)
         .sheet(isPresented: $showingDisplayNameSetup) {
             NavigationView {
                 DisplayNameSetupView()
             }
         }
         .onAppear {
-            // Initialize sync manager when we have model context
-            if syncManager == nil {
-                syncManager = OverlapSyncManager(modelContext: modelContext)
-            }
-            
             if userPreferences.needsDisplayNameSetup {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     showingDisplayNameSetup = true
@@ -141,12 +134,6 @@ struct HomeView: View {
                 to: .joinSession(prefilledInvite: invite),
                 using: $path
             )
-        }
-        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("NavigateToOverlap"))) { notification in
-            if let overlap = notification.object as? Overlap {
-                // Navigate to the overlap when opened from a share link
-                navigate(to: overlap, using: $path)
-            }
         }
     }
 

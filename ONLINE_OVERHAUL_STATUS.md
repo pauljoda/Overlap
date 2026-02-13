@@ -20,6 +20,11 @@
 - Added deep-link placeholders:
   - URL scheme `overlap://...`
   - associated domain placeholder `applinks:join.overlapapp.link`
+- Completed legacy cleanup pass (CloudKit removal):
+  - Deleted obsolete CloudKit/share services and delegates.
+  - Removed old share UI controls and sync manager dependencies from active views.
+  - Simplified the `Overlap` model by removing CloudKit-only fields.
+  - Removed stale iCloud share capabilities from `Info.plist` and entitlements.
 
 ## What this slice provides now
 

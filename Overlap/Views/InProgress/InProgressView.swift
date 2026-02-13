@@ -11,7 +11,6 @@ import SwiftData
 struct InProgressView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.navigationPath) private var navigationPath
-    @Environment(\.overlapSyncManager) private var syncManager
     
     @Query(
         filter: #Predicate<Overlap> { overlap in
@@ -21,16 +20,10 @@ struct InProgressView: View {
         order: .reverse
     ) private var allInProgressOverlaps: [Overlap]
     
-    @State private var isRefreshing = false
-    
-    // Filter out empty overlaps manually since SwiftData doesn't support .count in predicates
+    // Filter out empty overlaps manually since SwiftData doesn't support .count in predicates.
     private var inProgressOverlaps: [Overlap] {
         allInProgressOverlaps.filter { overlap in
-            // Always include shared overlaps, even if they appear empty locally
-            if overlap.isSharedToMe || overlap.shareRecordName != nil || overlap.cloudKitRecordID != nil {
-                return true
-            }
-            // For local overlaps, ensure they have participants and questions
+            // Ensure overlaps have both participants and questions.
             return !overlap.participants.isEmpty && !overlap.questions.isEmpty
         }
     }
@@ -47,17 +40,9 @@ struct InProgressView: View {
                     onDelete: deleteOverlaps
                 ) { overlap in
                     InProgressOverlapListItem(overlap: overlap)
-                        .overlay(
-                            // Loading indicator for online overlaps
-                            syncManager?.isSyncing(overlap: overlap) == true ? 
-                            LoadingOverlay() : nil
-                        )
                 }
                 .scrollContentBackground(.hidden)
                 .background(Color.clear)
-                .refreshable {
-                    await refreshOnlineOverlaps()
-                }
             }
         }
         .navigationTitle("In Progress")
@@ -65,9 +50,6 @@ struct InProgressView: View {
         .contentMargins(0)
         .onAppear {
             cleanupEmptyOverlaps()
-            Task {
-                await refreshOnlineOverlaps()
-            }
         }
         .toolbar {
             if !inProgressOverlaps.isEmpty {
@@ -84,19 +66,6 @@ struct InProgressView: View {
         }
     }
     
-    private func refreshOnlineOverlaps() async {
-        guard let syncManager = syncManager else { return }
-        
-        do {
-            // Fetch updates for all online overlaps
-            for overlap in inProgressOverlaps.filter({ $0.isOnline }) {
-                try await syncManager.fetchOverlapUpdates(overlap)
-            }
-        } catch {
-            print("Failed to refresh online overlaps: \(error)")
-        }
-    }
-    
     private func cleanupEmptyOverlaps() {
         // Find all overlaps and filter empty ones manually
         let allOverlapsDescriptor = FetchDescriptor<Overlap>()
@@ -104,11 +73,6 @@ struct InProgressView: View {
         do {
             let allOverlaps = try modelContext.fetch(allOverlapsDescriptor)
             let emptyOverlaps = allOverlaps.filter { overlap in
-                // Don't clean up shared overlaps - they might appear empty locally but have content in CloudKit
-                if overlap.isSharedToMe || overlap.shareRecordName != nil || overlap.cloudKitRecordID != nil {
-                    return false
-                }
-                // Only clean up truly local empty overlaps
                 return overlap.participants.isEmpty || overlap.questions.isEmpty
             }
             

@@ -6,13 +6,10 @@
 //
 
 import SwiftUI
-import SwiftData
 
 struct QuestionnaireAwaitingResponsesView: View {
     let overlap: Overlap
-    @Environment(\.overlapSyncManager) private var syncManager
     @State private var isAnimated = false
-    @State private var isRefreshing = false
     
     private var completedParticipants: [String] {
         overlap.participants.filter { overlap.isParticipantComplete($0) }
@@ -74,14 +71,15 @@ struct QuestionnaireAwaitingResponsesView: View {
                     }
                 }
                 
-                // Share button to invite more participants
                 VStack(spacing: Tokens.Spacing.m) {
-                    ShareButton(overlap: overlap)
+                    Label("Invites are managed from the Online Host screen.", systemImage: "square.and.arrow.up")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
                         .opacity(isAnimated ? 1 : 0)
                         .offset(y: isAnimated ? 0 : 20)
                         .animation(.easeIn(duration: Tokens.Duration.medium).delay(Tokens.Delay.extraLong + 0.2), value: isAnimated)
                     
-                    Text("Invite more participants to get their responses")
+                    Text("Share your link or invite code from the host setup flow.")
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
@@ -96,33 +94,6 @@ struct QuestionnaireAwaitingResponsesView: View {
         }
         .onAppear {
             isAnimated = true
-            
-            // Check for updates when view appears
-            Task {
-                await checkForUpdates()
-            }
-        }
-        .refreshable {
-            await checkForUpdates()
-        }
-        .overlay(
-            // Show loading indicator for online overlaps
-            overlap.isOnline && (syncManager?.isSyncing(overlap: overlap) == true || isRefreshing) ?
-            LoadingOverlay() : nil,
-            alignment: .topTrailing
-        )
-    }
-    
-    private func checkForUpdates() async {
-        guard let syncManager = syncManager, overlap.isOnline else { return }
-        
-        isRefreshing = true
-        defer { isRefreshing = false }
-        
-        do {
-            try await syncManager.fetchOverlapUpdates(overlap)
-        } catch {
-            print("Failed to sync overlap updates: \(error)")
         }
     }
 }

@@ -10,9 +10,6 @@ import SwiftUI
 
 @main
 struct OverlapApp: App {
-    // Keep the CloudKit service available for legacy screens while online
-    // collaboration transitions to the new backend flow.
-    private let cloudKitService = CloudKitService()
     private let onlineSubscriptionService = OnlineSubscriptionService.shared
     private let onlineHostAuthService = OnlineHostAuthService.shared
     private let onlineSessionService = OnlineSessionService.shared
@@ -34,7 +31,6 @@ struct OverlapApp: App {
     var body: some Scene {
         WindowGroup {
             HomeView()
-                .environment(\.cloudKitService, cloudKitService)
                 .environment(
                     \.onlineSubscriptionService,
                     onlineSubscriptionService
