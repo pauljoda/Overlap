@@ -2,18 +2,15 @@
 //  DisplayNameSetupView.swift
 //  Overlap
 //
-//  User display name setup for CloudKit sharing
+//  User display name setup for local and online session identity.
 //
 
 import SwiftUI
-import CloudKit
 
 struct DisplayNameSetupView: View {
     @Environment(\.dismiss) private var dismiss
-    @ObservedObject var cloudKitService: CloudKitService
     @StateObject private var userPreferences = UserPreferences.shared
     @State private var manualName = ""
-    @State private var showingManualEntry = true
     
     var body: some View {
         GlassScreen {
@@ -101,7 +98,7 @@ struct DisplayNameSetupView: View {
         let trimmedName = manualName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else { return }
         
-        cloudKitService.setManualDisplayName(trimmedName)
+        userPreferences.setDisplayName(trimmedName)
         dismiss()
     }
 }
@@ -110,6 +107,6 @@ struct DisplayNameSetupView: View {
 
 #Preview {
     NavigationView {
-        DisplayNameSetupView(cloudKitService: CloudKitService())
+        DisplayNameSetupView()
     }
 }

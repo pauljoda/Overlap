@@ -23,7 +23,7 @@ extension EnvironmentValues {
 struct HomeView: View {
     @State private var path = NavigationPath()
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.cloudKitService) private var cloudKitService
+    @Environment(\.onlineSessionService) private var onlineSessionService
     @State private var syncManager: OverlapSyncManager?
     @StateObject private var userPreferences = UserPreferences.shared
     @State private var showingDisplayNameSetup = false
@@ -93,12 +93,31 @@ struct HomeView: View {
             .navigationDestination(for: Overlap.self) { overlap in
                 QuestionnaireView(overlap: overlap)
             }
+            .navigationDestination(for: OnlineNavigationDestination.self) {
+                destination in
+                switch destination {
+                case .hostSetup(let questionnaireID):
+                    if let questionnaire = loadQuestionnaire(id: questionnaireID) {
+                        OnlineSessionSetupView(questionnaire: questionnaire)
+                    } else {
+                        ContentUnavailableView(
+                            "Questionnaire Not Found",
+                            systemImage: "exclamationmark.triangle.fill",
+                            description: Text(
+                                "The selected questionnaire could not be loaded."
+                            )
+                        )
+                    }
+                case .joinSession(let prefilledInvite):
+                    JoinOnlineSessionView(prefilledInvite: prefilledInvite)
+                }
+            }
         }
         .environment(\.navigationPath, $path)
         .environment(\.overlapSyncManager, syncManager)
         .sheet(isPresented: $showingDisplayNameSetup) {
             NavigationView {
-                DisplayNameSetupView(cloudKitService: cloudKitService)
+                DisplayNameSetupView()
             }
         }
         .onAppear {
@@ -107,23 +126,21 @@ struct HomeView: View {
                 syncManager = OverlapSyncManager(modelContext: modelContext)
             }
             
-            // Check if we need to prompt for display name setup
-            // Only prompt if CloudKit is available and user hasn't set up their name
-            Task {
-                await cloudKitService.checkAccountStatus()
-                
-                if cloudKitService.isAvailable && userPreferences.needsDisplayNameSetup {
-                    // Delay showing the sheet to avoid SwiftUI conflicts with onAppear
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        showingDisplayNameSetup = true
-                    }
-                }
-                
-                // Validate shared overlaps to clear stale share info
-                if cloudKitService.isAvailable {
-                    await cloudKitService.validateSharedOverlaps(in: modelContext)
+            if userPreferences.needsDisplayNameSetup {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    showingDisplayNameSetup = true
                 }
             }
+        }
+        .onOpenURL { url in
+            guard let invite = onlineSessionService.parseInvite(from: url) else {
+                return
+            }
+
+            navigate(
+                to: .joinSession(prefilledInvite: invite),
+                using: $path
+            )
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("NavigateToOverlap"))) { notification in
             if let overlap = notification.object as? Overlap {
@@ -131,6 +148,15 @@ struct HomeView: View {
                 navigate(to: overlap, using: $path)
             }
         }
+    }
+
+    private func loadQuestionnaire(id: UUID) -> Questionnaire? {
+        let descriptor = FetchDescriptor<Questionnaire>(
+            predicate: #Predicate<Questionnaire> { questionnaire in
+                questionnaire.id == id
+            }
+        )
+        return try? modelContext.fetch(descriptor).first
     }
 }
 
