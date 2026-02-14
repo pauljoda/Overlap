@@ -22,11 +22,26 @@ extension EnvironmentValues {
 
 struct HomeView: View {
     @State private var path = NavigationPath()
+    @State private var observedOnlineSessionIDs: Set<String> = []
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.cloudKitService) private var cloudKitService
-    @State private var syncManager: OverlapSyncManager?
-    @StateObject private var userPreferences = UserPreferences.shared
-    @State private var showingDisplayNameSetup = false
+    @EnvironmentObject private var onlineSessionService: OnlineSessionService
+    @Query(
+        filter: #Predicate<Overlap> { overlap in
+            overlap.isOnline == true
+        }
+    ) private var onlineOverlaps: [Overlap]
+
+    private var trackedOnlineSessionIDs: Set<String> {
+        Set(
+            onlineOverlaps.compactMap { overlap in
+                guard let sessionID = overlap.onlineSessionID?
+                    .trimmingCharacters(in: .whitespacesAndNewlines),
+                      !sessionID.isEmpty
+                else { return nil }
+                return sessionID
+            }
+        )
+    }
     
     var body: some View {
         NavigationStack(path: $path) {
@@ -74,7 +89,9 @@ struct HomeView: View {
                 case "completed":
                     CompletedView()
                 case "browse":
-                    ComingSoonView(title: "Browse")
+                    BrowseView()
+                case "settings":
+                    SettingsView()
                 case let editPath where editPath.hasPrefix("edit-"):
                     // Extract questionnaire ID for editing
                     let questionnaireId = String(editPath.dropFirst(5)) // Remove "edit-" prefix
@@ -90,55 +107,108 @@ struct HomeView: View {
             .navigationDestination(for: Questionnaire.self) { questionnaire in
                 QuestionnaireDetailView(questionnaire: questionnaire)
             }
+            .navigationDestination(for: BrowseQuestionnaire.self) { template in
+                BrowseDetailView(template: template)
+            }
             .navigationDestination(for: Overlap.self) { overlap in
                 QuestionnaireView(overlap: overlap)
             }
+            .navigationDestination(for: OnlineNavigationDestination.self) {
+                destination in
+                switch destination {
+                case .hostSetup(let questionnaireID):
+                    if let questionnaire = loadQuestionnaire(id: questionnaireID) {
+                        OnlineSessionSetupView(questionnaire: questionnaire)
+                    } else {
+                        ContentUnavailableView(
+                            "Questionnaire Not Found",
+                            systemImage: "exclamationmark.triangle.fill",
+                            description: Text(
+                                "The selected questionnaire could not be loaded."
+                            )
+                        )
+                    }
+                case .joinSession(let prefilledInvite):
+                    JoinOnlineSessionView(prefilledInvite: prefilledInvite)
+                }
+            }
         }
         .environment(\.navigationPath, $path)
-        .environment(\.overlapSyncManager, syncManager)
-        .sheet(isPresented: $showingDisplayNameSetup) {
-            NavigationView {
-                DisplayNameSetupView(cloudKitService: cloudKitService)
-            }
+        .task {
+            syncSessionObservers()
+            applyHostedSnapshotsToLocalOverlaps()
         }
-        .onAppear {
-            // Initialize sync manager when we have model context
-            if syncManager == nil {
-                syncManager = OverlapSyncManager(modelContext: modelContext)
-            }
-            
-            // Check if we need to prompt for display name setup
-            // Only prompt if CloudKit is available and user hasn't set up their name
-            Task {
-                await cloudKitService.checkAccountStatus()
-                
-                if cloudKitService.isAvailable && userPreferences.needsDisplayNameSetup {
-                    // Delay showing the sheet to avoid SwiftUI conflicts with onAppear
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        showingDisplayNameSetup = true
-                    }
-                }
-                
-                // Validate shared overlaps to clear stale share info
-                if cloudKitService.isAvailable {
-                    await cloudKitService.validateSharedOverlaps(in: modelContext)
-                }
-            }
+        .onChange(of: trackedOnlineSessionIDs) { _, _ in
+            syncSessionObservers()
+            applyHostedSnapshotsToLocalOverlaps()
         }
-        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("NavigateToOverlap"))) { notification in
-            if let overlap = notification.object as? Overlap {
-                // Navigate to the overlap when opened from a share link
-                navigate(to: overlap, using: $path)
-            }
+        .onReceive(onlineSessionService.$sessionsByID) { _ in
+            applyHostedSnapshotsToLocalOverlaps()
         }
+        .onOpenURL { url in
+            guard let invite = onlineSessionService.parseInvite(from: url) else {
+                return
+            }
+
+            navigate(
+                to: .joinSession(prefilledInvite: invite),
+                using: $path
+            )
+        }
+    }
+
+    private func loadQuestionnaire(id: UUID) -> Questionnaire? {
+        let descriptor = FetchDescriptor<Questionnaire>(
+            predicate: #Predicate<Questionnaire> { questionnaire in
+                questionnaire.id == id
+            }
+        )
+        return try? modelContext.fetch(descriptor).first
+    }
+
+    private func syncSessionObservers() {
+        let desired = trackedOnlineSessionIDs
+        let toStart = desired.subtracting(observedOnlineSessionIDs)
+        let toStop = observedOnlineSessionIDs.subtracting(desired)
+
+        for sessionID in toStart {
+            onlineSessionService.startSessionObservation(sessionID: sessionID)
+        }
+        for sessionID in toStop {
+            onlineSessionService.stopSessionObservation(sessionID: sessionID)
+        }
+
+        observedOnlineSessionIDs = desired
+    }
+
+    private func applyHostedSnapshotsToLocalOverlaps() {
+        guard !onlineOverlaps.isEmpty else { return }
+
+        var didApply = false
+        for overlap in onlineOverlaps {
+            guard let sessionID = overlap.onlineSessionID,
+                  let hostedSession = onlineSessionService.hostedSession(id: sessionID)
+            else { continue }
+            _ = OnlineSessionSnapshotApplier.apply(session: hostedSession, to: overlap)
+            didApply = true
+        }
+
+        guard didApply else { return }
+        try? modelContext.save()
     }
 }
 
 #Preview {
     HomeView()
+        .environmentObject(OnlineSubscriptionService.shared)
+        .environmentObject(OnlineHostAuthService.shared)
+        .environmentObject(OnlineSessionService.shared)
 }
 
 #Preview("With Model Data") {
     HomeView()
+        .environmentObject(OnlineSubscriptionService.shared)
+        .environmentObject(OnlineHostAuthService.shared)
+        .environmentObject(OnlineSessionService.shared)
         .modelContainer(previewModelContainer)
 }

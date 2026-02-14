@@ -6,8 +6,17 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		FD161C602F3FEB5900A13A95 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = FD161C5B2F3FEB5900A13A95 /* FirebaseAuth */; };
+		FD161C612F3FEB5900A13A95 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = FD161C5C2F3FEB5900A13A95 /* FirebaseCore */; };
+		FD161C622F3FEB5900A13A95 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = FD161C5D2F3FEB5900A13A95 /* FirebaseFirestore */; };
+		FD161C632F3FEB5900A13A95 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = FD161C5E2F3FEB5900A13A95 /* FirebaseFunctions */; };
+		FD8212DC2F3FA0310075998F /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FD8212DB2F3FA0310075998F /* StoreKit.framework */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		FD2F892A2E32FC920097AC8E /* Overlap.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Overlap.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FD8212DB2F3FA0310075998F /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -36,6 +45,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FD161C602F3FEB5900A13A95 /* FirebaseAuth in Frameworks */,
+				FD161C612F3FEB5900A13A95 /* FirebaseCore in Frameworks */,
+				FD161C622F3FEB5900A13A95 /* FirebaseFirestore in Frameworks */,
+				FD161C632F3FEB5900A13A95 /* FirebaseFunctions in Frameworks */,
+				FD8212DC2F3FA0310075998F /* StoreKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -46,6 +60,7 @@
 			isa = PBXGroup;
 			children = (
 				FD2F892C2E32FC920097AC8E /* Overlap */,
+				FD8212DA2F3FA0310075998F /* Frameworks */,
 				FD2F892B2E32FC920097AC8E /* Products */,
 			);
 			sourceTree = "<group>";
@@ -56,6 +71,14 @@
 				FD2F892A2E32FC920097AC8E /* Overlap.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		FD8212DA2F3FA0310075998F /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				FD8212DB2F3FA0310075998F /* StoreKit.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -78,6 +101,10 @@
 			);
 			name = Overlap;
 			packageProductDependencies = (
+				FD161C5B2F3FEB5900A13A95 /* FirebaseAuth */,
+				FD161C5C2F3FEB5900A13A95 /* FirebaseCore */,
+				FD161C5D2F3FEB5900A13A95 /* FirebaseFirestore */,
+				FD161C5E2F3FEB5900A13A95 /* FirebaseFunctions */,
 			);
 			productName = Overlap;
 			productReference = FD2F892A2E32FC920097AC8E /* Overlap.app */;
@@ -107,6 +134,9 @@
 			);
 			mainGroup = FD2F89212E32FC920097AC8E;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				FD8212DF2F3FA7580075998F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = FD2F892B2E32FC920097AC8E /* Products */;
 			projectDirPath = "";
@@ -145,7 +175,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Overlap/Overlap.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = 3U2R97HLXF;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -169,7 +199,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pauljoda.Overlap;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -194,7 +224,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Overlap/Overlap.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = 3U2R97HLXF;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -218,7 +248,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.pauljoda.Overlap;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -374,6 +404,40 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		FD8212DF2F3FA7580075998F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.9.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		FD161C5B2F3FEB5900A13A95 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FD8212DF2F3FA7580075998F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		FD161C5C2F3FEB5900A13A95 /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FD8212DF2F3FA7580075998F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+		FD161C5D2F3FEB5900A13A95 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FD8212DF2F3FA7580075998F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		FD161C5E2F3FEB5900A13A95 /* FirebaseFunctions */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FD8212DF2F3FA7580075998F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFunctions;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = FD2F89222E32FC920097AC8E /* Project object */;
 }

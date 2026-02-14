@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# Xcode user data
+*.xcuserstate
+xcuserdata/
+
+# Build artifacts
+DerivedData/
+build/
+
+# Swift Package Manager
+.swiftpm/
+
+# Local secrets and keys
+*.p8
+
+# Firebase local variants
+GoogleService-Info-*.plist

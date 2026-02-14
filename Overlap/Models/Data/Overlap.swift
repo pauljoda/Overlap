@@ -26,7 +26,7 @@ enum OverlapState: String, Codable, CaseIterable {
 ///
 /// ## Key Features
 /// - **Session Management**: Tracks current participant and question progress
-/// - **Response Storage**: Maintains participant responses with CloudKit compatibility
+/// - **Response Storage**: Maintains participant responses with online-sync compatibility
 /// - **Question Randomization**: Optional feature to randomize question order per participant
 /// - **Progress Tracking**: Monitors completion status and session flow
 /// - **Analysis Tools**: Methods for extracting and analyzing response data
@@ -63,35 +63,16 @@ class Overlap {
     // MARK: - Collaboration Settings
     /// List of participant names in this overlap session
     var participants: [String] = []
-    /// Whether this overlap is intended to be online (stored property)
-    private var _isOnline: Bool = false
-    /// CloudKit share information (if this overlap is shared)
-    var shareRecordName: String?
-    /// Whether this overlap was received via a CloudKit share (not owned by current user)
-    var isSharedToMe: Bool = false
-    /// The original CloudKit record ID (used for shared overlaps)
-    var cloudKitRecordID: String?
-    /// The CloudKit zone ID for this overlap (used in zone-based sharing)
-    var cloudKitZoneID: String?
-    /// CloudKit participant user IDs for tracking completion status
-    var cloudKitParticipants: [String]?
-    
     /// Whether this is an online collaborative session or local only
-    var isOnline: Bool {
-        get {
-            // An overlap is online if it's intended to be online OR if it has CloudKit data
-            return _isOnline || cloudKitRecordID != nil
-        }
-        set {
-            _isOnline = newValue
-        }
-    }
-    
-    /// Whether the current user is the owner (created the overlap)
-    var isOwner: Bool {
-        guard let cloudKitRecordID = cloudKitRecordID else { return true }
-        return id.uuidString == cloudKitRecordID
-    }
+    var isOnline: Bool = false
+    /// Linked hosted session identifier for online overlaps
+    var onlineSessionID: String?
+    /// Last known invite code for the linked hosted session
+    var onlineInviteCode: String?
+    /// Stable participant identity for this device in hosted sessions
+    var onlineParticipantID: String?
+    /// Participant identity for this device in the hosted session
+    var onlineParticipantDisplayName: String?
 
     // MARK: - Questionnaire Data
     /// The title for this overlap session
@@ -297,7 +278,7 @@ class Overlap {
         self.beginDate = beginDate
         self.completeDate = completeDate
         self.participants = participants
-        self._isOnline = isOnline
+        self.isOnline = isOnline
         
         // Copy questionnaire data to preserve immutability
         self.title = questionnaire.title
@@ -352,7 +333,7 @@ class Overlap {
         self.beginDate = beginDate
         self.completeDate = completeDate
         self.participants = participants
-        self._isOnline = isOnline
+        self.isOnline = isOnline
         self.title = title
         self.information = information
         self.instructions = instructions
@@ -408,7 +389,7 @@ class Overlap {
         self.beginDate = beginDate
         self.completeDate = completeDate
         self.participants = participants
-        self._isOnline = isOnline
+        self.isOnline = isOnline
         self.title = title
         self.information = information
         self.instructions = instructions
@@ -818,19 +799,19 @@ class Overlap {
     }
 }
 
-// MARK: - SwiftData CloudKit Support Methods
+// MARK: - Response Sync Helpers
 extension Overlap {
-    /// Returns all participant responses for CloudKit sync
+    /// Returns all participant responses for online sync.
     func getAllResponses() -> [String: [Answer?]] {
         return participantResponses
     }
     
-    /// Restores participant responses from CloudKit data
+    /// Restores participant responses from synced data.
     func restoreResponses(_ responses: [String: [Answer?]]) {
         participantResponses = responses
     }
     
-    /// Sets responses for a specific participant (used for CloudKit sync)
+    /// Sets responses for a specific participant during sync merge.
     /// - Parameters:
     ///   - participant: Name of the participant
     ///   - responses: Array of responses to set

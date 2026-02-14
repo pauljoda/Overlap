@@ -9,10 +9,24 @@ import SwiftUI
 
 struct CompletedOverlapListItem: View {
     let overlap: Overlap
+    @EnvironmentObject private var onlineSessionService: OnlineSessionService
+    @EnvironmentObject private var onlineHostAuthService: OnlineHostAuthService
+
+    private var hostedSession: HostedOnlineSession? {
+        guard overlap.isOnline, let sessionID = overlap.onlineSessionID else { return nil }
+        return onlineSessionService.hostedSession(id: sessionID)
+    }
+
+    private var isCurrentDeviceHost: Bool {
+        guard let hostedSession,
+              let account = onlineHostAuthService.account
+        else { return false }
+        return hostedSession.hostAppleUserID == account.appleUserID
+    }
     
     var body: some View {
-        HStack(spacing: 12) {
-            // Leading icon with gradient from overlap's colors
+        HStack(spacing: Tokens.Spacing.m) {
+            // Leading icon with gradient
             Circle()
                 .fill(
                     LinearGradient(
@@ -21,80 +35,92 @@ struct CompletedOverlapListItem: View {
                         endPoint: .bottomTrailing
                     )
                 )
-                .frame(width: 50, height: 50)
+                .frame(width: Tokens.Size.buttonStandard, height: Tokens.Size.buttonStandard)
                 .overlay(
                     Text(overlap.iconEmoji)
                         .font(.title2)
                 )
-            
+
             // Main content
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: Tokens.Spacing.xs) {
                 Text(overlap.title)
                     .font(.headline)
                     .fontWeight(.medium)
                     .foregroundColor(.primary)
-                    .lineLimit(2)
-                
-                // Session info
-                HStack(spacing: 12) {
-                    // Participants count
-                    HStack(spacing: 4) {
+                    .lineLimit(1)
+
+                // Metadata row — compact with icon pills
+                HStack(spacing: Tokens.Spacing.s) {
+                    if overlap.isOnline {
+                        iconPill(icon: "icloud.fill", tint: .blue)
+                    }
+
+                    if isCurrentDeviceHost {
+                        iconPill(icon: "crown.fill", tint: .green)
+                    }
+
+                    HStack(spacing: Tokens.Spacing.xs) {
                         Image(systemName: "person.2.fill")
                             .font(.caption2)
-                            .foregroundColor(.secondary)
-                        Text("\(overlap.participants.count) participants")
+                        Text("\(overlap.participants.count)")
                             .font(.caption)
-                            .foregroundColor(.secondary)
                     }
-                    
-                    // Separator
+                    .foregroundColor(.secondary)
+
                     Circle()
                         .fill(Color.secondary)
                         .frame(width: 2, height: 2)
-                    
-                    // Questions count
-                    HStack(spacing: 4) {
+
+                    HStack(spacing: Tokens.Spacing.xs) {
                         Image(systemName: "questionmark.circle.fill")
                             .font(.caption2)
-                            .foregroundColor(.secondary)
-                        Text("\(overlap.questions.count) questions")
+                        Text("\(overlap.questions.count) Qs")
                             .font(.caption)
-                            .foregroundColor(.secondary)
                     }
-                    
+                    .foregroundColor(.secondary)
+
                     Spacer()
                 }
-                
+
                 // Completion date
                 if let completeDate = overlap.completeDate {
-                    HStack(spacing: 4) {
-                        Image(systemName: "calendar")
+                    HStack(spacing: Tokens.Spacing.xs) {
+                        Image(systemName: "checkmark.circle.fill")
                             .font(.caption2)
                             .foregroundColor(.green)
-                        Text("Completed \(completeDate, style: .date)")
+                        Text(completeDate, style: .date)
                             .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundColor(.green)
+                            .foregroundColor(.secondary)
                     }
                 }
             }
-            
+
             Spacer()
-            
-            // Trailing chevron
+
             Image(systemName: "chevron.right")
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
         .padding(.vertical, Tokens.Spacing.s)
         .padding(.horizontal, Tokens.Spacing.m)
-        .frame(maxWidth: .infinity, alignment: .leading) // Ensure full width touch target
-        .contentShape(Rectangle()) // Make entire area tappable
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
         .standardGlassCard()
+    }
+
+    private func iconPill(icon: String, tint: Color) -> some View {
+        Image(systemName: icon)
+            .font(.caption2)
+            .foregroundColor(tint)
+            .padding(Tokens.Spacing.xs)
+            .background(tint.opacity(0.15))
+            .clipShape(Circle())
     }
 }
 
 #Preview {
     CompletedOverlapListItem(overlap: SampleData.sampleCompletedOverlap)
+        .environmentObject(OnlineSessionService.shared)
+        .environmentObject(OnlineHostAuthService.shared)
         .padding()
 }

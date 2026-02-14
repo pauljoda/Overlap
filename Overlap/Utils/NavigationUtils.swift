@@ -14,7 +14,13 @@ enum NavigationDestination {
     case inProgress
     case completed
     case browse
+    case settings
     case edit(questionnaireId: UUID)
+}
+
+enum OnlineNavigationDestination: Hashable {
+    case hostSetup(questionnaireID: UUID)
+    case joinSession(prefilledInvite: String?)
 }
 
 func navigate(to destination: NavigationDestination, using navigationPath: Binding<NavigationPath>) {
@@ -29,6 +35,8 @@ func navigate(to destination: NavigationDestination, using navigationPath: Bindi
         navigationPath.wrappedValue.append("completed")
     case .browse:
         navigationPath.wrappedValue.append("browse")
+    case .settings:
+        navigationPath.wrappedValue.append("settings")
     case .edit(let questionnaireId):
         navigationPath.wrappedValue.append("edit-\(questionnaireId.uuidString)")
     }
@@ -55,4 +63,15 @@ func navigate(
         navigationPath.wrappedValue.removeLast()
     }
     navigationPath.wrappedValue.append(overlap)
+}
+
+func navigate(
+    to destination: OnlineNavigationDestination,
+    using navigationPath: Binding<NavigationPath>,
+    replaceCurrent: Bool = false
+) {
+    if replaceCurrent, navigationPath.wrappedValue.count > 0 {
+        navigationPath.wrappedValue.removeLast()
+    }
+    navigationPath.wrappedValue.append(destination)
 }

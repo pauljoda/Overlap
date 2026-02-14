@@ -31,6 +31,19 @@ struct HomeMenuOptions: View {
                     color: .purple
                 )
             }
+
+            Button(action: {
+                navigate(
+                    to: .joinSession(prefilledInvite: nil),
+                    using: navigationPath
+                )
+            }) {
+                HomeOptionButton(
+                    title: "Join Session",
+                    icon: "person.2.wave.2.fill",
+                    color: .teal
+                )
+            }
             
             Button(action: {
                 navigate(to: .inProgress, using: navigationPath)
@@ -59,6 +72,16 @@ struct HomeMenuOptions: View {
                     title: "Browse",
                     icon: "list.bullet.rectangle.fill",
                     color: .red
+                )
+            }
+
+            Button(action: {
+                navigate(to: .settings, using: navigationPath)
+            }) {
+                HomeOptionButton(
+                    title: "Settings",
+                    icon: "gearshape.fill",
+                    color: .gray
                 )
             }
         }
