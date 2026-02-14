@@ -6,6 +6,52 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ---
 
+## [1.3.0] - 2026-02-14
+
+Questionnaire import/export via `.overlap` files, UI polish, and bug fixes.
+
+### Added
+
+- **Questionnaire export**: Share button on questionnaire detail view exports as `.overlap` file (JSON) via system share sheet using `ShareLink` + `Transferable`.
+- **Questionnaire import**: Import button on create/edit view reads `.overlap` or `.json` files via system file picker, with confirmation dialog before overwriting current fields.
+- **Custom file type**: Registered `com.pauljoda.Overlap.questionnaire` UTType with `.overlap` extension; app opens `.overlap` files from Files or other apps.
+- **File open handling**: Tapping a `.overlap` file outside the app imports the questionnaire into the library and navigates to its detail view.
+- **`QuestionnaireTransferData`**: Lightweight `Codable` + `Transferable` value type decoupled from SwiftData for safe cross-boundary file serialization.
+- **App icon in Settings**: About section now displays the real app icon instead of a generic SF Symbol.
+- **`LSSupportsOpeningDocumentsInPlace`**: Info.plist declares in-place document support for proper file handling.
+
+### Changed
+
+- **AI Assist length picker**: Removed card background from segmented picker for cleaner appearance.
+- **Version**: Bumped to 1.3.0 (MARKETING_VERSION) / build 4 (CURRENT_PROJECT_VERSION).
+
+### Fixed
+
+- **Online session participant removal**: Removing the second participant from a completed session now correctly transitions back to the awaiting phase instead of showing "No more questions" to the host.
+
+---
+
+## [1.2.0] - 2026-02-14
+
+AI-assisted questionnaire creation using Apple's on-device Foundation Models.
+
+### Added
+
+- **AI Assist in Create flow**: Toolbar button (Apple Intelligence icon) on the Create/Edit Questionnaire screen opens an AI-powered generation sheet.
+- **On-device AI generation**: Uses Apple Foundation Models framework with `@Generable` structured output for reliable, typed questionnaire generation — all processing stays on-device.
+- **AI Assist flyout sheet**: Three-phase UI (input → generating → results) with prompt field, length picker (Short/Medium/Long), and toggles for title, description, instructions, and replace/append behavior.
+- **Streaming generation with animations**: Pulsing Apple Intelligence icon, rotating gradient ring, cycling status messages, and live partial result previews (title and question count) during generation.
+- **`AIGenerationService`**: Isolated service wrapping `LanguageModelSession` with structured streaming, error handling (guardrail violations, context limits), and state management.
+- **`AIGeneratingView`**: Animated loading component with accessibility support (`reduceMotion` respected).
+- **Device availability gating**: AI Assist button only appears on devices that support Foundation Models (`SystemLanguageModel.default.availability`).
+- **Flexible result application**: Users choose to generate title/description and instructions independently, and can replace or append to existing questions.
+
+### Changed
+
+- **Version**: Bumped to 1.2.0 (MARKETING_VERSION) / build 3 (CURRENT_PROJECT_VERSION).
+
+---
+
 ## [1.1.0] - 2026-02-14
 
 Online overhaul, new features (Settings, Browse, Favorite Groups), and Liquid Glass design polish.

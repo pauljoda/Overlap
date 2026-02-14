@@ -7,6 +7,7 @@
 
 import SwiftData
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct QuestionnaireDetailView: View {
     let questionnaire: Questionnaire
@@ -59,8 +60,21 @@ struct QuestionnaireDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button("Edit") {
-                    editQuestionnaire()
+                HStack(spacing: Tokens.Spacing.m) {
+                    ShareLink(
+                        item: QuestionnaireTransferData(from: questionnaire),
+                        preview: SharePreview(
+                            questionnaire.title,
+                            icon: Image(systemName: "doc.fill")
+                        )
+                    ) {
+                        Image(systemName: "square.and.arrow.up")
+                    }
+                    .accessibilityLabel("Export Questionnaire")
+
+                    Button("Edit") {
+                        editQuestionnaire()
+                    }
                 }
             }
         }

@@ -7,6 +7,10 @@
 
 import SwiftData
 import SwiftUI
+import UniformTypeIdentifiers
+#if canImport(FoundationModels)
+import FoundationModels
+#endif
 
 struct CreateQuestionnaireView: View {
     @Environment(\.modelContext) private var modelContext
@@ -19,6 +23,16 @@ struct CreateQuestionnaireView: View {
 
     @State private var questionnaire = Questionnaire()
     @State private var questions: [String] = [""]
+
+    // AI Assist
+    #if canImport(FoundationModels)
+    @State private var showingAIAssist = false
+    #endif
+
+    // Import
+    @State private var showingImporter = false
+    @State private var showingImportConfirmation = false
+    @State private var pendingImportData: QuestionnaireTransferData?
 
     // Create a binding that works with either the editing questionnaire or the local one
     private var questionnaireBinding: Binding<Questionnaire> {
@@ -152,7 +166,56 @@ struct CreateQuestionnaireView: View {
                 focusedField = .question(newValue)
             }
         }
+        #if canImport(FoundationModels)
+        .sheet(isPresented: $showingAIAssist) {
+            AIAssistFlyout { result, options in
+                applyAIResult(result, options: options)
+            }
+            .presentationDetents([.medium, .large])
+            .presentationBackground(.ultraThinMaterial)
+        }
+        #endif
+        .fileImporter(
+            isPresented: $showingImporter,
+            allowedContentTypes: [.overlapQuestionnaire, .json],
+            allowsMultipleSelection: false
+        ) { result in
+            handleImportResult(result)
+        }
+        .alert("Import Questionnaire?", isPresented: $showingImportConfirmation) {
+            Button("Cancel", role: .cancel) {
+                pendingImportData = nil
+            }
+            Button("Import", role: .destructive) {
+                if let data = pendingImportData {
+                    applyImportedData(data)
+                    pendingImportData = nil
+                }
+            }
+        } message: {
+            Text("This will overwrite the current title, description, instructions, and questions with the imported data.")
+        }
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                HStack(spacing: Tokens.Spacing.s) {
+                    #if canImport(FoundationModels)
+                    if SystemLanguageModel.default.availability == .available {
+                        Button { showingAIAssist = true } label: {
+                            Image(systemName: "apple.intelligence")
+                        }
+                        .accessibilityLabel("AI Assist")
+                        .accessibilityHint("Generate questionnaire content using on-device AI")
+                    }
+                    #endif
+
+                    Button { showingImporter = true } label: {
+                        Image(systemName: "square.and.arrow.down")
+                    }
+                    .accessibilityLabel("Import Questionnaire")
+                    .accessibilityHint("Import a questionnaire from a file")
+                }
+            }
+
             ToolbarItem(placement: .topBarTrailing) {
                 if isValid {
                     Button(action: saveQuestionnaire) {
@@ -187,6 +250,72 @@ struct CreateQuestionnaireView: View {
             }
         }
 
+    }
+
+    #if canImport(FoundationModels)
+    private func applyAIResult(_ result: GeneratedQuestionnaire, options: AIAssistOptions) {
+        let currentQuestionnaire = questionnaireBinding.wrappedValue
+
+        if options.generateTitleAndDescription {
+            currentQuestionnaire.title = result.title
+            currentQuestionnaire.information = result.information
+        }
+
+        if options.generateInstructions {
+            currentQuestionnaire.instructions = result.instructions
+        }
+
+        if options.replaceExisting {
+            questions = result.questions
+        } else {
+            // Append: remove trailing empty questions first, then add
+            let trimmed = questions.filter {
+                !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            }
+            questions = trimmed + result.questions
+        }
+
+        // Ensure at least one question exists
+        if questions.isEmpty {
+            questions = [""]
+        }
+    }
+    #endif
+
+    private func handleImportResult(_ result: Result<[URL], Error>) {
+        switch result {
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            guard url.startAccessingSecurityScopedResource() else { return }
+            defer { url.stopAccessingSecurityScopedResource() }
+
+            do {
+                let data = try Data(contentsOf: url)
+                let transfer = try QuestionnaireTransferData.fromJSON(data)
+                pendingImportData = transfer
+                showingImportConfirmation = true
+            } catch {
+                print("Import failed: \(error.localizedDescription)")
+            }
+        case .failure(let error):
+            print("File selection failed: \(error.localizedDescription)")
+        }
+    }
+
+    private func applyImportedData(_ data: QuestionnaireTransferData) {
+        let currentQuestionnaire = questionnaireBinding.wrappedValue
+        currentQuestionnaire.title = data.title
+        currentQuestionnaire.information = data.information
+        currentQuestionnaire.instructions = data.instructions
+        currentQuestionnaire.author = data.author
+        currentQuestionnaire.iconEmoji = data.iconEmoji
+        currentQuestionnaire.startColorRed = data.startColorRed
+        currentQuestionnaire.startColorGreen = data.startColorGreen
+        currentQuestionnaire.startColorBlue = data.startColorBlue
+        currentQuestionnaire.endColorRed = data.endColorRed
+        currentQuestionnaire.endColorGreen = data.endColorGreen
+        currentQuestionnaire.endColorBlue = data.endColorBlue
+        questions = data.questions.isEmpty ? [""] : data.questions
     }
 
     private func saveQuestionnaire() {

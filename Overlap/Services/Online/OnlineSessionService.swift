@@ -981,7 +981,7 @@ final class OnlineSessionService: ObservableObject {
         }
         guard !duplicateTarget else { return }
 
-        let previousPhase = session.phase
+
         let previousName = session.participantDisplayNames[idx]
         session.participantDisplayNames[idx] = newTrimmed
         if session.hostDisplayName.caseInsensitiveCompare(previousName) == .orderedSame {
@@ -1005,11 +1005,7 @@ final class OnlineSessionService: ObservableObject {
         }
 
         session.updatedAt = Date.now
-        if previousPhase == .complete {
-            session.phase = .active
-        } else {
-            recomputePhase(&session)
-        }
+        recomputePhase(&session)
     }
 
     private static func removeParticipant(
@@ -1025,7 +1021,7 @@ final class OnlineSessionService: ObservableObject {
             return
         }
 
-        let previousPhase = session.phase
+
         let existingName = session.participantDisplayNames[idx]
         if session.hostDisplayName.caseInsensitiveCompare(existingName) == .orderedSame {
             throw OnlineSessionError.backendFailure("Host cannot be removed from the session.")
@@ -1038,11 +1034,7 @@ final class OnlineSessionService: ObservableObject {
         session.participantIDsByDisplayName.removeValue(forKey: existingName)
         session.updatedAt = Date.now
 
-        if previousPhase == .complete {
-            session.phase = .active
-        } else {
-            recomputePhase(&session)
-        }
+        recomputePhase(&session)
     }
 
     private static func applyAnswer(

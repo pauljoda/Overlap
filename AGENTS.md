@@ -11,13 +11,16 @@ Overlap is an iOS SwiftUI app for running "overlap" questionnaires in local and 
 - Runtime: iOS app target via Xcode
 - Data: SwiftData (local persistence) and Firebase Firestore (hosted online sessions)
 - Auth: Firebase Auth with Apple Sign In
+- AI: Apple Foundation Models (on-device structured generation with `@Generable`)
 - Payments: StoreKit 2 (subscription-gated online hosting)
 - Tooling: Xcode, xcodebuild, Swift Package Manager
 - Testing: XCTest (when tests are present)
 
 ## Core Features
 
-- Questionnaire authoring, editing, and local session play.
+- Questionnaire authoring, editing, and local session play — with optional AI-assisted creation via Apple Foundation Models.
+- AI Assist: On-device structured generation of questionnaire titles, descriptions, instructions, and questions with streaming UI.
+- Import/Export: Share questionnaires as `.overlap` files (JSON) via system share sheet; import from Files or other apps with automatic library integration.
 - In-progress and completed overlap session tracking.
 - Online hosting with Firebase Firestore: real-time session sync, invite links, host management.
 - StoreKit 2 subscription gating for online hosting access.
@@ -27,8 +30,8 @@ Overlap is an iOS SwiftUI app for running "overlap" questionnaires in local and 
 
 ## Current Version
 
-- **Marketing Version**: 1.1.0
-- **Build Number**: 2
+- **Marketing Version**: 1.3.0
+- **Build Number**: 4
 - Version is set in `Overlap.xcodeproj/project.pbxproj` (`MARKETING_VERSION` / `CURRENT_PROJECT_VERSION`).
 - Version is displayed to users in Settings → About section (reads from `CFBundleShortVersionString` and `CFBundleVersion`).
 
@@ -51,14 +54,14 @@ xcodebuild -project /Users/pauldavis/Dev/Overlap/Overlap.xcodeproj -scheme Overl
 /Users/pauldavis/Dev/Overlap
 |- Overlap/                    # App source
 |  |- Design/                  # DesignTokens.swift (Tokens namespace)
-|  |- Models/                  # BrowseQuestionnaire, Data/ (Questionnaire, Overlap, FavoriteGroup)
-|  |- Services/                # BrowseCatalogService, Online/ (Session, Auth, Subscription, Snapshot, Identity, Firebase)
+|  |- Models/                  # BrowseQuestionnaire, Data/ (Questionnaire, Overlap, FavoriteGroup, QuestionnaireTransferData)
+|  |- Services/                # AIGenerationService, BrowseCatalogService, Online/ (Session, Auth, Subscription, Snapshot, Identity, Firebase)
 |  |- Utils/                   # NavigationUtils, ColorHex
 |  |- Views/                   # All UI views organized by feature
 |     |- Browse/               # BrowseView, Components/BrowseQuestionnaireCard
 |     |- Completed/            # CompletedView, Components/
 |     |- Components/           # Shared: GlassScreen, GlassActionButton, BlobBackground, HomeMenuOptions, etc.
-|     |- Create/               # CreateQuestionnaireView (design gold standard)
+|     |- Create/               # CreateQuestionnaireView (design gold standard), Components/ (AIAssistFlyout, AIGeneratingView, QuestionEditor, etc.)
 |     |- InProgress/           # InProgressView, Components/
 |     |- Online/               # OnlineSessionSetupView, JoinOnlineSessionView, Components/ (SubscriptionFlyout, InviteCodeCard, OnlineHostManagementSheet)
 |     |- Questionnaire/        # QuestionnaireView (state router), Answering/, AwaitingResponses/, Complete/, Instructions/, Participant/

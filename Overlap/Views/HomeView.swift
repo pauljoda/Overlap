@@ -146,6 +146,13 @@ struct HomeView: View {
             applyHostedSnapshotsToLocalOverlaps()
         }
         .onOpenURL { url in
+            // Handle .overlap file imports
+            if url.pathExtension.lowercased() == "overlap" {
+                importQuestionnaireFromFile(url: url)
+                return
+            }
+
+            // Handle invite deep links
             guard let invite = onlineSessionService.parseInvite(from: url) else {
                 return
             }
@@ -154,6 +161,25 @@ struct HomeView: View {
                 to: .joinSession(prefilledInvite: invite),
                 using: $path
             )
+        }
+    }
+
+    private func importQuestionnaireFromFile(url: URL) {
+        guard url.startAccessingSecurityScopedResource() else { return }
+        defer { url.stopAccessingSecurityScopedResource() }
+
+        do {
+            let data = try Data(contentsOf: url)
+            let transfer = try QuestionnaireTransferData.fromJSON(data)
+            let questionnaire = transfer.toQuestionnaire()
+            questionnaire.creationDate = Date.now
+            modelContext.insert(questionnaire)
+            try modelContext.save()
+
+            // Navigate to the imported questionnaire's detail view
+            navigate(to: questionnaire, using: $path)
+        } catch {
+            print("Failed to import questionnaire from file: \(error.localizedDescription)")
         }
     }
 

@@ -323,9 +323,27 @@ struct SettingsView: View {
             SectionHeader(title: "About", icon: "info.circle.fill")
 
             HStack(spacing: Tokens.Spacing.m) {
-                Image(systemName: "app.fill")
-                    .font(.title2)
-                    .foregroundColor(.blue)
+                Group {
+                    if let icons = Bundle.main.object(forInfoDictionaryKey: "CFBundleIcons") as? [String: Any],
+                       let primary = icons["CFBundlePrimaryIcon"] as? [String: Any],
+                       let iconFiles = primary["CFBundleIconFiles"] as? [String],
+                       let iconName = iconFiles.last,
+                       let uiImage = UIImage(named: iconName) {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                    } else if let uiImage = UIImage(named: "AppIcon60x60") {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                    } else {
+                        Image(systemName: "app.fill")
+                            .font(.title2)
+                            .foregroundColor(.blue)
+                    }
+                }
+                .frame(width: 44, height: 44)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
 
                 VStack(alignment: .leading, spacing: Tokens.Spacing.xs) {
                     Text("Overlap")
