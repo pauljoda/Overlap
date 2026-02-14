@@ -15,12 +15,38 @@ import SwiftUI
 /// - Responsive design
 struct QuestionnaireHeader: View {
     let overlap: Overlap
+    @EnvironmentObject private var onlineSessionService: OnlineSessionService
+    @EnvironmentObject private var onlineHostAuthService: OnlineHostAuthService
+
+    private var hostedSession: HostedOnlineSession? {
+        guard overlap.isOnline, let sessionID = overlap.onlineSessionID else { return nil }
+        return onlineSessionService.hostedSession(id: sessionID)
+    }
+
+    private var isCurrentDeviceHost: Bool {
+        guard let hostedSession,
+              let account = onlineHostAuthService.account
+        else { return false }
+        return hostedSession.hostAppleUserID == account.appleUserID
+    }
     
     var body: some View {
-        VStack(spacing: 16) {
-            HStack {
-                Spacer()
-                OnlineIndicator(isOnline: overlap.isOnline, style: .detailed)
+        VStack(spacing: Tokens.Spacing.l) {
+            if overlap.isOnline {
+                HStack(spacing: Tokens.Spacing.s) {
+                    Spacer()
+                    OnlineIndicator(isOnline: true, style: .detailed)
+                    if isCurrentDeviceHost {
+                        Text("Host")
+                            .font(.caption2)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.green)
+                            .padding(.horizontal, Tokens.Spacing.s)
+                            .padding(.vertical, 4)
+                            .background(Color.green.opacity(0.15))
+                            .clipShape(Capsule())
+                    }
+                }
             }
             
             Text(overlap.title)
@@ -41,5 +67,7 @@ struct QuestionnaireHeader: View {
 
 #Preview {
     QuestionnaireHeader(overlap: SampleData.sampleOverlap)
+        .environmentObject(OnlineSessionService.shared)
+        .environmentObject(OnlineHostAuthService.shared)
         .padding()
 }

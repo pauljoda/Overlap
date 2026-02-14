@@ -1,0 +1,175 @@
+{
+  "version": 1,
+  "questionnaires": [
+    {
+      "id": "B0000001-0000-0000-0000-000000000001",
+      "title": "Weekend Plans",
+      "information": "A quick pulse on what everyone's up for this weekend.",
+      "instructions": "Answer honestly — there are no wrong answers!",
+      "author": "Overlap Team",
+      "questions": [
+        "Go on a hike?",
+        "Try a new restaurant?",
+        "Have a movie marathon?",
+        "Visit a farmers market?",
+        "Go to the beach or lake?",
+        "Have a game night?",
+        "Cook a big meal together?",
+        "Sleep in and do nothing?"
+      ],
+      "iconEmoji": "🏔️",
+      "startColorHex": "#FF6B35",
+      "endColorHex": "#004E89",
+      "category": "Social"
+    },
+    {
+      "id": "B0000002-0000-0000-0000-000000000002",
+      "title": "Vacation Vibes",
+      "information": "Find out where your travel tastes overlap.",
+      "instructions": "Think about your ideal vacation and answer each question.",
+      "author": "Overlap Team",
+      "questions": [
+        "Beach vacation?",
+        "Mountain retreat?",
+        "City exploration?",
+        "Road trip adventure?",
+        "Camping in the wilderness?",
+        "Cruise ship getaway?",
+        "Cultural tour abroad?",
+        "Staycation at home?"
+      ],
+      "iconEmoji": "✈️",
+      "startColorHex": "#00B4D8",
+      "endColorHex": "#0077B6",
+      "category": "Travel"
+    },
+    {
+      "id": "B0000003-0000-0000-0000-000000000003",
+      "title": "Movie Night Picks",
+      "information": "See which movie genres your group agrees on.",
+      "instructions": "Would you watch this type of movie tonight?",
+      "author": "Overlap Team",
+      "questions": [
+        "Action blockbuster?",
+        "Romantic comedy?",
+        "Horror thriller?",
+        "Animated film?",
+        "Documentary?",
+        "Sci-fi adventure?",
+        "Classic black and white?",
+        "Foreign film with subtitles?"
+      ],
+      "iconEmoji": "🎬",
+      "startColorHex": "#E63946",
+      "endColorHex": "#1D3557",
+      "category": "Entertainment"
+    },
+    {
+      "id": "B0000004-0000-0000-0000-000000000004",
+      "title": "Food Preferences",
+      "information": "Discover what cuisines and foods everyone enjoys.",
+      "instructions": "Would you eat this right now?",
+      "author": "Overlap Team",
+      "questions": [
+        "Sushi?",
+        "Pizza?",
+        "Tacos?",
+        "Thai food?",
+        "Indian curry?",
+        "Burgers and fries?",
+        "Mediterranean bowl?",
+        "Ramen?",
+        "Breakfast for dinner?",
+        "Vegan meal?"
+      ],
+      "iconEmoji": "🍕",
+      "startColorHex": "#F4A261",
+      "endColorHex": "#E76F51",
+      "category": "Food"
+    },
+    {
+      "id": "B0000005-0000-0000-0000-000000000005",
+      "title": "Team Building",
+      "information": "Find common ground with your coworkers.",
+      "instructions": "Answer based on your genuine preferences, not what you think others will say.",
+      "author": "Overlap Team",
+      "questions": [
+        "Morning person?",
+        "Prefer working from home?",
+        "Enjoy team lunches?",
+        "Like brainstorming sessions?",
+        "Comfortable with public speaking?",
+        "Prefer email over meetings?",
+        "Enjoy after-work socializing?",
+        "Like learning new tools?"
+      ],
+      "iconEmoji": "🤝",
+      "startColorHex": "#2A9D8F",
+      "endColorHex": "#264653",
+      "category": "Work"
+    },
+    {
+      "id": "B0000006-0000-0000-0000-000000000006",
+      "title": "Family Game Night",
+      "information": "What games does the family want to play?",
+      "instructions": "Would you play this tonight?",
+      "author": "Overlap Team",
+      "questions": [
+        "Board game?",
+        "Card game?",
+        "Video game together?",
+        "Charades or acting games?",
+        "Trivia quiz?",
+        "Puzzle challenge?",
+        "Outdoor lawn games?",
+        "Drawing or creative game?"
+      ],
+      "iconEmoji": "🎲",
+      "startColorHex": "#7B2CBF",
+      "endColorHex": "#3C096C",
+      "category": "Family"
+    },
+    {
+      "id": "B0000007-0000-0000-0000-000000000007",
+      "title": "Fitness Goals",
+      "information": "See which fitness activities your group overlaps on.",
+      "instructions": "Would you do this activity this week?",
+      "author": "Overlap Team",
+      "questions": [
+        "Go for a run?",
+        "Yoga session?",
+        "Weight training?",
+        "Swimming?",
+        "Cycling?",
+        "Group fitness class?",
+        "Hiking trail?",
+        "Dance workout?"
+      ],
+      "iconEmoji": "💪",
+      "startColorHex": "#06D6A0",
+      "endColorHex": "#118AB2",
+      "category": "Health"
+    },
+    {
+      "id": "B0000008-0000-0000-0000-000000000008",
+      "title": "Date Night Ideas",
+      "information": "Find out what date activities you both want.",
+      "instructions": "Would you enjoy this as a date?",
+      "author": "Overlap Team",
+      "questions": [
+        "Fancy dinner out?",
+        "Cook together at home?",
+        "See a live show or concert?",
+        "Outdoor picnic?",
+        "Museum or art gallery?",
+        "Mini golf or arcade?",
+        "Stargazing?",
+        "Bookstore and coffee?"
+      ],
+      "iconEmoji": "💕",
+      "startColorHex": "#FF006E",
+      "endColorHex": "#8338EC",
+      "category": "Social"
+    }
+  ]
+}

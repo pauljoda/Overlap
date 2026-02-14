@@ -119,6 +119,13 @@ struct VisualCustomizationSection: View {
         questionnaire.endColor = start
     }
 
+    private static let randomEmojis = [
+        "📝", "🎯", "🏔️", "✈️", "🎬", "🍕", "🤝", "🎲",
+        "💪", "💕", "🌊", "🎨", "🎵", "📚", "🌟", "🏆",
+        "🎉", "🧩", "🌈", "🔥", "💡", "🚀", "🎸", "☕",
+        "🌻", "🐾", "⚡", "🎭", "🍜", "🏖️", "🎤", "🎧"
+    ]
+
     private func randomizeColors() {
         // Generate harmonious gradient using HSB
         let hue = Double.random(in: 0...1)
@@ -129,6 +136,14 @@ struct VisualCustomizationSection: View {
         let end = Color(hue: endHue, saturation: 0.7, brightness: 0.85)
         questionnaire.startColor = start
         questionnaire.endColor = end
+
+        // Also randomize the emoji
+        let currentEmoji = questionnaire.iconEmoji
+        var newEmoji = Self.randomEmojis.randomElement() ?? "📝"
+        if newEmoji == currentEmoji, Self.randomEmojis.count > 1 {
+            newEmoji = Self.randomEmojis.filter { $0 != currentEmoji }.randomElement() ?? "📝"
+        }
+        questionnaire.iconEmoji = newEmoji
     }
 }
 

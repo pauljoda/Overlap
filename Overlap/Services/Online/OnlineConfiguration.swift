@@ -10,6 +10,7 @@ import Foundation
 enum OnlineConfiguration {
     static let maxParticipants = 25
     static let sessionLifetimeDays = 30
+    static let firebaseFunctionsRegion = "us-central1"
 
     // Placeholder domain for universal-link invites.
     static let inviteHost = "join.overlapapp.link"
@@ -22,4 +23,10 @@ enum OnlineConfiguration {
 
     static let monthlyPriceUSD: Decimal = 2.99
     static let yearlyPriceUSD: Decimal = 24.99
+    static let monthlyProductID = "overlap.online.monthly"
+    static let yearlyProductID = "overlap.online.yearly"
+    static let hostSubscriptionProductIDs = [
+        monthlyProductID,
+        yearlyProductID
+    ]
 }

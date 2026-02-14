@@ -9,25 +9,39 @@ import SwiftUI
 
 struct InProgressOverlapListItem: View {
     let overlap: Overlap
+    @EnvironmentObject private var onlineSessionService: OnlineSessionService
+    @EnvironmentObject private var onlineHostAuthService: OnlineHostAuthService
     
     private var stateInfo: (String, Color, String) {
         switch overlap.currentState {
         case .instructions:
-            return ("Setting up", .blue, "person.2.fill")
+            return ("Setup", .blue, "person.2.fill")
         case .nextParticipant:
-            return ("Ready to start", .green, "play.fill")
+            return ("Ready", .green, "play.fill")
         case .answering:
-            return ("In progress", .orange, "clock.fill")
+            return ("Answering", .orange, "clock.fill")
         case .awaitingResponses:
-            return ("Awaiting responses", .orange, "clock.badge.checkmark")
+            return ("Awaiting", .orange, "clock.badge.checkmark")
         case .complete:
             return ("Complete", .green, "checkmark.circle.fill")
         }
     }
+
+    private var hostedSession: HostedOnlineSession? {
+        guard overlap.isOnline, let sessionID = overlap.onlineSessionID else { return nil }
+        return onlineSessionService.hostedSession(id: sessionID)
+    }
+
+    private var isCurrentDeviceHost: Bool {
+        guard let hostedSession,
+              let account = onlineHostAuthService.account
+        else { return false }
+        return hostedSession.hostAppleUserID == account.appleUserID
+    }
     
     var body: some View {
-        HStack(spacing: 12) {
-            // Leading icon with gradient from overlap's colors
+        HStack(spacing: Tokens.Spacing.m) {
+            // Leading icon with gradient
             Circle()
                 .fill(
                     LinearGradient(
@@ -36,79 +50,90 @@ struct InProgressOverlapListItem: View {
                         endPoint: .bottomTrailing
                     )
                 )
-                .frame(width: 50, height: 50)
+                .frame(width: Tokens.Size.buttonStandard, height: Tokens.Size.buttonStandard)
                 .overlay(
                     Text(overlap.iconEmoji)
                         .font(.title2)
                 )
-            
+
             // Main content
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: Tokens.Spacing.xs) {
                 Text(overlap.title)
                     .font(.headline)
                     .fontWeight(.medium)
                     .foregroundColor(.primary)
-                    .lineLimit(2)
-                
-                // Progress info
-                Text("\(overlap.participants.count) participants")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
                     .lineLimit(1)
-                
-                // Status and metadata
-                HStack(spacing: 12) {
-                    // Status
-                    HStack(spacing: 4) {
+
+                // Participants
+                HStack(spacing: Tokens.Spacing.xs) {
+                    Image(systemName: "person.2.fill")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                    Text("\(overlap.participants.count) participants")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                // Status row — compact icon pills to prevent overflow
+                HStack(spacing: Tokens.Spacing.s) {
+                    HStack(spacing: Tokens.Spacing.xs) {
                         Image(systemName: stateInfo.2)
                             .font(.caption2)
-                            .foregroundColor(stateInfo.1)
                         Text(stateInfo.0)
                             .font(.caption)
                             .fontWeight(.medium)
-                            .foregroundColor(stateInfo.1)
                     }
-                    
-                    // Online indicator
-                    OnlineIndicator(isOnline: overlap.isOnline, style: .compact)
-                    
+                    .foregroundColor(stateInfo.1)
+
+                    if overlap.isOnline {
+                        iconPill(icon: "icloud.fill", tint: .blue)
+                    }
+
+                    if isCurrentDeviceHost {
+                        iconPill(icon: "crown.fill", tint: .green)
+                    }
+
                     if overlap.currentState != .instructions {
-                        // Separator
                         Circle()
                             .fill(Color.secondary)
                             .frame(width: 2, height: 2)
-                        
-                        // Progress indicator
-                        HStack(spacing: 4) {
-                            Image(systemName: "chart.bar.fill")
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
-                            Text("\(Int(overlap.completionPercentage * 100))% complete")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
+
+                        Text("\(Int(overlap.completionPercentage * 100))%")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(.secondary)
                     }
-                    
+
                     Spacer()
                 }
             }
-            
+
             Spacer()
-            
-            // Trailing chevron
+
             Image(systemName: "chevron.right")
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
         .padding(.vertical, Tokens.Spacing.s)
         .padding(.horizontal, Tokens.Spacing.m)
-        .frame(maxWidth: .infinity, alignment: .leading) // Ensure full width touch target
-        .contentShape(Rectangle()) // Make entire area tappable
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
         .standardGlassCard()
+    }
+
+    private func iconPill(icon: String, tint: Color) -> some View {
+        Image(systemName: icon)
+            .font(.caption2)
+            .foregroundColor(tint)
+            .padding(Tokens.Spacing.xs)
+            .background(tint.opacity(0.15))
+            .clipShape(Circle())
     }
 }
 
 #Preview {
     InProgressOverlapListItem(overlap: SampleData.sampleInProgressOverlap)
+        .environmentObject(OnlineSessionService.shared)
+        .environmentObject(OnlineHostAuthService.shared)
         .padding()
 }

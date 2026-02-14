@@ -65,6 +65,14 @@ class Overlap {
     var participants: [String] = []
     /// Whether this is an online collaborative session or local only
     var isOnline: Bool = false
+    /// Linked hosted session identifier for online overlaps
+    var onlineSessionID: String?
+    /// Last known invite code for the linked hosted session
+    var onlineInviteCode: String?
+    /// Stable participant identity for this device in hosted sessions
+    var onlineParticipantID: String?
+    /// Participant identity for this device in the hosted session
+    var onlineParticipantDisplayName: String?
 
     // MARK: - Questionnaire Data
     /// The title for this overlap session

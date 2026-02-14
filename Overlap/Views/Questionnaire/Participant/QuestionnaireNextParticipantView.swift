@@ -11,7 +11,9 @@ import SwiftData
 struct QuestionnaireNextParticipantView: View {
     let overlap: Overlap
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var onlineSessionService: OnlineSessionService
     @State private var isAnimated = false
+    @State private var syncErrorMessage: String?
 
     var body: some View {
         ZStack {
@@ -24,6 +26,7 @@ struct QuestionnaireNextParticipantView: View {
                     VStack(spacing: Tokens.Spacing.xl) {
                         AnimatedParticipantDisplay(
                             overlap: overlap,
+                            subtitle: overlap.isOnline ? "Your Turn" : "Next Participant",
                             isAnimated: isAnimated
                         )
 
@@ -85,18 +88,72 @@ struct QuestionnaireNextParticipantView: View {
         .onAppear {
             isAnimated = true
         }
+        .alert(
+            "Online Session",
+            isPresented: Binding(
+                get: { syncErrorMessage != nil },
+                set: { _ in syncErrorMessage = nil }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(syncErrorMessage ?? "")
+        }
     }
 
     private func beginAnswering() {
+        if overlap.isOnline,
+           let sessionID = overlap.onlineSessionID,
+           let participantID = resolvedParticipantID() {
+            Task {
+                await beginAnsweringOnline(sessionID: sessionID, participantID: participantID)
+            }
+            return
+        }
+
         overlap.currentState = .answering
-        
-        // Save state change to model context
         try? modelContext.save()
-        
-        // The session automatically handles question index management
+    }
+
+    @MainActor
+    private func beginAnsweringOnline(sessionID: String, participantID: String) async {
+        do {
+            _ = try await onlineSessionService.beginParticipantOnline(
+                sessionID: sessionID,
+                participantID: participantID
+            )
+            overlap.currentState = .answering
+            try? modelContext.save()
+        } catch {
+            syncErrorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    private func resolvedParticipantID() -> String? {
+        if let participantID = overlap.onlineParticipantID?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+           !participantID.isEmpty {
+            return participantID
+        }
+
+        guard let sessionID = overlap.onlineSessionID,
+              let participantName = overlap.onlineParticipantDisplayName,
+              let hostedSession = onlineSessionService.hostedSession(id: sessionID)
+        else {
+            return nil
+        }
+
+        let mappedID = hostedSession.participantIDsByDisplayName.first(where: {
+            $0.key.caseInsensitiveCompare(participantName) == .orderedSame
+        })?.value
+        if let mappedID {
+            overlap.onlineParticipantID = mappedID
+        }
+        return mappedID
     }
 }
 
 #Preview {
     QuestionnaireNextParticipantView(overlap: SampleData.sampleOverlap)
+        .environmentObject(OnlineSessionService.shared)
 }

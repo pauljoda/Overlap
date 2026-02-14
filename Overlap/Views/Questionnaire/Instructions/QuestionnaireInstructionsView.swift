@@ -10,16 +10,49 @@ import SwiftData
 
 struct QuestionnaireInstructionsView: View {
     let overlap: Overlap
+
+    init(overlap: Overlap) {
+        self.overlap = overlap
+    }
+
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var onlineSessionService: OnlineSessionService
+    @EnvironmentObject private var onlineHostAuthService: OnlineHostAuthService
+    @Query(sort: \FavoriteGroup.name) private var favoriteGroups: [FavoriteGroup]
     @State private var newParticipantName = ""
     @FocusState private var isTextFieldFocused: Bool
     @State private var animatingParticipants: Set<Int> = []
 
+    private var hostedSession: HostedOnlineSession? {
+        guard overlap.isOnline, let sessionID = overlap.onlineSessionID else { return nil }
+        return onlineSessionService.hostedSession(id: sessionID)
+    }
+
+    private var isCurrentDeviceHost: Bool {
+        guard let hostedSession,
+              let account = onlineHostAuthService.account
+        else { return false }
+        return hostedSession.hostAppleUserID == account.appleUserID
+    }
+
     private var canBegin: Bool {
         if overlap.isOnline {
-            // For online overlaps, allow beginning as long as there are participants
-            // (participants are set by the original creator)
-            return !overlap.participants.isEmpty
+            if let session = hostedSession,
+               let participantID = overlap.onlineParticipantID?
+                .trimmingCharacters(in: .whitespacesAndNewlines),
+               !participantID.isEmpty {
+                return session.participantIDsByDisplayName.values.contains {
+                    $0.caseInsensitiveCompare(participantID) == .orderedSame
+                }
+            }
+
+            guard let onlineParticipantDisplayName = overlap.onlineParticipantDisplayName else {
+                return false
+            }
+
+            return overlap.participants.contains { participant in
+                participant.caseInsensitiveCompare(onlineParticipantDisplayName) == .orderedSame
+            }
         } else {
             // For local overlaps, require at least 2 participants
             return overlap.participants.count >= 2
@@ -36,6 +69,10 @@ struct QuestionnaireInstructionsView: View {
 
                         // Participants Section
                         if !overlap.isOnline {
+                            if !favoriteGroups.isEmpty {
+                                favoriteGroupPicker
+                            }
+
                             ParticipantsSection(
                                 overlap: overlap,
                                 newParticipantName: $newParticipantName,
@@ -45,8 +82,10 @@ struct QuestionnaireInstructionsView: View {
                                 onRemoveParticipant: removeParticipant
                             )
                         } else {
-                            // For online overlaps, show existing participants (read-only)
-                            OnlineParticipantsSection(overlap: overlap)
+                            OnlineInstructionsSection(
+                                overlap: overlap,
+                                isCurrentDeviceParticipant: canBegin
+                            )
                         }
 
                         // Bottom spacing to account for floating button and safe area
@@ -63,11 +102,13 @@ struct QuestionnaireInstructionsView: View {
                 Spacer()
 
                 GlassActionButton(
-                    title: overlap.isOnline ? Tokens.Strings.beginOnlineOverlap : Tokens.Strings.beginOverlap,
+                    title: overlap.isOnline ? "Begin" : Tokens.Strings.beginOverlap,
                     icon: overlap.isOnline ? "icloud.fill" : "play.fill",
                     isEnabled: canBegin,
                     tintColor: overlap.isOnline ? .blue : .green,
-                    action: beginQuestionnaire
+                    action: {
+                        Task { await beginQuestionnaire() }
+                    }
                 )
                 .padding(.horizontal, Tokens.Spacing.xl)
                 .padding(.bottom, Tokens.Spacing.xl)
@@ -77,6 +118,61 @@ struct QuestionnaireInstructionsView: View {
         }
         .onTapGesture {
             isTextFieldFocused = false
+        }
+    }
+
+    private var favoriteGroupPicker: some View {
+        VStack(alignment: .leading, spacing: Tokens.Spacing.m) {
+            SectionHeader(title: "Quick Fill", icon: "person.3.fill")
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Tokens.Spacing.s) {
+                    if let lastUsed = lastUsedParticipants, !lastUsed.isEmpty {
+                        Button {
+                            applyParticipants(lastUsed)
+                        } label: {
+                            Label("Last Used", systemImage: "clock.arrow.circlepath")
+                                .font(.caption)
+                                .fontWeight(.medium)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(.orange)
+                    }
+
+                    ForEach(favoriteGroups) { group in
+                        Button {
+                            applyParticipants(group.participants)
+                        } label: {
+                            Label(group.name, systemImage: "star.fill")
+                                .font(.caption)
+                                .fontWeight(.medium)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(.purple)
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, Tokens.Spacing.xl)
+    }
+
+    private var lastUsedParticipants: [String]? {
+        let descriptor = FetchDescriptor<Overlap>(
+            predicate: #Predicate<Overlap> { o in
+                o.isOnline == false
+            },
+            sortBy: [SortDescriptor(\Overlap.beginDate, order: .reverse)]
+        )
+        guard let recent = try? modelContext.fetch(descriptor).first,
+              recent.id != overlap.id
+        else { return nil }
+        return recent.participants.isEmpty ? nil : recent.participants
+    }
+
+    private func applyParticipants(_ names: [String]) {
+        withAnimation {
+            overlap.participants = names
+            animatingParticipants = []
         }
     }
 
@@ -132,73 +228,69 @@ struct QuestionnaireInstructionsView: View {
         }
     }
 
-    private func beginQuestionnaire() {
+    @MainActor
+    private func beginQuestionnaire() async {
         guard canBegin else { return }
 
-        // Initialize responses for all current participants
-        overlap.initializeResponses()
-
         if overlap.isOnline {
-            // For online overlaps, go directly to answering state
-            // Invite management happens in the host setup flow.
-            overlap.currentState = .answering
+            // Online sessions are backend-authoritative and should not be reset locally.
+            if isCurrentDeviceHost,
+               let sessionID = overlap.onlineSessionID,
+               hostedSession?.phase == .lobby {
+                _ = try? await onlineSessionService.beginSessionOnline(sessionID: sessionID)
+            }
+            // Online uses the same participant-start screen before answering.
+            overlap.currentState = .nextParticipant
         } else {
+            // Initialize responses for all current participants.
+            overlap.initializeResponses()
             // For local overlaps, use the participant selection flow
             overlap.currentState = .nextParticipant
         }
-        
-        // Save the overlap to the model context when starting
-        modelContext.insert(overlap)
+
         try? modelContext.save()        
     }
 }
 
 // MARK: - Online Participants Section
 
-struct OnlineParticipantsSection: View {
+struct OnlineInstructionsSection: View {
     let overlap: Overlap
+    let isCurrentDeviceParticipant: Bool
     
     var body: some View {
         VStack(alignment: .leading, spacing: Tokens.Spacing.m) {
             SectionHeader(
-                title: "Participants",
-                icon: "person.2.fill"
+                title: "Instructions",
+                icon: "list.bullet.clipboard.fill"
             )
-            
-            VStack(spacing: Tokens.Spacing.s) {
-                ForEach(Array(overlap.participants.enumerated()), id: \.offset) { index, participant in
-                    HStack {
-                        HStack(spacing: Tokens.Spacing.s) {
-                            Image(systemName: "person.fill")
-                                .foregroundColor(.blue)
-                                .frame(width: 20)
-                            
-                            Text(participant)
-                                .font(.body)
-                                .foregroundColor(.primary)
-                        }
-                        
-                        Spacer()
-                        
-                        Image(systemName: "icloud.fill")
-                            .foregroundColor(.blue)
-                            .font(.caption)
-                    }
-                    .padding(.horizontal, Tokens.Spacing.m)
-                    .padding(.vertical, Tokens.Spacing.s)
-                    .standardGlassCard()
-                }
-            }
-            
-            // Info about online collaboration
+
+            Text(overlap.instructions)
+                .font(.body)
+                .foregroundColor(.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(Tokens.Spacing.l)
+                .standardGlassCard()
+
             HStack(spacing: Tokens.Spacing.s) {
                 Image(systemName: "info.circle.fill")
                     .foregroundColor(.blue)
-                Text("Everyone answers questions independently, then results are shared")
+                Text("Answers sync live across participants.")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
             .padding(.horizontal, Tokens.Spacing.s)
+
+            if !isCurrentDeviceParticipant {
+                HStack(spacing: Tokens.Spacing.s) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundColor(.orange)
+                    Text("You are no longer in this session. Ask the host to add you again.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal, Tokens.Spacing.s)
+            }
         }
         .padding(.horizontal, Tokens.Spacing.xl)
     }
@@ -206,4 +298,7 @@ struct OnlineParticipantsSection: View {
 
 #Preview {
     QuestionnaireInstructionsView(overlap: SampleData.sampleOverlap)
+        .environmentObject(OnlineSessionService.shared)
+        .environmentObject(OnlineHostAuthService.shared)
+        .modelContainer(for: [Overlap.self, FavoriteGroup.self], inMemory: true)
 }

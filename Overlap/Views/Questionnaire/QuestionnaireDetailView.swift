@@ -21,9 +21,9 @@ struct QuestionnaireDetailView: View {
                     DetailInfo(questionnaire: questionnaire)
                     DetailQuestions(questionnaire: questionnaire)
                     
-                    // Bottom spacing to account for floating button
+                    // Bottom spacing to account for two floating buttons
                     Spacer()
-                        .frame(height: Tokens.Size.buttonLarge + Tokens.Spacing.xl * 2)
+                        .frame(height: (Tokens.Size.buttonLarge * 2) + Tokens.Spacing.m + Tokens.Spacing.xl * 3)
                 }
                 .padding(.horizontal, Tokens.Spacing.xl)
                 .padding(.top, Tokens.Spacing.xl)
@@ -216,7 +216,7 @@ private struct DetailQuestions: View {
         information: "A quick pulse on preferences.",
         instructions: "Answer honestly with yes/no/maybe.",
         author: "Alex",
-        questions: ["Hike a trail?", "Try a new cafe?", "See a movie?"],
+        questions: ["Hike a trail?", "Try a new cafe?", "See a movie?", "How are you", "This is to make alot of questions", "Just want more and more", "This is to fill space" ],
         startColor: .blue,
         endColor: .purple
     )

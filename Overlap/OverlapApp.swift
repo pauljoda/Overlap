@@ -7,12 +7,31 @@
 
 import SwiftData
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
+
+#if canImport(UIKit)
+final class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Bool {
+        FirebaseBootstrap.configureIfAvailable()
+        return true
+    }
+}
+#endif
 
 @main
 struct OverlapApp: App {
     private let onlineSubscriptionService = OnlineSubscriptionService.shared
     private let onlineHostAuthService = OnlineHostAuthService.shared
     private let onlineSessionService = OnlineSessionService.shared
+
+    #if canImport(UIKit)
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    #endif
 
     let overlapModelContainer: ModelContainer = {
         do {
@@ -21,6 +40,7 @@ struct OverlapApp: App {
             return try ModelContainer(
                 for: Questionnaire.self,
                 Overlap.self,
+                FavoriteGroup.self,
                 configurations: configuration
             )
         } catch {
@@ -40,6 +60,9 @@ struct OverlapApp: App {
                     onlineHostAuthService
                 )
                 .environment(\.onlineSessionService, onlineSessionService)
+                .environmentObject(onlineSubscriptionService)
+                .environmentObject(onlineHostAuthService)
+                .environmentObject(onlineSessionService)
         }
         .modelContainer(overlapModelContainer)
     }

@@ -74,6 +74,16 @@ struct HomeMenuOptions: View {
                     color: .red
                 )
             }
+
+            Button(action: {
+                navigate(to: .settings, using: navigationPath)
+            }) {
+                HomeOptionButton(
+                    title: "Settings",
+                    icon: "gearshape.fill",
+                    color: .gray
+                )
+            }
         }
     }
 }
